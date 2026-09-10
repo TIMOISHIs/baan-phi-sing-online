@@ -7,23 +7,11 @@ let sessionToken=localStorage.getItem(tokenKey)||makeToken();
 localStorage.setItem(tokenKey,sessionToken);
 let state=null,mine=null,tutorialShown=false;
 let createAfterLeave=false,leavingRoom=false;
-let audioCtx=null,ambientMaster=null,ambientNodes=[],ambientTimer=null;
-let ambientEnabled=localStorage.getItem("bpsAmbientV13")==="1";
-let ambientVolume=Math.max(0,Math.min(1,Number(localStorage.getItem("bpsAmbientVolV13")||0.24)));
-
-function toast(t){const e=$("#toast");e.textContent=t;e.classList.remove("hidden");setTimeout(()=>e.classList.add("hidden"),2600)}
-function closeModal(){$("#modal").classList.add("hidden")}
-function openModal(title,node){$("#modalTitle").textContent=title;$("#modalBody").innerHTML="";if(typeof node==="string")$("#modalBody").textContent=node;else $("#modalBody").appendChild(node);$("#modal").classList.remove("hidden")}
-function activePlayer(){return state?.players?.[state.game?.turn||0]}
-function myId(){return mine?.id||null}
-function mePublic(){return state?.players?.find(p=>p.id===myId())}
-function roomAt(i){if(!state?.game)return null;if(i===state.game.bossIndex)return {id:"BOSS",name:"เขตพิธีกรรม",type:"BOSS",fear:state.game.ghost?.fear||6,boss:true,effectText:`ห้องของ ${state.game.ghost?.name||"ผี"} • ใช้ทำพิธีปราบผี`};return state.game.rooms[i]}
-function isMyTurn(){return !!myId()&&activePlayer()?.id===myId()}
-function isHost(){return !!myId()&&state?.hostId===myId()}
-function persistSession(){
-  if(mine?.sessionToken){sessionToken=mine.sessionToken;localStorage.setItem(tokenKey,sessionToken)}
-  if(state?.code&&mine?.id){localStorage.setItem(roomKey,state.code);localStorage.removeItem(legacyRoomKey)}
-}
+let audioCtx=null,ambientMaster=null,sfxMaster=null,trackNodes=[],trackTimers=[];
+let ambientEnabled=localStorage.getItem("bpsAmbientV14")==="1" || localStorage.getItem("bpsAmbientV13")==="1";
+let ambientVolume=Math.max(0,Math.min(1,Number(localStorage.getItem("bpsAmbientVolV14")||localStorage.getItem("bpsAmbientVolV13")||0.24)));
+let ambientTrack=localStorage.getItem("bpsAmbientTrackV14")||"haunted";
+const TRACK_NAMES={haunted:"บ้านร้าง",candle:"พิธีเทียนดับ",redrain:"คืนฝนแดง"};
 
 function resetLocalRoom(){
   localStorage.removeItem(roomKey);localStorage.removeItem(legacyRoomKey);
@@ -37,36 +25,130 @@ function leaveCurrentRoom({newRoom=false}={}){
   socket.emit("leaveRoom");
 }
 function migrateLegacyRoom(){const legacy=localStorage.getItem(legacyRoomKey);if(legacy&&!localStorage.getItem(roomKey))localStorage.setItem(roomKey,legacy)}
+function ensureAudio(){
+  if(!audioCtx){
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return null;
+    audioCtx=new AC();
+    ambientMaster=audioCtx.createGain();ambientMaster.gain.value=0.0001;ambientMaster.connect(audioCtx.destination);
+    sfxMaster=audioCtx.createGain();sfxMaster.gain.value=0.55;sfxMaster.connect(audioCtx.destination);
+  }
+  if(audioCtx.state==="suspended") audioCtx.resume().catch(()=>{});
+  return audioCtx;
+}
 function updateAmbientUI(){
-  const label=ambientEnabled?"🔊 เสียงหลอน ON":"🎵 เปิดเสียงหลอน";
+  const label=ambientEnabled?`🔊 ${TRACK_NAMES[ambientTrack]||"เพลง"} ON`:"🎵 เปิดเพลง";
   [$("#ambientToggle"),$("#audioBtn")].forEach(b=>{if(b){b.textContent=label;b.classList.toggle("active",ambientEnabled)}});
   if($("#ambientVolume"))$("#ambientVolume").value=String(Math.round(ambientVolume*100));
+  if($("#ambientTrack"))$("#ambientTrack").value=ambientTrack;
 }
-function createNoiseSource(ctx){
-  const len=Math.floor(ctx.sampleRate*8),buf=ctx.createBuffer(1,len,ctx.sampleRate),data=buf.getChannelData(0);let last=0;
-  for(let i=0;i<len;i++){const white=Math.random()*2-1;last=last*0.985+white*0.015;data[i]=last*0.75;}
+function clearTrack(){
+  trackTimers.forEach(t=>clearTimeout(t));trackTimers=[];
+  trackNodes.forEach(n=>{try{n.stop?.()}catch{} try{n.disconnect?.()}catch{}});trackNodes=[];
+}
+function makeNoiseSource(ctx,seconds=6){
+  const len=Math.floor(ctx.sampleRate*seconds),buf=ctx.createBuffer(1,len,ctx.sampleRate),data=buf.getChannelData(0);let last=0;
+  for(let i=0;i<len;i++){const white=Math.random()*2-1;last=last*0.986+white*0.014;data[i]=last*0.85;}
   const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;return src;
 }
-function scheduleHauntTone(){
-  if(!ambientEnabled||!audioCtx||!ambientMaster)return;
-  const ctx=audioCtx,now=ctx.currentTime,choices=[174.61,196,207.65,233.08,261.63],freq=choices[Math.floor(Math.random()*choices.length)]*(Math.random()<0.18?0.5:1);
-  const o=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();o.type=Math.random()<0.55?"sine":"triangle";o.frequency.value=freq;f.type="lowpass";f.frequency.value=900;
-  g.gain.setValueAtTime(0.0001,now);g.gain.exponentialRampToValueAtTime(0.018+Math.random()*0.02,now+0.8);g.gain.exponentialRampToValueAtTime(0.0001,now+5+Math.random()*3);
-  o.connect(f).connect(g).connect(ambientMaster);o.start(now);o.stop(now+9);ambientTimer=setTimeout(scheduleHauntTone,6500+Math.random()*9500);
+function tone(freq,duration=1.2,volume=0.025,type="sine",when=0,target=ambientMaster){
+  const ctx=ensureAudio();if(!ctx||!target)return;
+  const now=ctx.currentTime+when,o=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();
+  o.type=type;o.frequency.value=freq;f.type="lowpass";f.frequency.value=1500;
+  g.gain.setValueAtTime(0.0001,now);g.gain.exponentialRampToValueAtTime(Math.max(0.0002,volume),now+0.04);
+  g.gain.exponentialRampToValueAtTime(0.0001,now+duration);
+  o.connect(f).connect(g).connect(target);o.start(now);o.stop(now+duration+0.05);
+}
+function loopPhrase(notes,stepMs,vol=0.022,type="triangle"){
+  let i=0;
+  const tick=()=>{
+    if(!ambientEnabled)return;
+    const n=notes[i%notes.length];i++;
+    if(n) tone(n,Math.max(.55,stepMs/1000*.82),vol,type);
+    trackTimers.push(setTimeout(tick,stepMs));
+  };
+  tick();
+}
+function addDrone(freqs,level=0.05){
+  const ctx=ensureAudio();if(!ctx||!ambientMaster)return;
+  const bus=ctx.createGain(),filter=ctx.createBiquadFilter();bus.gain.value=level;filter.type="lowpass";filter.frequency.value=220;bus.connect(filter).connect(ambientMaster);
+  trackNodes.push(bus,filter);
+  freqs.forEach((freq,i)=>{
+    const o=ctx.createOscillator(),g=ctx.createGain(),lfo=ctx.createOscillator(),lg=ctx.createGain();
+    o.type=i%2?"triangle":"sine";o.frequency.value=freq;g.gain.value=i?0.25:0.38;lfo.frequency.value=.025+i*.012;lg.gain.value=.6+i*.25;
+    lfo.connect(lg).connect(o.detune);o.connect(g).connect(bus);o.start();lfo.start();trackNodes.push(o,g,lfo,lg);
+  });
+}
+function addWind(freq=430,level=.1){
+  const ctx=ensureAudio();if(!ctx||!ambientMaster)return;
+  const src=makeNoiseSource(ctx,8),filter=ctx.createBiquadFilter(),gain=ctx.createGain();filter.type="bandpass";filter.frequency.value=freq;filter.Q.value=.45;gain.gain.value=level;
+  src.connect(filter).connect(gain).connect(ambientMaster);src.start();trackNodes.push(src,filter,gain);
+}
+function scheduleHaunt(){
+  if(!ambientEnabled||ambientTrack!=="haunted")return;
+  const choices=[174.61,196,207.65,233.08,261.63],freq=choices[Math.floor(Math.random()*choices.length)]*(Math.random()<.18?.5:1);
+  tone(freq,5+Math.random()*2,.018+Math.random()*.014,Math.random()<.5?"sine":"triangle");
+  trackTimers.push(setTimeout(scheduleHaunt,6000+Math.random()*8000));
+}
+function startSelectedTrack(){
+  clearTrack();
+  if(!ambientEnabled)return;
+  ensureAudio();
+  if(ambientTrack==="haunted"){
+    addDrone([43.65,65.41],.05);addWind(430,.11);scheduleHaunt();
+  }else if(ambientTrack==="candle"){
+    addDrone([55,82.41],.045);addWind(760,.045);
+    loopPhrase([220,261.63,293.66,261.63,233.08,196,220,null],1150,.025,"triangle");
+    loopPhrase([110,null,null,123.47,null,null,98,null],2300,.018,"sine");
+  }else{
+    addDrone([46.25,69.3],.05);addWind(1150,.085);
+    loopPhrase([185,220,207.65,164.81,185,246.94,220,null],820,.021,"triangle");
+    loopPhrase([92.5,null,82.41,null,103.83,null,92.5,null],1640,.02,"sine");
+  }
 }
 async function startAmbient(){
-  if(!audioCtx){
-    const AC=window.AudioContext||window.webkitAudioContext;if(!AC){toast("Browser นี้ไม่รองรับ Web Audio");return;}
-    audioCtx=new AC();ambientMaster=audioCtx.createGain();ambientMaster.gain.value=ambientVolume;ambientMaster.connect(audioCtx.destination);
-    const droneBus=audioCtx.createGain(),droneFilter=audioCtx.createBiquadFilter();droneBus.gain.value=0.05;droneFilter.type="lowpass";droneFilter.frequency.value=180;droneBus.connect(droneFilter).connect(ambientMaster);
-    [43.65,65.41].forEach((freq,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain(),lfo=audioCtx.createOscillator(),lg=audioCtx.createGain();o.type=i?"triangle":"sine";o.frequency.value=freq;g.gain.value=i?0.32:0.42;lfo.frequency.value=i?0.041:0.027;lg.gain.value=i?1.2:0.8;lfo.connect(lg).connect(o.detune);o.connect(g).connect(droneBus);o.start();lfo.start();ambientNodes.push(o,g,lfo,lg);});
-    const wind=createNoiseSource(audioCtx),windFilter=audioCtx.createBiquadFilter(),windGain=audioCtx.createGain();windFilter.type="bandpass";windFilter.frequency.value=430;windFilter.Q.value=0.45;windGain.gain.value=0.12;wind.connect(windFilter).connect(windGain).connect(ambientMaster);wind.start();ambientNodes.push(wind,windFilter,windGain);
-  }
-  await audioCtx.resume();ambientEnabled=true;localStorage.setItem("bpsAmbientV13","1");ambientMaster.gain.setTargetAtTime(Math.max(0.0001,ambientVolume),audioCtx.currentTime,0.08);clearTimeout(ambientTimer);scheduleHauntTone();updateAmbientUI();
+  const ctx=ensureAudio();if(!ctx){toast("Browser นี้ไม่รองรับ Web Audio");return;}
+  try{await ctx.resume()}catch{}
+  ambientEnabled=true;
+  localStorage.setItem("bpsAmbientV14","1");
+  ambientMaster.gain.setTargetAtTime(Math.max(.0001,ambientVolume),ctx.currentTime,.08);
+  startSelectedTrack();updateAmbientUI();
 }
-function stopAmbient(){ambientEnabled=false;localStorage.setItem("bpsAmbientV13","0");clearTimeout(ambientTimer);ambientTimer=null;if(ambientMaster&&audioCtx)ambientMaster.gain.setTargetAtTime(0.0001,audioCtx.currentTime,0.08);updateAmbientUI()}
+function stopAmbient(){
+  ambientEnabled=false;localStorage.setItem("bpsAmbientV14","0");clearTrack();
+  if(ambientMaster&&audioCtx)ambientMaster.gain.setTargetAtTime(.0001,audioCtx.currentTime,.08);
+  updateAmbientUI();
+}
 function toggleAmbient(){ambientEnabled?stopAmbient():startAmbient()}
-function setAmbientVolume(value){ambientVolume=Math.max(0,Math.min(1,Number(value)/100));localStorage.setItem("bpsAmbientVolV13",String(ambientVolume));if(ambientMaster&&audioCtx&&ambientEnabled)ambientMaster.gain.setTargetAtTime(Math.max(0.0001,ambientVolume),audioCtx.currentTime,0.05)}
+function setAmbientVolume(value){
+  ambientVolume=Math.max(0,Math.min(1,Number(value)/100));localStorage.setItem("bpsAmbientVolV14",String(ambientVolume));
+  if(ambientMaster&&audioCtx&&ambientEnabled)ambientMaster.gain.setTargetAtTime(Math.max(.0001,ambientVolume),audioCtx.currentTime,.05);
+}
+function setAmbientTrack(value){
+  if(!TRACK_NAMES[value])return;
+  ambientTrack=value;localStorage.setItem("bpsAmbientTrackV14",value);updateAmbientUI();
+  if(ambientEnabled)startSelectedTrack();
+}
+function playDiceTick(strength=.04){
+  const ctx=ensureAudio();if(!ctx||ctx.state!=="running"||!sfxMaster)return;
+  const now=ctx.currentTime,o=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();
+  o.type="triangle";o.frequency.value=900+Math.random()*1100;f.type="highpass";f.frequency.value=650;
+  g.gain.setValueAtTime(strength,now);g.gain.exponentialRampToValueAtTime(.0001,now+.055);
+  o.connect(f).connect(g).connect(sfxMaster);o.start(now);o.stop(now+.07);
+}
+function playDiceRollSound(durationMs=2100){
+  const started=performance.now();
+  const tick=()=>{
+    if(performance.now()-started>=durationMs)return;
+    playDiceTick(.025+Math.random()*.035);
+    setTimeout(tick,70+Math.random()*85);
+  };
+  tick();
+}
+function playCardFlipSound(){
+  const ctx=ensureAudio();if(!ctx||ctx.state!=="running"||!sfxMaster)return;
+  tone(520,.12,.018,"triangle",0,sfxMaster);tone(780,.16,.012,"sine",.05,sfxMaster);
+}
 migrateLegacyRoom();
 
 $("#createForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("createRoom",{name:$("#createName").value,sessionToken})});
@@ -87,6 +169,7 @@ $("#resultNewRoomBtn").onclick=()=>leaveCurrentRoom({newRoom:true});
 $("#ambientToggle").onclick=toggleAmbient;
 $("#audioBtn").onclick=toggleAmbient;
 $("#ambientVolume").oninput=e=>setAmbientVolume(e.target.value);
+$("#ambientTrack").onchange=e=>setAmbientTrack(e.target.value);
 $("#stayBtn").onclick=()=>socket.emit("stayInRoom");
 $("#escapeBtn").onclick=()=>socket.emit("escapeRoom");
 $("#rollBtn").onclick=()=>socket.emit("roll");
@@ -118,7 +201,7 @@ $("#helpBtn").onclick=openHowToPlay;
 $("#roomRulesBtn").onclick=openRoomRules;
 $("#bossHelpBtn").onclick=openBossHelp;
 $("#endBtn").onclick=()=>socket.emit("endTurn");
-$("#closeModal").onclick=closeModal;
+$("#closeModal").onclick=()=>{if(state?.game?.pendingRoomEffect?.playerId===myId()){toast("ต้องเลือก/Resolve ให้เสร็จก่อน");return;}closeModal()};
 
 socket.on("errorMessage",toast);
 socket.on("connect",()=>{
@@ -142,6 +225,7 @@ socket.on("state",s=>{
   if(previous==="lobby"&&s.phase==="game") setTimeout(openSetupReveal,420);
 });
 socket.on("privateState",p=>{mine=p;persistSession();render()});
+socket.on("cardReveal",enqueueCardReveal);
 socket.on("diceFx",showDiceFx);
 socket.on("ritualFx",showRitualFx);
 
@@ -243,7 +327,7 @@ function statsNode(){
 }
 function openStats(){openModal("📊 Playtest Stats",statsNode())}
 function reportPayload(){
-  return {project:"บ้านผีสิง",build:"V1.3",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
+  return {project:"บ้านผีสิง",build:"V1.4",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
     players:(state?.players||[]).map(p=>({name:p.name,character:p.char?.name||null,score:p.score,hp:p.hp,dead:p.dead})),
     settings:state?.settings||null,result:state?.result||null,stats:currentStats(),log:state?.log||[],exportedAt:new Date().toISOString()};
 }
@@ -253,25 +337,65 @@ function downloadReport(){
   link.href=url;link.download=`baan-phi-sing-playtest-${state?.code||"room"}.json`;
   document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
 }
-let diceTimer=null,ritualTimer=null;
+let diceTimer=null,ritualTimer=null,diceAnimTimer=null,cardRevealBusy=false;
+const cardRevealQueue=[];
+function enqueueCardReveal(e){
+  cardRevealQueue.push(e);
+  if(!cardRevealBusy)showNextCardReveal();
+}
+function showNextCardReveal(){
+  const e=cardRevealQueue.shift();
+  if(!e){cardRevealBusy=false;return}
+  cardRevealBusy=true;
+  const box=$("#cardRevealFx"),card=$("#cardRevealCard"),c=e.card||{};
+  card.className="card-reveal-card";
+  card.classList.add(e.zone==="sacrifice"?`reveal-${c.color||"green"}`:"reveal-amulet");
+  $("#cardRevealZone").textContent=e.zone==="sacrifice"?"SACRIFICE DRAW":"AMULET DRAW";
+  $("#cardRevealName").textContent=c.name||"การ์ด";
+  const meta=e.zone==="sacrifice"
+    ? `${c.color||""}${c.boss!=null?` • ตีผี +${c.boss}`:""}${c.end!=null?` • จบเกม ${c.end>=0?"+":""}${c.end}`:""}`
+    : `${c.type||"Amulet"}${c.desc?` • ${c.desc}`:""}`;
+  $("#cardRevealMeta").textContent=meta;
+  $("#cardRevealPlayer").textContent=`${e.playerName||"ผู้เล่น"} จั่วได้`;
+  box.classList.remove("hidden","card-pop");void box.offsetWidth;box.classList.add("card-pop");playCardFlipSound();
+  setTimeout(()=>{
+    box.classList.add("card-out");
+    setTimeout(()=>{box.classList.add("hidden");box.classList.remove("card-out");cardRevealBusy=false;showNextCardReveal()},280);
+  },1750);
+}
 function showDiceFx(e){
-  const box=$("#diceFx");
-  $("#dieA").textContent=e.a;$("#dieB").textContent=e.b;$("#diceFxTotal").textContent=`รวม ${e.total}`;
+  const box=$("#diceFx"),aEl=$("#dieA"),bEl=$("#dieB"),total=$("#diceFxTotal");
   $("#diceFxPlayer").textContent=e.playerName||"";
   $("#diceFxKind").textContent=e.kind==="ritual"?"ทอยทำพิธี":e.kind==="escape"?"ทอยหนีห้อง":"ทอยเดิน";
-  box.classList.remove("hidden","pop");void box.offsetWidth;box.classList.add("pop");
-  clearTimeout(diceTimer);diceTimer=setTimeout(()=>box.classList.add("hidden"),1100);
+  box.classList.remove("hidden","pop","dice-result");box.classList.add("dice-rolling");
+  clearTimeout(diceTimer);clearInterval(diceAnimTimer);
+  const start=performance.now(),rollMs=2100;
+  playDiceRollSound(rollMs);
+  diceAnimTimer=setInterval(()=>{
+    aEl.textContent=1+Math.floor(Math.random()*6);
+    bEl.textContent=1+Math.floor(Math.random()*6);
+    total.textContent="กำลังทอย…";
+  },85);
+  setTimeout(()=>{
+    clearInterval(diceAnimTimer);
+    aEl.textContent=e.a;bEl.textContent=e.b;total.textContent=`รวม ${e.total}`;
+    box.classList.remove("dice-rolling");box.classList.add("dice-result");
+    playDiceTick(.075);setTimeout(()=>playDiceTick(.055),100);
+    diceTimer=setTimeout(()=>box.classList.add("hidden"),1600);
+  },rollMs);
 }
 function showRitualFx(e){
-  const box=$("#ritualFx"),card=$("#ritualFxCard");
-  card.classList.toggle("success",!!e.success);card.classList.toggle("fail",!e.success);
-  $("#ritualFxTitle").textContent=e.success?"พิธีสำเร็จ":"ผีสวนกลับ";
-  $("#ritualFxDice").textContent=`🎲 ${e.dice.a} + ${e.dice.b} = ${e.dice.total}`;
-  $("#ritualFxText").textContent=e.success?`${e.playerName} ใช้ ${e.cardName} สำเร็จ • +${e.score} คะแนน`:`${e.playerName} ใช้ ${e.cardName} ไม่สำเร็จ`;
-  box.classList.remove("hidden","ritual-pop");void box.offsetWidth;box.classList.add("ritual-pop");
-  clearTimeout(ritualTimer);ritualTimer=setTimeout(()=>box.classList.add("hidden"),1800);
+  clearTimeout(ritualTimer);
+  ritualTimer=setTimeout(()=>{
+    const box=$("#ritualFx"),card=$("#ritualFxCard");
+    card.classList.toggle("success",!!e.success);card.classList.toggle("fail",!e.success);
+    $("#ritualFxTitle").textContent=e.success?"พิธีสำเร็จ":"ผีสวนกลับ";
+    $("#ritualFxDice").textContent=`🎲 ${e.dice.a} + ${e.dice.b} = ${e.dice.total}`;
+    $("#ritualFxText").textContent=e.success?`${e.playerName} ใช้ ${e.cardName} สำเร็จ • +${e.score} คะแนน`:`${e.playerName} ใช้ ${e.cardName} ไม่สำเร็จ`;
+    box.classList.remove("hidden","ritual-pop");void box.offsetWidth;box.classList.add("ritual-pop");
+    setTimeout(()=>box.classList.add("hidden"),1800);
+  },2250);
 }
-
 function renderGame(){
   const ap=activePlayer(), mp=mePublic(), g=state.game;
   $("#turnPlayer").textContent=ap?`${ap.name} · ${ap.char?.name||""}`:"—";
@@ -335,7 +459,7 @@ function renderGame(){
   $("#escapeBtn").style.display=g.escapeRequired?"inline-block":"none";
   $("#escapeBtn").disabled=!canAct||!g.escapeRequired||g.actions<1;
   $("#rollBtn").disabled=!canAct||g.escapeRequired||g.rolled;
-  $("#drawAmu").disabled=!canAct||!g.moved||g.actions<1||(mine?.amu?.length||0)>=5;
+  $("#drawAmu").disabled=!canAct||!g.moved||g.actions<1;
   const myRoom=mp?.pos!=null?roomAt(mp.pos):null;
   const sacLimited=(state.settings?.sacrificeDraw||"onePerTurn")==="onePerTurn";
   $("#drawSac").disabled=!canAct||!g.moved||g.actions<1||(sacLimited&&g.sacDrawn)||!myRoom?.sac||(mine?.sac?.length||0)>=7;
@@ -400,7 +524,7 @@ function openHowToPlay(){
     <div class="howto-step"><b>1 · ทอยเดิน</b><p>ทอยเต๋า 2 ลูก → หัก Fear ของห้องปัจจุบันและผลของสวมใส่ → ได้ “สติ”</p></div>
     <div class="howto-step"><b>2 · ${forced?"ต้องย้ายห้อง":"เลือกย้ายหรืออยู่เดิม"}</b><p>ห้องข้างเคียงที่ Fear ≤ สติจะเป็นทางที่เข้าได้ • ${forced?"ถ้ามีทาง ระบบบังคับให้เดิน 1 ห้อง":"เลือกเดิน 1 ห้องหรือกดอยู่ห้องเดิมได้"} (บน/ล่าง/ซ้าย/ขวา)</p></div>
     <div class="howto-step"><b>3 · ใช้ธูป 3 ดอก</b><p>จั่ว Amulet 1 ดอก · สวม/ถอด 1 ดอก · ${sacRule} · ตีผี 2 ดอก · Skill 3 ดอก</p></div>
-    <div class="howto-step"><b>4 · ฟาร์มแล้วต่อรอง</b><p>Amulet ถือสูงสุด 5 ใบ · เครื่องเซ่น 7 ใบ · Trade ฟรี 1 ครั้ง/เทิร์นกับคนห้องเดียวกัน</p></div>
+    <div class="howto-step"><b>4 · ฟาร์มแล้วต่อรอง</b><p>Amulet เก็บได้สูงสุด 5 ใบ แต่ยังจั่วต่อได้ แล้วเลือกทิ้งให้เหลือ 5 · เครื่องเซ่น 7 ใบ · Trade ฟรี 1 ครั้ง/เทิร์นกับคนห้องเดียวกัน</p></div>
     <div class="howto-step"><b>5 · ปราบผี</b><p>เข้าห้อง Boss ให้ได้ → เลือกเครื่องเซ่นที่ตรงสี → ทอยผ่านเกณฑ์ของสีนั้น → ปิด Symbol และรับคะแนน</p></div>
     <div class="howto-step danger"><b>☠️ ระวัง</b><p>HP = 0 จะตายและรอชุบ · ผีสะสม Curse ครบ 6 จะสร้างความเสียหายแล้วรีเซ็ต</p></div>`;
   openModal("วิธีเล่นแบบ 60 วินาที",box);
@@ -501,8 +625,16 @@ function renderPendingRoomEffect(pending){
   }else if(pending.type==="pickAmuletDiscard"){
     const help=document.createElement("p");help.className="muted";help.textContent="เลือก Amulet 1 ใบจากกองทิ้งกลับขึ้นมือ";box.appendChild(help);
     (pending.options||[]).forEach(c=>{const b=document.createElement("button");b.className="modal-option";b.textContent=`${c.name} • ${c.type}`;b.onclick=()=>{socket.emit("resolveRoomEffect",{uid:c.uid});closeModal()};box.appendChild(b)});
+  }else if(pending.type==="discardAmuletOverflow"){
+    const help=document.createElement("p");help.className="muted";help.textContent="ตอนนี้มี 6 ใบชั่วคราว — เลือก 1 ใบที่ไม่ต้องการทิ้ง เพื่อให้เหลือ 5 ใบ";box.appendChild(help);
+    (mine.amu||[]).forEach(c=>{
+      const b=document.createElement("button");b.className="modal-option overflow-choice";
+      b.innerHTML=`<b>${c.name}</b><small>${c.type||"Amulet"}${c.uid===pending.newUid?" • ใบที่เพิ่งจั่ว":""}</small><span>${c.desc||""}</span>`;
+      b.onclick=()=>{socket.emit("resolveRoomEffect",{uid:c.uid});closeModal()};
+      box.appendChild(b);
+    });
   }
-  openModal("Room Effect",box);
+  openModal(pending.type==="discardAmuletOverflow"?"Amulet Hand เต็ม — เลือกทิ้ง 1 ใบ":"Room Effect",box);
 }
 
 function renderResult(){
@@ -517,6 +649,9 @@ function renderResult(){
   $("#resultStats").appendChild(statsNode());
 }
 
-// Resume a previously enabled ambience after the next real user gesture (browser autoplay policy).
-document.addEventListener("pointerdown",()=>{if(ambientEnabled)startAmbient()},{once:true,capture:true});
+// Unlock Web Audio on the first real gesture. If music was enabled before, resume the selected track.
+document.addEventListener("pointerdown",()=>{
+  ensureAudio();
+  if(ambientEnabled)startAmbient();
+},{once:true,capture:true});
 updateAmbientUI();

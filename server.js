@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.3"}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.4"}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -233,6 +233,27 @@ function recordDice(room,p,d,kind){
   g.lastDiceEvent={seq:g.diceSeq,a:d.a,b:d.b,total:d.total,kind,playerId:p.id,playerName:p.name};
   io.to(room.code).emit("diceFx",g.lastDiceEvent);
 }
+function revealCard(room,p,card,zone,reason="draw"){
+  if(!room?.game||!card)return;
+  const g=room.game;
+  g.cardSeq=(g.cardSeq||0)+1;
+  io.to(room.code).emit("cardReveal",{
+    seq:g.cardSeq,
+    zone,
+    reason,
+    playerId:p?.id||null,
+    playerName:p?.name||"ผู้เล่น",
+    card:{
+      uid:card.uid||null,
+      name:card.name||"การ์ด",
+      type:card.type||null,
+      color:card.color||null,
+      desc:card.desc||null,
+      boss:card.boss??null,
+      end:card.end??null
+    }
+  });
+}
 function publicSnapshot(room){
   const g=room.game;
   return {
@@ -426,8 +447,9 @@ function drawExtraSacrifices(room, player, count, reason){
     if(!c) break;
     if(player.sac.length>=7){ room.game.sacDeck.push(c); continue; }
     player.sac.push(c); got++;
+    revealCard(room,player,c,"sacrifice",reason);
   }
-  addLog(room,`${player.name}: ${reason} → จั่วเครื่องเซ่นเพิ่ม ${got} ชิ้น (โบนัสไม่ Chain Effect ใน V0.5)`);
+  addLog(room,`${player.name}: ${reason} → จั่วเครื่องเซ่นเพิ่ม ${got} ชิ้น (โบนัสไม่ Chain Effect)`);
 }
 function applySacrificeRoomEffect(room, player, card){
   const r=roomAt(room,player.pos);
@@ -592,7 +614,7 @@ function startRoom(room){
     rolled:false,moved:false,mustMove:false,moveOptional:false,legal:[],sacDrawn:false,traded:false,
     curse:0,bossDone:{green:0,blue:0,pink:0,black:0}, pendingRoomEffect:null,
     ghost, escapeRequired:false, escapeRule:null, escapeAttempts:0,
-    diceSeq:0,lastDiceEvent:null,stats:freshStats(room.settings),
+    diceSeq:0,lastDiceEvent:null,cardSeq:0,stats:freshStats(room.settings),
     amuDeck:shuffle(cloneCards(AMULETS,4)), amuDiscard:[],
     sacDeck:shuffle(cloneCards(SACRIFICES,6)), sacDiscard:[]
   };
@@ -699,7 +721,7 @@ io.on("connection", socket=>{
     }
 
     if(room.phase!=="lobby") return fail(socket,"เกมเริ่มไปแล้ว — ใช้ Session เดิมเพื่อกลับเข้าห้อง");
-    if(room.players.length>=4) return fail(socket,"V1.3 เปิดเทสสูงสุด 4 คนก่อน");
+    if(room.players.length>=4) return fail(socket,"V1.4 เปิดเทสสูงสุด 4 คนก่อน");
     if(room.players.some(p=>p.socketId===socket.id)) return;
     const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),characterKey:null};
     room.players.push(p);
@@ -846,11 +868,12 @@ io.on("connection", socket=>{
     const room=rooms.get(socket.data.roomCode); if(!room) return;
     const p=checkTurn(socket,room); if(!p) return;
     const g=room.game;
-    if(!g.moved||g.actions<1||p.amu.length>=5) return fail(socket,"จั่ว Amulet ไม่ได้");
-    g.actions--;
-    if(g.stats) g.stats.draws.amulet++;
+    if(!g.moved||g.actions<1) return fail(socket,"จั่ว Amulet ไม่ได้");
     const c=g.amuDeck.shift();
     if(!c) return fail(socket,"กอง Amulet หมด");
+    g.actions--;
+    if(g.stats) g.stats.draws.amulet++;
+    revealCard(room,p,c,"amulet","draw");
     const currentRoom=roomAt(room,p.pos);
     if(c.type==="event"){
       p.hp=Math.max(0,p.hp-1);
@@ -871,6 +894,18 @@ io.on("connection", socket=>{
     }else{
       p.amu.push(c);
       addLog(room,`${p.name} จั่ว Amulet 1 ใบ`);
+      if(p.amu.length>5){
+        g.pendingRoomEffect={
+          id:`amu-overflow-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+          type:"discardAmuletOverflow",
+          playerId:p.id,
+          reason:"Amulet Hand เต็ม — เลือกเก็บ 5 ใบ",
+          count:1,
+          newUid:c.uid,
+          options:p.amu.map(x=>({uid:x.uid,name:x.name,type:x.type,desc:x.desc}))
+        };
+        addLog(room,`${p.name} มี Amulet 6 ใบชั่วคราว → ต้องเลือกทิ้ง 1 ใบ`);
+      }
     }
     emitRoom(room);
   });
@@ -890,6 +925,7 @@ io.on("connection", socket=>{
       if(!c) break;
       if(p.sac.length>=7){ g.sacDeck.push(c); continue; }
       p.sac.push(c); drawn.push(c);
+      revealCard(room,p,c,"sacrifice","draw");
     }
     if(!drawn.length) return fail(socket,"กองเครื่องเซ่นหมดหรือมือเต็ม");
     if(g.stats){
@@ -1122,6 +1158,14 @@ io.on("connection", socket=>{
       const [c]=room.game.amuDiscard.splice(idx,1); p.amu.push(c);
       addLog(room,`${p.name} เลือก ${c.name} จากกองทิ้งขึ้นมือ`);
       room.game.pendingRoomEffect=null;
+    }else if(pending.type==="discardAmuletOverflow"){
+      const idx=p.amu.findIndex(c=>c.uid===uid);
+      if(idx<0) return fail(socket,"ไม่พบ Amulet ที่เลือก");
+      if(p.amu.length<=5) return fail(socket,"Amulet Hand ไม่เกินขีดจำกัดแล้ว");
+      const [c]=p.amu.splice(idx,1);
+      room.game.amuDiscard.push(c);
+      addLog(room,`${p.name} เลือกทิ้ง ${c.name} → Amulet Hand เหลือ ${p.amu.length}/5`);
+      room.game.pendingRoomEffect=null;
     }
     emitRoom(room);
   });
@@ -1256,4 +1300,4 @@ setInterval(()=>{
   }
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.3 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.4 listening on :${PORT}`));

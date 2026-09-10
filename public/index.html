@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Online Friends Build V1.3</title>
+<title>บ้านผีสิง — Online Friends Build V1.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
 
 <section id="home" class="screen active">
   <div class="hero">
-    <div class="eyebrow">ONLINE FRIENDS BUILD V1.3</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.4</div>
     <h1>บ้านผีสิง</h1>
     <p>สร้างโต๊ะ ส่ง Room Code ให้เพื่อน แล้วช่วยกันฟาร์มของก่อนเข้าห้องผี</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
@@ -38,7 +38,7 @@
   <div class="lobby-wrap">
     <div class="eyebrow">WAITING ROOM</div>
     <h1>Room <span id="roomCode">—</span></h1>
-    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 4 คนใน V1.3</p>
+    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 4 คนใน V1.4</p>
     <div class="room-code-tools">
       <button id="copyCodeBtn" class="secondary">📋 Copy Room Code</button>
       <button id="lobbyHelpBtn" class="secondary">? วิธีเล่น</button>
@@ -130,12 +130,6 @@
       </div>
       <div id="board" class="board"></div>
       <div id="message" class="message">รอข้อมูล...</div>
-      <div id="turnGuide" class="turn-guide">
-        <div class="guide-kicker">ตอนนี้ทำอะไร?</div>
-        <div id="guideTitle" class="guide-title">รอเกมเริ่ม</div>
-        <div id="guideText" class="guide-text"></div>
-        <div id="guideSteps" class="guide-steps"></div>
-      </div>
       <div class="actions-row">
         <button id="drawAmu">จั่ว Amulet · 1🕯</button>
         <button id="drawSac">จั่วเครื่องเซ่น · 1🕯</button>
@@ -144,6 +138,18 @@
         <button id="skillBtn">✨ Skill · 3🕯</button>
         <button id="endBtn">ส่งเทิร์น →</button>
       </div>
+      <section class="my-zone">
+        <article class="character">
+          <small>CHARACTER</small><h2 id="charName">—</h2><p id="charRole">—</p>
+          <div class="char-art">CHARACTER ART</div><p id="charSkill"></p>
+        </article>
+        <div class="inventory">
+          <div class="inventory-head"><div><h3>พื้นที่ของฉัน</h3><small id="myRoom">—</small></div><span id="limits">—</span></div>
+          <div class="equip-row"><span>สวมใส่</span><div id="equip"></div></div>
+          <div class="hand-title">Amulet Hand</div><div id="amuHand" class="hand"></div>
+          <div class="hand-title">เครื่องเซ่น</div><div id="sacHand" class="hand"></div>
+        </div>
+      </section>
     </main>
 
     <aside class="boss-column">
@@ -157,21 +163,15 @@
       </article>
       <div class="deck-card">AMULET DECK<small>ของขลัง / คาถา / Event / Heal</small></div>
       <div class="deck-card">SACRIFICE DECK<small>ทุกสีอยู่กองเดียวกัน</small></div>
+      <div id="turnGuide" class="turn-guide turn-guide-side">
+        <div class="guide-kicker">ตอนนี้ทำอะไร?</div>
+        <div id="guideTitle" class="guide-title">รอเกมเริ่ม</div>
+        <div id="guideText" class="guide-text"></div>
+        <div id="guideSteps" class="guide-steps"></div>
+      </div>
     </aside>
   </div>
 
-  <section class="my-zone">
-    <article class="character">
-      <small>CHARACTER</small><h2 id="charName">—</h2><p id="charRole">—</p>
-      <div class="char-art">CHARACTER ART</div><p id="charSkill"></p>
-    </article>
-    <div class="inventory">
-      <div class="inventory-head"><div><h3>พื้นที่ของฉัน</h3><small id="myRoom">—</small></div><span id="limits">—</span></div>
-      <div class="equip-row"><span>สวมใส่</span><div id="equip"></div></div>
-      <div class="hand-title">Amulet Hand</div><div id="amuHand" class="hand"></div>
-      <div class="hand-title">เครื่องเซ่น</div><div id="sacHand" class="hand"></div>
-    </div>
-  </section>
 </section>
 
 <section id="result" class="screen">
@@ -189,8 +189,25 @@
 </section>
 
 <div id="ambientDock" class="ambient-dock">
-  <button id="ambientToggle" class="ambient-toggle">🎵 เปิดเสียงหลอน</button>
+  <button id="ambientToggle" class="ambient-toggle">🎵 เปิดเพลง</button>
+  <label class="ambient-track"><span>TRACK</span>
+    <select id="ambientTrack">
+      <option value="haunted">บ้านร้าง</option>
+      <option value="candle">พิธีเทียนดับ</option>
+      <option value="redrain">คืนฝนแดง</option>
+    </select>
+  </label>
   <label class="ambient-volume"><span>VOL</span><input id="ambientVolume" type="range" min="0" max="100" value="24"></label>
+</div>
+
+<div id="cardRevealFx" class="card-reveal-fx hidden">
+  <div id="cardRevealCard" class="card-reveal-card">
+    <small id="cardRevealZone">DRAW</small>
+    <div class="card-reveal-art">✦</div>
+    <h2 id="cardRevealName">—</h2>
+    <p id="cardRevealMeta">—</p>
+    <span id="cardRevealPlayer">—</span>
+  </div>
 </div>
 
 <div id="diceFx" class="dice-fx hidden">
