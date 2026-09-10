@@ -240,24 +240,24 @@ function roomAt(room, i){
   return room.game?.rooms?.[i] || null;
 }
 function equipmentFear(player){
-  return player.equip.reduce((n,c)=>n+(Number(c.fear)||0),0);
+  return (player?.equip||[]).reduce((n,c)=>n+(Number(c.fear)||0),0);
 }
 function equipmentAttack(player){
-  return player.equip.reduce((n,c)=>n+(Number(c.attackMod)||0),0);
+  return (player?.equip||[]).reduce((n,c)=>n+(Number(c.attackMod)||0),0);
 }
 function equipmentAttackOptions(player){
   let values=new Set([0]);
-  for(const c of player.equip){
+  for(const c of (player?.equip||[])){
     const n=Math.max(0,Number(c.attackMod)||0); if(!n) continue;
     const next=new Set(); for(const base of values){next.add(base-n);next.add(base);next.add(base+n);} values=next;
   }
   return [...values].sort((a,b)=>a-b);
 }
 function equipmentDefense(player){
-  return player.equip.reduce((n,c)=>n+(Number(c.defense)||0),0);
+  return (player?.equip||[]).reduce((n,c)=>n+(Number(c.defense)||0),0);
 }
 function equipmentLifeSteal(player){
-  return player.equip.reduce((n,c)=>n+(Number(c.lifeSteal)||0),0);
+  return (player?.equip||[]).reduce((n,c)=>n+(Number(c.lifeSteal)||0),0);
 }
 function equipmentSummary(player){
   return {fear:equipmentFear(player),attack:equipmentAttack(player),defense:equipmentDefense(player),lifeSteal:equipmentLifeSteal(player)};
