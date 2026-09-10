@@ -13,6 +13,21 @@ let ambientVolume=Math.max(0,Math.min(1,Number(localStorage.getItem("bpsAmbientV
 let ambientTrack=localStorage.getItem("bpsAmbientTrackV14")||"haunted";
 const TRACK_NAMES={haunted:"บ้านร้าง",candle:"พิธีเทียนดับ",redrain:"คืนฝนแดง"};
 
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.remove("hidden");setTimeout(()=>e.classList.add("hidden"),2600)}
+function closeModal(){$("#modal").classList.add("hidden")}
+function openModal(title,node){$("#modalTitle").textContent=title;$("#modalBody").innerHTML="";if(typeof node==="string")$("#modalBody").textContent=node;else $("#modalBody").appendChild(node);$("#modal").classList.remove("hidden")}
+function activePlayer(){return state?.players?.[state.game?.turn||0]}
+function myId(){return mine?.id||null}
+function mePublic(){return state?.players?.find(p=>p.id===myId())}
+function roomAt(i){if(!state?.game)return null;if(i===state.game.bossIndex)return {id:"BOSS",name:"เขตพิธีกรรม",type:"BOSS",fear:state.game.ghost?.fear||6,boss:true,effectText:`ห้องของ ${state.game.ghost?.name||"ผี"} • ใช้ทำพิธีปราบผี`};return state.game.rooms[i]}
+function isMyTurn(){return !!myId()&&activePlayer()?.id===myId()}
+function isHost(){return !!myId()&&state?.hostId===myId()}
+function persistSession(){
+  if(mine?.sessionToken){sessionToken=mine.sessionToken;localStorage.setItem(tokenKey,sessionToken)}
+  if(state?.code&&mine?.id){localStorage.setItem(roomKey,state.code);localStorage.removeItem(legacyRoomKey)}
+}
+
+
 function resetLocalRoom(){
   localStorage.removeItem(roomKey);localStorage.removeItem(legacyRoomKey);
 }
