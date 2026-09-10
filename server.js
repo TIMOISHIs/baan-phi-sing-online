@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.5"}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.6",amuletCards:54}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -62,23 +62,73 @@ const ROOMS = [
   { id:"STORAGE", name:"ห้องเก็บของ", type:"ลึกลับน่าค้นหา", fear:3, amu:true, sac:true, effectId:"storage", effectText:"จั่วได้ ‘อาหารเซ่นผี’ → HP +1 • จั่วได้ของตำนาน(ชมพู) → ทิ้งเครื่องเซ่น 2 ชิ้น (ทริกเกอร์อาหารรอข้อมูล tag การ์ด)" },
   { id:"UNDER_STAIRS", name:"ห้องใต้บันได", type:"ลึกลับน่าค้นหา", fear:3, amu:true, sac:true, capacity:1, effectId:"under_stairs", effectText:"อยู่ได้ 1 คน • จั่วเครื่องเซ่นครั้งละ 2 ชิ้น แต่ HP -2" },
   { id:"BEDROOM", name:"ห้องนอน", type:"ลึกลับน่าค้นหา", fear:3, amu:true, sac:true, effectId:"bedroom", effectText:"จั่วได้ ‘ดอกไม้ธูปเทียน’ → จั่วเพิ่ม 1 • จั่วได้ ‘อาหารเซ่นไหว้’ → HP -1 (รอข้อมูล tag การ์ดเพื่อเปิดใช้ Trigger)" },
-  { id:"OFFICE", name:"ห้องทำงาน", type:"ปลอดภัย", fear:1, amu:true, effectId:"event_pick_discard", effectText:"หากจั่วได้การ์ดเหตุการณ์ → เลือก Amulet 1 ใบจากกองทิ้งกลับขึ้นมือ" }
+  { id:"OFFICE", name:"ห้องทำงาน", type:"ปลอดภัย", fear:1, amu:true, effectId:"event_pick_discard", effectText:"หากจั่วได้การ์ดเหตุการณ์ → Effect เลือกจากกองทิ้งพักไว้ใน V1.6 เพราะ Amulet ทุกใบวนกลับใต้กอง" }
 ];
 
 const AMULETS = [
-  { id:"A0101", name:"มีดหมอ", type:"equip", fear:-1, desc:"Fear -1 เมื่อสวมใส่" },
-  { id:"A0104", name:"ตะกรุดไม้", type:"equip", fear:-2, desc:"Fear -2 เมื่อสวมใส่" },
-  { id:"A0112", name:"เกราะเพชร", type:"equip", fear:-2, desc:"ป้องกัน 2 HP • Fear -2" },
-  { id:"A0201", name:"แคล้วคลาด", type:"spell", desc:"คาถาอาคม — ใช้ตามเงื่อนไขบนการ์ด" },
-  { id:"A0302", name:"เอ๊อะ! ถือธูปจี้หลัง", type:"event", desc:"Event — แสดงผลทันที" },
+  // ของขลัง / สวมใส่ — 12 ใบ (อิง Amulet Sheet)
+  { id:"A0101", category:"ของขลัง", name:"มีดหมอ", type:"equip", attackMod:1, fear:-1, desc:"โจมตี ±1 • Fear -1 เมื่อสวมใส่" },
+  { id:"A0102", category:"ของขลัง", name:"ไม้เรียว 7 ป่าช้า", type:"equip", attackMod:1, fear:-1, desc:"โจมตี ±1 • Fear -1 เมื่อสวมใส่" },
+  { id:"A0103", category:"ของขลัง", name:"ดาบฟ้าฟื้น", type:"equip", attackMod:2, fear:-2, desc:"โจมตี ±2 • Fear -2 เมื่อสวมใส่" },
+  { id:"A0104", category:"ของขลัง", name:"ตะกรุดไม้", type:"equip", defense:2, fear:-2, desc:"ป้องกันผี 2 HP • Fear -2 เมื่อสวมใส่" },
+  { id:"A0105", category:"ของขลัง", name:"เคี้ยวตันหมูป่า", type:"equip", attackMod:2, fear:-2, desc:"โจมตี ±2 • Fear -2 เมื่อสวมใส่" },
+  { id:"A0106", category:"ของขลัง", name:"ยันต์กันผี", type:"equip", defense:2, fear:-2, desc:"ป้องกันผี 2 HP • Fear -2 เมื่อสวมใส่" },
+  { id:"A0107", category:"ของขลัง", name:"มีดหมอครู", type:"equip", attackMod:2, fear:-2, desc:"โจมตี ±2 • Fear -2 เมื่อสวมใส่" },
+  { id:"A0108", category:"ของขลัง", name:"ดาบศักสิทธิ์ 7 ป่าช้า", type:"equip", attackMod:2, lifeSteal:1, fear:-2, desc:"โจมตี ±2 • ทำพิธีสำเร็จ HP +1 • Fear -2" },
+  { id:"A0109", category:"ของขลัง", name:"หวายแช่เหยียว", type:"equip", attackMod:2, lifeSteal:1, fear:-2, desc:"โจมตี ±2 • ทำพิธีสำเร็จ HP +1 • Fear -2" },
+  { id:"A0110", category:"ของขลัง", name:"กำไลพิลัย", type:"equip", defense:2, fear:-2, desc:"ป้องกันผี 2 HP • Fear -2 เมื่อสวมใส่" },
+  { id:"A0111", category:"ของขลัง", name:"ดาบอาคมจารย์คง", type:"equip", attackMod:1, lifeSteal:1, fear:-2, desc:"โจมตี ±1 • ทำพิธีสำเร็จ HP +1 • Fear -2" },
+  { id:"A0112", category:"ของขลัง", name:"เกราะเพชร", type:"equip", defense:2, fear:-2, desc:"ป้องกันผี 2 HP • Fear -2 เมื่อสวมใส่" },
 
-  { id:"A0401", name:"น้ำมนต์ศักดิ์สิทธิ์", type:"heal_self", heal:1, desc:"HP +1" },
-  { id:"A0404", name:"น้ำมนต์ศักดิ์สิทธิ์", type:"heal_self", heal:2, desc:"HP +2" },
-  { id:"A0407", name:"ยาหอมราชโอสถ", type:"heal_room", heal:2, desc:"ผู้เล่นทุกคนในห้องเดียวกัน HP +2" },
-  { id:"A0408", name:"ยาหอมแก้ว", type:"heal_adjacent", heal:1, desc:"ตัวเองและเพื่อนในระยะ 1 ห้อง HP +1" },
-  { id:"A0410", name:"ยาฟื้นชีพโอสถ", type:"revive", reviveHp:1, range:"any", desc:"ชุบเพื่อนที่ HP = 0 ให้กลับมาที่ HP 1 • ไม่จำกัดระยะ" },
-  { id:"A0411", name:"ยาหอมราชโอสถ", type:"heal_room", heal:2, desc:"ผู้เล่นทุกคนในห้องเดียวกัน HP +2" },
-  { id:"A0412", name:"ยาฟื้นชีพโอสถ", type:"revive", reviveHp:1, range:"any", desc:"ชุบเพื่อนที่ HP = 0 ให้กลับมาที่ HP 1 • ไม่จำกัดระยะ" }
+  // คาถาอาคม — 9 ใบ
+  { id:"A0201", category:"คาถาอาคม", name:"แคล้วคลาด", type:"spell", condition:"เมื่อทอยได้ 8-", effect:"ไม่ได้รับผลใดๆ ใช้ตอนไหนก็ได้เมื่อเกิดผลลบกับตัวเอง", manual:true },
+  { id:"A0202", category:"คาถาอาคม", name:"พ่อแก้ว แม่แก้ว ช่วยลูกด้วย", type:"spell", condition:"เมื่อทอยได้ 9-", effect:"หลบแค่การโจมตีผี", manual:true },
+  { id:"A0203", category:"คาถาอาคม", name:"บูชาหลวงปู่เค็ม", type:"spell", condition:"เมื่อทอยได้ 7-", effect:"ท้าทายโดยไม่เสียการ์ดพิธี", manual:true },
+  { id:"A0204", category:"คาถาอาคม", name:"คาถาบังตามะมา มะโม", type:"spell", condition:"เมื่อทอยได้ 8+", effect:"ไปที่ไหนก็ได้", manual:true },
+  { id:"A0205", category:"คาถาอาคม", name:"อาราธนาสิ่งศักดิ์สิทธิ์", type:"spell", condition:"เมื่อทอยได้ดับเบิล", effect:"ได้ Action Tokens เพิ่ม 2", manual:true },
+  { id:"A0206", category:"คาถาอาคม", name:"อยู่ยงคงกระพัน", type:"spell", condition:"เมื่อทอยได้ 7+", effect:"ไม่ได้รับผลใดๆ ทันที", manual:true },
+  { id:"A0207", category:"คาถาอาคม", name:"เมตตามหานิยม", type:"spell", condition:"เมื่อทอยได้ 10-", effect:"หลุดจากคำสาป และกับดัก ทันที", manual:true },
+  { id:"A0208", category:"คาถาอาคม", name:"บูชาลูกกรอกประสิทธิโชค", type:"spell", condition:"เมื่อทอยได้มากกว่า 7", effect:"เดินทางทะแยงมุมได้", manual:true },
+  { id:"A0209", category:"คาถาอาคม", name:"คาถามหาอุตม์", type:"spell", condition:"เมื่อทอยได้ 4+", effect:"เลือกสวมใส่อุปกรณ์ได้เลย", manual:true },
+
+  // เหตุการณ์ — 9 ใบ (จั่วแล้วเกิดผลทันที จากนั้นกลับใต้กอง)
+  { id:"A0301", category:"เหตุการณ์", name:"ผีทวงของเซ่น ถูกหวยแต่ไม่แก้บน", type:"event", eventId:"discard_sacrifice", desc:"ทิ้งการ์ดพิธี 1 ชิ้น" },
+  { id:"A0302", category:"เหตุการณ์", name:"เอ๊อะ! ถือธูปจี้หลัง", type:"event", eventId:"left_hp2", desc:"คุณและเพื่อนที่นั่งฝั่งซ้าย HP -2" },
+  { id:"A0303", category:"เหตุการณ์", name:"กลัวจนฉี่ราด!", type:"event", eventId:"break_equip", desc:"ถอดอุปกรณ์ที่สวมใส่อยู่ ทิ้ง 1 ชิ้น" },
+  { id:"A0304", category:"เหตุการณ์", name:"สุดแสบ!", type:"event", eventId:"self_hp1", desc:"ขูดเลขเสี้ยนตำ • HP -1" },
+  { id:"A0305", category:"เหตุการณ์", name:"ตกใจ!! ใจหายนึกว่าผี ฝันศอกใส่หัวเพื่อน", type:"event", eventId:"right_hp2", desc:"เพื่อนทางขวา HP -2" },
+  { id:"A0306", category:"เหตุการณ์", name:"ลื่นเครื่องเซ่นหัวฟาดพื้น ผีหลอกซ้ำ เจ็บทั้งกายและใจ", type:"event", eventId:"self_hp2", desc:"HP -2" },
+  { id:"A0307", category:"เหตุการณ์", name:"เพิ่งรู้ว่าที่เกาะอยู่.. ไม่ใช่หลังเพื่อน!", type:"event", eventId:"move_two", desc:"วิ่งต่อไป 2 ห้องทันที" },
+  { id:"A0308", category:"เหตุการณ์", name:"ช่วยด้วยย!", type:"event", eventId:"atf_drop3", desc:"ตกใจเงาในกระจก การ์ด ATF กระเด็นหล่น 3 ใบ" },
+  { id:"A0309", category:"เหตุการณ์", name:"โดนสิง! เผลอขานรับเสียงเรียกแปลกๆ", type:"event", eventId:"to_curse", desc:"ไปที่ห้องคำสาปทันที" },
+
+  // รักษา — 12 ใบ
+  { id:"A0401", category:"รักษา", name:"น้ำมนต์ผ้าป่า", type:"heal_self", heal:1, desc:"เพิ่มเลือด +1" },
+  { id:"A0402", category:"รักษา", name:"น้ำมนต์ผ้าป่า", type:"heal_self", heal:1, desc:"เพิ่มเลือด +1" },
+  { id:"A0403", category:"รักษา", name:"น้ำมนต์ถังพร้อมอาบ", type:"heal_self", heal:2, desc:"เพิ่มเลือด +2" },
+  { id:"A0404", category:"รักษา", name:"น้ำมนต์ถังพร้อมอาบ", type:"heal_self", heal:2, desc:"เพิ่มเลือด +2" },
+  { id:"A0405", category:"รักษา", name:"ยาหอมจันทร์", type:"heal_near2", heal:1, desc:"เพิ่มเลือด +1 ตัวเองและเพื่อนใกล้เคียง • ระยะ 2 ห้อง" },
+  { id:"A0406", category:"รักษา", name:"ยาหอมจันทร์", type:"heal_near2", heal:1, desc:"เพิ่มเลือด +1 ตัวเองและเพื่อนใกล้เคียง • ระยะ 2 ห้อง" },
+  { id:"A0407", category:"รักษา", name:"น้ำมนต์พร้อมดื่มวัดดัง", type:"heal_self", heal:3, desc:"เพิ่มเลือด +3" },
+  { id:"A0408", category:"รักษา", name:"น้ำมนต์พร้อมดื่มวัดดัง", type:"heal_self", heal:3, desc:"เพิ่มเลือด +3" },
+  { id:"A0409", category:"รักษา", name:"เครื่องหอมอโรม่า", type:"heal_room", heal:1, desc:"เพิ่มเลือด +1 ผู้เล่นทุกคนในห้องเดียวกัน" },
+  { id:"A0410", category:"รักษา", name:"ระฆังเรียกสติ", type:"revive", reviveHp:2, range:"any", desc:"เพิ่มเลือด +2 เพื่อนที่ตาย • ไม่จำกัดห้อง" },
+  { id:"A0411", category:"รักษา", name:"ระฆังเรียกสติ", type:"revive", reviveHp:2, range:"any", desc:"เพิ่มเลือด +2 เพื่อนที่ตาย • ไม่จำกัดห้อง" },
+  { id:"A0412", category:"รักษา", name:"ยาอายุขัย", type:"heal_friends_all", heal:1, desc:"เพิ่มเลือด +1 เพื่อนทั้งหมด • ไม่จำกัดห้อง" },
+
+  // ค่าสติ — 12 ใบ: +1 x6 / +2 x6
+  { id:"A0501", category:"ค่าสติ", name:"ค่าสติ +1", type:"sanity", sanityBonus:1, desc:"เพิ่มค่าสติ +1 หลังทอยเดิน • ใช้ 1 ธูป" },
+  { id:"A0502", category:"ค่าสติ", name:"ค่าสติ +1", type:"sanity", sanityBonus:1, desc:"เพิ่มค่าสติ +1 หลังทอยเดิน • ใช้ 1 ธูป" },
+  { id:"A0503", category:"ค่าสติ", name:"ค่าสติ +1", type:"sanity", sanityBonus:1, desc:"เพิ่มค่าสติ +1 หลังทอยเดิน • ใช้ 1 ธูป" },
+  { id:"A0504", category:"ค่าสติ", name:"ค่าสติ +1", type:"sanity", sanityBonus:1, desc:"เพิ่มค่าสติ +1 หลังทอยเดิน • ใช้ 1 ธูป" },
+  { id:"A0505", category:"ค่าสติ", name:"ค่าสติ +1", type:"sanity", sanityBonus:1, desc:"เพิ่มค่าสติ +1 หลังทอยเดิน • ใช้ 1 ธูป" },
+  { id:"A0506", category:"ค่าสติ", name:"ค่าสติ +1", type:"sanity", sanityBonus:1, desc:"เพิ่มค่าสติ +1 หลังทอยเดิน • ใช้ 1 ธูป" },
+  { id:"A0507", category:"ค่าสติ", name:"ค่าสติ +2", type:"sanity", sanityBonus:2, desc:"เพิ่มค่าสติ +2 หลังทอยเดิน • ใช้ 1 ธูป" },
+  { id:"A0508", category:"ค่าสติ", name:"ค่าสติ +2", type:"sanity", sanityBonus:2, desc:"เพิ่มค่าสติ +2 หลังทอยเดิน • ใช้ 1 ธูป" },
+  { id:"A0509", category:"ค่าสติ", name:"ค่าสติ +2", type:"sanity", sanityBonus:2, desc:"เพิ่มค่าสติ +2 หลังทอยเดิน • ใช้ 1 ธูป" },
+  { id:"A0510", category:"ค่าสติ", name:"ค่าสติ +2", type:"sanity", sanityBonus:2, desc:"เพิ่มค่าสติ +2 หลังทอยเดิน • ใช้ 1 ธูป" },
+  { id:"A0511", category:"ค่าสติ", name:"ค่าสติ +2", type:"sanity", sanityBonus:2, desc:"เพิ่มค่าสติ +2 หลังทอยเดิน • ใช้ 1 ธูป" },
+  { id:"A0512", category:"ค่าสติ", name:"ค่าสติ +2", type:"sanity", sanityBonus:2, desc:"เพิ่มค่าสติ +2 หลังทอยเดิน • ใช้ 1 ธูป" }
 ];
 
 const SACRIFICES = [
@@ -192,6 +242,39 @@ function roomAt(room, i){
 function equipmentFear(player){
   return player.equip.reduce((n,c)=>n+(Number(c.fear)||0),0);
 }
+function equipmentAttack(player){
+  return player.equip.reduce((n,c)=>n+(Number(c.attackMod)||0),0);
+}
+function equipmentAttackOptions(player){
+  let values=new Set([0]);
+  for(const c of player.equip){
+    const n=Math.max(0,Number(c.attackMod)||0); if(!n) continue;
+    const next=new Set(); for(const base of values){next.add(base-n);next.add(base);next.add(base+n);} values=next;
+  }
+  return [...values].sort((a,b)=>a-b);
+}
+function equipmentDefense(player){
+  return player.equip.reduce((n,c)=>n+(Number(c.defense)||0),0);
+}
+function equipmentLifeSteal(player){
+  return player.equip.reduce((n,c)=>n+(Number(c.lifeSteal)||0),0);
+}
+function equipmentSummary(player){
+  return {fear:equipmentFear(player),attack:equipmentAttack(player),defense:equipmentDefense(player),lifeSteal:equipmentLifeSteal(player)};
+}
+function returnAmuletToBottom(room,card,reason="ใช้การ์ดแล้ว"){
+  if(!card||!room?.game)return;
+  room.game.amuDeck.push(card);
+  addLog(room,`${card.name} → กลับใต้กอง Amulet (${reason})`);
+}
+function ghostDamage(room,player,amount,reason){
+  amount=Math.max(0,Number(amount)||0);
+  const defense=equipmentDefense(player);
+  const actual=Math.max(0,amount-defense);
+  if(actual>0) changeHp(room,player,-actual,`${reason}${defense?` • เกราะกัน ${Math.min(defense,amount)}`:""}`);
+  else if(player?.socketId) io.to(player.socketId).emit("hpFx",{delta:0,hp:player.hp,maxHp:player.char?.hp||null,reason:`${reason} • ป้องกันได้ทั้งหมด ${amount} HP`,blocked:true});
+  return actual;
+}
 function addLog(room, text){
   room.log.push({at:Date.now(), text});
   if(room.log.length>120) room.log.shift();
@@ -258,8 +341,16 @@ function revealCard(room,p,card,zone,reason="draw"){
       uid:card.uid||null,
       name:card.name||"การ์ด",
       type:card.type||null,
+      category:card.category||null,
+      condition:card.condition||null,
+      effect:card.effect||null,
       color:card.color||null,
       desc:card.desc||null,
+      sanityBonus:card.sanityBonus??null,
+      attackMod:card.attackMod??null,
+      defense:card.defense??null,
+      fear:card.fear??null,
+      lifeSteal:card.lifeSteal??null,
       boss:card.boss??null,
       end:card.end??null
     }
@@ -286,7 +377,8 @@ function publicSnapshot(room){
       dead:(p.hp??1)<=0,
       amuCount:p.amu?.length || 0,
       sacCount:p.sac?.length || 0,
-      equip:p.equip?.map(c=>({uid:c.uid,name:c.name,type:c.type,desc:c.desc})) || [],
+      equip:p.equip?.map(c=>({uid:c.uid,name:c.name,type:c.type,desc:c.desc,fear:c.fear||0,attackMod:c.attackMod||0,defense:c.defense||0,lifeSteal:c.lifeSteal||0})) || [],
+      equipStats:equipmentSummary(p),
       isTurn:g ? i===g.turn : false
     })),
     game:g ? {
@@ -310,7 +402,11 @@ function publicSnapshot(room){
       bossDone:g.bossDone,
       ghost:g.ghost,
       pendingRoomEffect:g.pendingRoomEffect || null,
-      amuDiscardCount:g.amuDiscard?.length || 0,
+      sanityBase:g.sanityBase??null,
+      sanityBonus:g.sanityBonus||0,
+      sanityDecision:!!g.sanityDecision,
+      moveFear:g.moveFear??null,
+      pendingRitual:g.pendingRitual||null,
       diceSeq:g.diceSeq||0,
       lastDiceEvent:g.lastDiceEvent||null,
       stats:g.stats||null
@@ -481,6 +577,53 @@ function applySacrificeRoomEffect(room, player, card){
     queueSacrificeDiscard(room,player,2,"จั่วของตำนานในห้องเก็บของ");
   }
 }
+function finalizeMovementOptions(room,p){
+  const g=room.game;
+  g.sanityDecision=false;
+  g.legal=neighbors(p.pos).filter(i=>roomAt(room,i).fear<=g.sanity && canEnter(room,p,i));
+  if(g.legal.length){
+    if(room.settings.forcedMovement) g.mustMove=true;
+    else g.moveOptional=true;
+  }else{
+    g.moved=true;
+  }
+}
+function seatNeighbor(room,p,direction){
+  const sorted=[...room.players].sort((a,b)=>(a.seat||0)-(b.seat||0));
+  const idx=sorted.findIndex(x=>x.id===p.id);
+  if(idx<0||sorted.length<2)return null;
+  const step=direction==="left"?-1:1;
+  return sorted[(idx+step+sorted.length)%sorted.length];
+}
+function applyEventCard(room,p,c){
+  const g=room.game;
+  const id=c.eventId;
+  if(id==="discard_sacrifice") queueSacrificeDiscard(room,p,1,`Event: ${c.name}`);
+  else if(id==="left_hp2"){
+    changeHp(room,p,-2,`Event: ${c.name}`);
+    const left=seatNeighbor(room,p,"left"); if(left&&left.id!==p.id) changeHp(room,left,-2,`Event: ${c.name} • ผู้เล่นฝั่งขวา`);
+  }else if(id==="break_equip"){
+    if(p.equip.length===1){const broken=p.equip.shift();returnAmuletToBottom(room,broken,`Event ${c.name} ทำให้อุปกรณ์แตก`);addLog(room,`${p.name} อุปกรณ์แตก: ${broken.name}`);}
+    else if(p.equip.length>1){g.pendingRoomEffect={id:`event-equip-${Date.now()}`,type:"chooseBrokenEquip",playerId:p.id,reason:`Event: ${c.name}`,options:p.equip.map(x=>({uid:x.uid,name:x.name,desc:x.desc}))};}
+  }else if(id==="self_hp1") changeHp(room,p,-1,`Event: ${c.name}`);
+  else if(id==="right_hp2"){
+    const right=seatNeighbor(room,p,"right"); if(right&&right.id!==p.id) changeHp(room,right,-2,`Event: ${c.name}`);
+  }else if(id==="self_hp2") changeHp(room,p,-2,`Event: ${c.name}`);
+  else if(id==="move_two"){
+    const choices=[];
+    for(let i=0;i<9;i++){
+      const r1=Math.floor(p.pos/3),c1=p.pos%3,r2=Math.floor(i/3),c2=i%3;
+      if(Math.abs(r1-r2)+Math.abs(c1-c2)===2 && canEnter(room,p,i)) choices.push(i);
+    }
+    if(choices.length) g.pendingRoomEffect={id:`event-move-${Date.now()}`,type:"eventMoveTwo",playerId:p.id,reason:`Event: ${c.name} • V1.6 ตีความ “วิ่งต่อไป 2 ห้อง” = เลือกปลายทางห่าง 2 ก้าว`,options:choices.map(i=>({index:i,name:roomAt(room,i).name,fear:roomAt(room,i).fear}))};
+  }else if(id==="atf_drop3"){
+    addLog(room,`${p.name} จั่ว ${c.name} → คำว่า ATF ใน Sheet ยังไม่ระบุว่าเป็นการ์ดกลุ่มใด จึงแสดงผลข้อความไว้ก่อนใน V1.6`);
+    if(p.socketId) io.to(p.socketId).emit("errorMessage","Event ‘ช่วยด้วยย!’: ATF ยังไม่ระบุว่าเป็นการ์ดประเภทใดใน Sheet — V1.6 ยังไม่ทิ้ง 3 ใบอัตโนมัติ");
+  }else if(id==="to_curse"){
+    const choices=g.rooms.map((r,i)=>({r,i})).filter(x=>x.i!==g.bossIndex&&x.r.type==="คำสาป");
+    if(choices.length){const dest=choices[Math.floor(Math.random()*choices.length)].i;p.pos=dest;addLog(room,`${p.name} โดนสิง → ไป ${roomAt(room,dest).name} ทันที`);}
+  }
+}
 function escapeSuccess(rule,d){
   if(!rule) return true;
   if(rule.kind==="bothOdd") return d.a%2===1 && d.b%2===1;
@@ -496,45 +639,46 @@ function ghostComplete(room){
 function firstTrap(room){
   return room.game.rooms.findIndex(r=>r.type==="กับดัก");
 }
-function damagePlayersInRoom(room,pos,exceptId,amount,reason="โดนผลกระทบในห้องเดียวกัน"){
+function damagePlayersInRoom(room,pos,exceptId,amount,reason="โดนผลกระทบในห้องเดียวกัน",ghostAttack=false){
   room.players.forEach(x=>{
-    if(x.id!==exceptId && x.hp>0 && x.pos===pos) changeHp(room,x,-amount,reason);
+    if(x.id!==exceptId && x.hp>0 && x.pos===pos){
+      if(ghostAttack) ghostDamage(room,x,amount,reason); else changeHp(room,x,-amount,reason);
+    }
   });
 }
 function applyGhostCounter(room,p,color){
   const ghost=currentGhost(room);
   const originalPos=p.pos;
+  const hit=(target,amount,label)=>ghostDamage(room,target,amount,label);
   if(ghost.id==="ghost-prai-mon"){
     if(color==="green"){
-      changeHp(room,p,-1,`${ghost.name} สวนกลับสีเขียว`);
-      damagePlayersInRoom(room,originalPos,p.id,1,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`);
-      addLog(room,`${ghost.name} สวนกลับสีเขียว → ${p.name} HP -1 • ผู้เล่นอื่นในห้องเดียวกัน HP -1`);
+      const self=hit(p,1,`${ghost.name} สวนกลับสีเขียว`);
+      damagePlayersInRoom(room,originalPos,p.id,1,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`,true);
+      addLog(room,`${ghost.name} สวนกลับสีเขียว → ${p.name} เสียจริง ${self} HP หลังหักเกราะ`);
     }
     if(color==="blue"){
-      changeHp(room,p,-2,`${ghost.name} สวนกลับสีฟ้า`);
-      damagePlayersInRoom(room,originalPos,p.id,1,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`);
-      const idx=firstTrap(room);
-      if(idx>=0) p.pos=idx;
-      addLog(room,`${ghost.name} สวนกลับสีฟ้า → ${p.name} HP -2${idx>=0?" และถูกหลอกไปห้องกับดัก":""} • ผู้เล่นอื่นในห้องเดียวกัน HP -1`);
+      const self=hit(p,2,`${ghost.name} สวนกลับสีฟ้า`);
+      damagePlayersInRoom(room,originalPos,p.id,1,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`,true);
+      const idx=firstTrap(room); if(idx>=0) p.pos=idx;
+      addLog(room,`${ghost.name} สวนกลับสีฟ้า → ${p.name} เสียจริง ${self} HP หลังหักเกราะ${idx>=0?" และถูกหลอกไปห้องกับดัก":""}`);
     }
   }
   if(ghost.id==="ghost-pret-to"){
     if(color==="green"){
-      changeHp(room,p,-1,`${ghost.name} สวนกลับสีเขียว`);
-      damagePlayersInRoom(room,originalPos,p.id,1,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`);
-      addLog(room,`${ghost.name} สวนกลับสีเขียว → ${p.name} HP -1 • ผู้เล่นอื่นในห้องเดียวกัน HP -1`);
+      const self=hit(p,1,`${ghost.name} สวนกลับสีเขียว`);
+      damagePlayersInRoom(room,originalPos,p.id,1,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`,true);
+      addLog(room,`${ghost.name} สวนกลับสีเขียว → ${p.name} เสียจริง ${self} HP หลังหักเกราะ`);
     }
     if(color==="blue"){
-      changeHp(room,p,-2,`${ghost.name} สวนกลับสีฟ้า`);
-      damagePlayersInRoom(room,originalPos,p.id,1,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`);
-      const idx=firstTrap(room);
-      if(idx>=0) p.pos=idx;
-      addLog(room,`${ghost.name} สวนกลับสีฟ้า → ${p.name} HP -2${idx>=0?" และถูกส่งไปห้องกับดัก":""} • ผู้เล่นอื่นในห้องเดียวกัน HP -1`);
+      const self=hit(p,2,`${ghost.name} สวนกลับสีฟ้า`);
+      damagePlayersInRoom(room,originalPos,p.id,1,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`,true);
+      const idx=firstTrap(room); if(idx>=0) p.pos=idx;
+      addLog(room,`${ghost.name} สวนกลับสีฟ้า → ${p.name} เสียจริง ${self} HP หลังหักเกราะ${idx>=0?" และถูกส่งไปห้องกับดัก":""}`);
     }
     if(color==="pink"){
-      changeHp(room,p,-3,`${ghost.name} สวนกลับสีชมพู`);
-      damagePlayersInRoom(room,originalPos,p.id,2,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`);
-      addLog(room,`${ghost.name} สวนกลับสีชมพู → ${p.name} HP -3 • ผู้เล่นอื่นในห้องเดียวกัน HP -2 • เป้าหมาย Teleport บนการ์ดยังรอยืนยันชื่อห้อง จึงยังไม่ย้ายตำแหน่งใน V0.7`);
+      const self=hit(p,3,`${ghost.name} สวนกลับสีชมพู`);
+      damagePlayersInRoom(room,originalPos,p.id,2,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`,true);
+      addLog(room,`${ghost.name} สวนกลับสีชมพู → ${p.name} เสียจริง ${self} HP หลังหักเกราะ • จุด Teleport ยังรอยืนยันชื่อห้อง`);
     }
   }
 }
@@ -568,8 +712,8 @@ function beginTurn(room){
   }
 
   if(g.stats) g.stats.turns++;
-  g.actions=3; g.sanity=null; g.lastDice=null; g.rolled=false; g.moved=false;
-  g.mustMove=false; g.moveOptional=false; g.legal=[]; g.sacDrawn=false; g.traded=false;
+  g.actions=3; g.sanity=null; g.sanityBase=null; g.sanityBonus=0; g.sanityDecision=false; g.moveFear=null; g.lastDice=null; g.rolled=false; g.moved=false;
+  g.mustMove=false; g.moveOptional=false; g.legal=[]; g.sacDrawn=false; g.traded=false; g.pendingRitual=null;
   g.escapeRequired=false; g.escapeRule=null; g.escapeAttempts=0;
 
   const r=roomAt(room,p.pos);
@@ -614,6 +758,9 @@ function startRoom(room){
     if(!p.char){ p.char=remaining.shift(); p.characterKey=p.char.key; }
   });
 
+  const allAmu=AMULETS.map(uidCard);
+  const amuEvents=allAmu.filter(x=>x.type==="event");
+  const amuNonEvents=shuffle(allAmu.filter(x=>x.type!=="event"));
   room.players.forEach((p,i)=>{
     p.hp=p.char.hp;
     p.deadAnnounced=false;
@@ -621,15 +768,16 @@ function startRoom(room){
     p.pos=bossIndex;
     p.equip=[];
     p.sac=[];
-    p.amu=shuffle(AMULETS.filter(x=>x.type!=="event").map(uidCard)).slice(0,3);
+    p.amu=[];
+    for(let n=0;n<3;n++){const c=amuNonEvents.shift();if(c)p.amu.push(c);}
   });
   room.game={
-    turn:0, rooms:map, bossIndex, actions:3, sanity:null,lastDice:null,
+    turn:0, rooms:map, bossIndex, actions:3, sanity:null,sanityBase:null,sanityBonus:0,sanityDecision:false,moveFear:null,lastDice:null,
     rolled:false,moved:false,mustMove:false,moveOptional:false,legal:[],sacDrawn:false,traded:false,
-    curse:0,bossDone:{green:0,blue:0,pink:0,black:0}, pendingRoomEffect:null,
+    curse:0,bossDone:{green:0,blue:0,pink:0,black:0}, pendingRoomEffect:null,pendingRitual:null,
     ghost, escapeRequired:false, escapeRule:null, escapeAttempts:0,
     diceSeq:0,lastDiceEvent:null,cardSeq:0,stats:freshStats(room.settings),
-    amuDeck:shuffle(cloneCards(AMULETS,4)), amuDiscard:[],
+    amuDeck:shuffle([...amuNonEvents,...amuEvents]),
     sacDeck:shuffle(cloneCards(SACRIFICES,6)), sacDiscard:[]
   };
   room.phase="game";
@@ -649,6 +797,7 @@ function checkTurn(socket,room){
   const p=playerBySocket(room,socket.id);
   if(!p || active(room)?.id!==p.id){ fail(socket,"ยังไม่ถึงเทิร์นของคุณ"); return null; }
   if(room.game?.pendingRoomEffect){ fail(socket,"ต้อง Resolve Effect ของห้องก่อน"); return null; }
+  if(room.game?.pendingRitual){ fail(socket,"กำลัง Resolve การทำพิธี"); return null; }
   return p;
 }
 
@@ -735,7 +884,7 @@ io.on("connection", socket=>{
     }
 
     if(room.phase!=="lobby") return fail(socket,"เกมเริ่มไปแล้ว — ใช้ Session เดิมเพื่อกลับเข้าห้อง");
-    if(room.players.length>=4) return fail(socket,"V1.5 เปิดเทสสูงสุด 4 คนก่อน");
+    if(room.players.length>=4) return fail(socket,"V1.6 เปิดเทสสูงสุด 4 คนก่อน");
     if(room.players.some(p=>p.socketId===socket.id)) return;
     const seat=[1,2,3,4].find(n=>!room.players.some(x=>(x.seat||0)===n)) || Math.min(4,room.players.length+1);
     const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),seat,characterKey:null};
@@ -857,16 +1006,42 @@ io.on("connection", socket=>{
     applyCurse(room,d);
     if(resolveDeathsAfterAction(room,p.id)){ emitRoom(room); return; }
     const currentFear=roomAt(room,p.pos).fear;
-    const fear=Math.max(0,currentFear+equipmentFear(p));
-    g.sanity=Math.max(0,d.total-fear);
-    g.legal=neighbors(p.pos).filter(i=>roomAt(room,i).fear<=g.sanity && canEnter(room,p,i));
-    if(g.legal.length){
-      if(room.settings.forcedMovement) g.mustMove=true;
-      else g.moveOptional=true;
-    }else{
-      g.moved=true;
-    }
-    addLog(room,`${p.name} ทอย ${d.a}+${d.b}=${d.total} • Fear ${fear} → สติ ${g.sanity}`);
+    g.moveFear=Math.max(0,currentFear+equipmentFear(p));
+    g.sanityBase=Math.max(0,d.total-g.moveFear);
+    g.sanityBonus=0;
+    g.sanity=g.sanityBase;
+    const hasSanity=(p.amu||[]).some(c=>c.type==="sanity") && g.actions>0;
+    g.sanityDecision=hasSanity;
+    if(!hasSanity) finalizeMovementOptions(room,p);
+    addLog(room,`${p.name} ทอย ${d.a}+${d.b}=${d.total} • Fear หลังของสวมใส่ ${g.moveFear} → สติฐาน ${g.sanityBase}${hasSanity?" • รอเลือกใช้การ์ดค่าสติ":""}`);
+    emitRoom(room);
+  });
+
+  socket.on("useSanity", ({uid})=>{
+    const room=rooms.get(socket.data.roomCode); if(!room) return;
+    const p=checkTurn(socket,room); if(!p) return;
+    const g=room.game;
+    if(!g.sanityDecision||!g.rolled||g.moved||g.actions<1) return fail(socket,"ตอนนี้ใช้การ์ดค่าสติไม่ได้");
+    const ref=cardFromPlayer(p,uid);
+    if(!ref||ref.zone!=="amu"||ref.card.type!=="sanity") return fail(socket,"ต้องเลือกการ์ดค่าสติบนมือ");
+    g.actions--;
+    const card=removeCard(p,ref),bonus=Number(card.sanityBonus)||0;
+    g.sanityBonus=(g.sanityBonus||0)+bonus;
+    g.sanity=Math.max(0,(g.sanityBase||0)+g.sanityBonus);
+    revealCard(room,p,card,"amulet","play");
+    returnAmuletToBottom(room,card,"ใช้เพิ่มค่าสติ");
+    addLog(room,`${p.name} ใช้ ${card.name} • สติ ${g.sanityBase} + ${g.sanityBonus} = ${g.sanity} • ธูปเหลือ ${g.actions}`);
+    if(g.actions<=0 || !(p.amu||[]).some(c=>c.type==="sanity")) finalizeMovementOptions(room,p);
+    emitRoom(room);
+  });
+
+  socket.on("finishSanityDecision", ()=>{
+    const room=rooms.get(socket.data.roomCode); if(!room) return;
+    const p=checkTurn(socket,room); if(!p) return;
+    const g=room.game;
+    if(!g.sanityDecision) return fail(socket,"ไม่มีการตัดสินใจค่าสติค้างอยู่");
+    finalizeMovementOptions(room,p);
+    addLog(room,`${p.name} ยืนยันค่าสติ ${g.sanity} → คำนวณห้องที่เดินได้`);
     emitRoom(room);
   });
 
@@ -903,24 +1078,21 @@ io.on("connection", socket=>{
     revealCard(room,p,c,"amulet","draw");
     const currentRoom=roomAt(room,p.pos);
     if(c.type==="event"){
-      changeHp(room,p,-1,`Event ${c.name}`);
-      g.amuDiscard.push(c);
-      addLog(room,`${p.name} จั่ว Event ${c.name} → V0.6 placeholder Event HP -1`);
+      addLog(room,`${p.name} จั่ว Event: ${c.name} → แสดงผลทันที`);
+      applyEventCard(room,p,c);
+      returnAmuletToBottom(room,c,"Event จบผลทันที");
       if(resolveDeathsAfterAction(room,p.id)){ emitRoom(room); return; }
       if(currentRoom?.effectId==="event_heal"){
         changeHp(room,p,1,`${currentRoom.name}: จั่ว Event`);
         addLog(room,`${currentRoom.name}: จั่ว Event → HP +1`);
       }
-      if(currentRoom?.effectId==="event_pick_discard" && g.amuDiscard.length && p.amu.length<5){
-        g.pendingRoomEffect={id:`re${Date.now()}`,type:"pickAmuletDiscard",playerId:p.id,reason:"ห้องทำงาน",options:g.amuDiscard.map(x=>({uid:x.uid,name:x.name,type:x.type,desc:x.desc}))};
-        addLog(room,`${currentRoom.name}: เลือก Amulet 1 ใบจากกองทิ้ง`);
-      }
+      if(currentRoom?.effectId==="event_pick_discard") addLog(room,`${currentRoom.name}: Effect กองทิ้งพักไว้ใน V1.6 เพราะ Amulet ทุกใบวนใต้กอง`);
     }else if(currentRoom?.effectId==="equip_free" && c.type==="equip" && p.equip.length<Math.min(2,p.char.slots)){
       p.equip.push(c);
       addLog(room,`${p.name} จั่ว ${c.name} ในห้องน้ำ → สวมใส่ทันทีฟรี`);
     }else{
       p.amu.push(c);
-      addLog(room,`${p.name} จั่ว Amulet 1 ใบ`);
+      addLog(room,`${p.name} จั่ว Amulet 1 ใบ (${c.category||c.type})`);
       if(p.amu.length>5){
         g.pendingRoomEffect={
           id:`amu-overflow-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
@@ -929,9 +1101,9 @@ io.on("connection", socket=>{
           reason:"Amulet Hand เต็ม — เลือกเก็บ 5 ใบ",
           count:1,
           newUid:c.uid,
-          options:p.amu.map(x=>({uid:x.uid,name:x.name,type:x.type,desc:x.desc}))
+          options:p.amu.map(x=>({uid:x.uid,name:x.name,type:x.type,category:x.category,desc:x.desc||x.effect||""}))
         };
-        addLog(room,`${p.name} มี Amulet 6 ใบชั่วคราว → ต้องเลือกทิ้ง 1 ใบ`);
+        addLog(room,`${p.name} มี Amulet 6 ใบชั่วคราว → ต้องเลือก 1 ใบกลับใต้กอง`);
       }
     }
     emitRoom(room);
@@ -998,29 +1170,31 @@ io.on("connection", socket=>{
     const p=checkTurn(socket,room); if(!p) return;
     const g=room.game;
     const ref=cardFromPlayer(p,uid);
-    if(!ref||ref.zone!=="amu"||!["heal_self","heal_room","heal_adjacent"].includes(ref.card.type)||!g.moved||g.actions<1){
+    const healTypes=["heal_self","heal_room","heal_near2","heal_friends_all"];
+    if(!ref||ref.zone!=="amu"||!healTypes.includes(ref.card.type)||!g.moved||g.actions<1){
       return fail(socket,"ใช้การ์ดรักษาไม่ได้");
     }
     g.actions--;
-    const card=removeCard(p,ref);
-    const amount=Number(card.heal)||1;
-
+    const card=removeCard(p,ref),amount=Number(card.heal)||1;
+    revealCard(room,p,card,"amulet","play");
     if(card.type==="heal_self"){
       changeHp(room,p,amount,`ใช้ ${card.name}`);
       addLog(room,`${p.name} ใช้ ${card.name} → HP +${amount}`);
-    }
-    if(card.type==="heal_room"){
+    }else if(card.type==="heal_room"){
       const targets=room.players.filter(x=>x.hp>0 && x.pos===p.pos);
       targets.forEach(x=>changeHp(room,x,amount,`${p.name} ใช้ ${card.name}`));
-      addLog(room,`${p.name} ใช้ ${card.name} → ผู้เล่นที่ยังมีชีวิตในห้องเดียวกัน HP +${amount}`);
-    }
-    if(card.type==="heal_adjacent"){
-      const validRooms=new Set([p.pos,...neighbors(p.pos)]);
-      const targets=room.players.filter(x=>x.hp>0 && validRooms.has(x.pos));
+      addLog(room,`${p.name} ใช้ ${card.name} → ทุกคนในห้องเดียวกัน HP +${amount}`);
+    }else if(card.type==="heal_near2"){
+      const r1=Math.floor(p.pos/3),c1=p.pos%3;
+      const targets=room.players.filter(x=>x.hp>0 && Math.abs(Math.floor(x.pos/3)-r1)+Math.abs((x.pos%3)-c1)<=2);
       targets.forEach(x=>changeHp(room,x,amount,`${p.name} ใช้ ${card.name}`));
-      addLog(room,`${p.name} ใช้ ${card.name} → ตัวเองและเพื่อนระยะ 1 ห้อง HP +${amount}`);
+      addLog(room,`${p.name} ใช้ ${card.name} → ตัวเองและเพื่อนในระยะ 2 ห้อง HP +${amount}`);
+    }else if(card.type==="heal_friends_all"){
+      const targets=room.players.filter(x=>x.id!==p.id&&x.hp>0);
+      targets.forEach(x=>changeHp(room,x,amount,`${p.name} ใช้ ${card.name}`));
+      addLog(room,`${p.name} ใช้ ${card.name} → เพื่อนทั้งหมด HP +${amount}`);
     }
-    g.amuDiscard.push(card);
+    returnAmuletToBottom(room,card,"ใช้การ์ดรักษา");
     emitRoom(room);
   });
 
@@ -1035,7 +1209,21 @@ io.on("connection", socket=>{
     g.actions--;
     const card=removeCard(p,ref);
     revivePlayer(room,target,card.reviveHp||1,card.name);
-    g.amuDiscard.push(card);
+    revealCard(room,p,card,"amulet","play");
+    returnAmuletToBottom(room,card,"ใช้การ์ดชุบชีวิต");
+    emitRoom(room);
+  });
+
+  socket.on("useSpellManual", ({uid})=>{
+    const room=rooms.get(socket.data.roomCode); if(!room) return;
+    const p=checkTurn(socket,room); if(!p) return;
+    const ref=cardFromPlayer(p,uid);
+    if(!ref||ref.zone!=="amu"||ref.card.type!=="spell") return fail(socket,"ต้องเลือกการ์ดคาถาอาคม");
+    const card=removeCard(p,ref);
+    revealCard(room,p,card,"amulet","play");
+    returnAmuletToBottom(room,card,"ใช้คาถาอาคมแบบ Manual Resolve");
+    addLog(room,`${p.name} ใช้คาถา ${card.name} • ${card.condition||""} → ${card.effect||""} (V1.6 Manual Resolve)`);
+    io.to(room.code).emit("manualSpellFx",{playerName:p.name,name:card.name,condition:card.condition||"",effect:card.effect||""});
     emitRoom(room);
   });
 
@@ -1103,64 +1291,61 @@ io.on("connection", socket=>{
     if(!g.moved||g.actions<2||!r.boss) return fail(socket,"ทำพิธีไม่ได้");
     const ref=cardFromPlayer(p,uid);
     if(!ref||ref.zone!=="sac") return fail(socket,"ต้องเลือกเครื่องเซ่น");
-    const c=ref.card;
-    const ghost=currentGhost(room);
+    const c=ref.card,ghost=currentGhost(room);
     if(!ghost.need[c.color]) return fail(socket,"ผีตัวนี้ไม่ต้องการเครื่องเซ่นสีนี้");
     if((g.bossDone[c.color]||0)>=ghost.need[c.color]) return fail(socket,"สีนี้ครบแล้ว");
     g.actions-=2;
-    if(g.stats){
-      g.stats.rituals.attempts++;
-      if(g.stats.rituals.byColor[c.color]) g.stats.rituals.byColor[c.color].attempts++;
-    }
-    const d=roll2(); g.lastDice=d;
-    recordDice(room,p,d,"ritual");
-    applyCurse(room,d);
-    if(resolveDeathsAfterAction(room,p.id)){ emitRoom(room); return; }
-    const rule=ghost.dice[c.color];
-    const ok=rule.op===">="?d.total>=rule.value:d.total<=rule.value;
+    if(g.stats){g.stats.rituals.attempts++;if(g.stats.rituals.byColor[c.color])g.stats.rituals.byColor[c.color].attempts++;}
+    const d=roll2();g.lastDice=d;recordDice(room,p,d,"ritual");applyCurse(room,d);
+    if(resolveDeathsAfterAction(room,p.id)){emitRoom(room);return;}
+    const rule=ghost.dice[c.color],attackMax=equipmentAttack(p);
+    g.pendingRitual={
+      id:`rit-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+      playerId:p.id,playerName:p.name,cardUid:c.uid,cardName:c.name,color:c.color,
+      dice:d,rule:{op:rule.op,value:rule.value,label:rule.label},attackMax,modifierOptions:equipmentAttackOptions(p),
+      equipment:equipmentSummary(p),score:c.boss,counterText:ghost.counterText?.[c.color]||""
+    };
+    addLog(room,`${p.name} เริ่มพิธีด้วย ${c.name} • ทอยดิบ ${d.total} • อุปกรณ์ปรับได้ ±${attackMax} • รอเลือก Modifier`);
+    emitRoom(room);
+  });
+
+  socket.on("resolveRitual", ({modifier=0})=>{
+    const room=rooms.get(socket.data.roomCode);if(!room||!room.game?.pendingRitual)return;
+    const p=playerBySocket(room,socket.id),g=room.game,pending=g.pendingRitual;
+    if(!p||pending.playerId!==p.id)return fail(socket,"พิธีนี้ไม่ใช่ของคุณ");
+    modifier=Math.trunc(Number(modifier)||0);
+    const attackMax=equipmentAttack(p),modifierOptions=equipmentAttackOptions(p);
+    if(!modifierOptions.includes(modifier))return fail(socket,`Modifier นี้ใช้ไม่ได้กับอุปกรณ์ที่สวมอยู่`);
+    const ref=cardFromPlayer(p,pending.cardUid);
+    if(!ref||ref.zone!=="sac")return fail(socket,"ไม่พบเครื่องเซ่นที่ใช้ทำพิธี");
+    const c=ref.card,ghost=currentGhost(room),rule=pending.rule,d=pending.dice;
+    const finalTotal=d.total+modifier;
+    const ok=rule.op===">="?finalTotal>=rule.value:finalTotal<=rule.value;
     removeCard(p,ref);
     if(ok){
-      if(g.stats){
-        g.stats.rituals.success++;
-        if(g.stats.rituals.byColor[c.color]) g.stats.rituals.byColor[c.color].success++;
-      }
-      g.bossDone[c.color]++; p.score+=c.boss;
-      addLog(room,`${p.name} ใช้ ${c.name} • ทอย ${d.total} → สำเร็จ +${c.boss} คะแนน`);
+      if(g.stats){g.stats.rituals.success++;if(g.stats.rituals.byColor[c.color])g.stats.rituals.byColor[c.color].success++;}
+      g.bossDone[c.color]++;p.score+=c.boss;
+      const life=equipmentLifeSteal(p);if(life>0)changeHp(room,p,life,`อุปกรณ์ดูดเลือดหลังทำพิธีสำเร็จ`);
+      addLog(room,`${p.name} พิธีสำเร็จ • ${d.total}${modifier?`${modifier>0?"+":""}${modifier}`:""} = ${finalTotal} เทียบ ${rule.label} • +${c.boss} คะแนน${life?` • HP +${life}`:""}`);
     }else{
-      if(g.stats){
-        g.stats.rituals.fail++;
-        if(g.stats.rituals.byColor[c.color]) g.stats.rituals.byColor[c.color].fail++;
-      }
-      if(room.settings.failedSacrifice==="remove"){
-        g.sacDiscard.push(c);
-        addLog(room,`${p.name} ทำพิธีพลาด • ${c.name} ออกจากเกมสำหรับ Session นี้`);
-      }else{
-        g.sacDeck.push(c);
-        addLog(room,`${p.name} ทำพิธีพลาด • ${c.name} กลับใต้กอง`);
-      }
+      if(g.stats){g.stats.rituals.fail++;if(g.stats.rituals.byColor[c.color])g.stats.rituals.byColor[c.color].fail++;}
+      if(room.settings.failedSacrifice==="remove"){g.sacDiscard.push(c);addLog(room,`${p.name} ทำพิธีพลาด • ${c.name} ออกจากเกมสำหรับ Session นี้`);}
+      else{g.sacDeck.push(c);addLog(room,`${p.name} ทำพิธีพลาด • ${c.name} กลับใต้กอง`);}
       applyGhostCounter(room,p,c.color);
       if(p.equip.length){
         if(room.settings.equipmentBreak==="all"){
-          const broken=p.equip.splice(0,p.equip.length);
-          if(g.stats) g.stats.equipmentBreaks+=broken.length;
-          addLog(room,`อุปกรณ์ของ ${p.name} แตกทั้งหมด: ${broken.map(x=>x.name).join(", ")}`);
+          const broken=p.equip.splice(0,p.equip.length);broken.forEach(x=>returnAmuletToBottom(room,x,"อุปกรณ์แตกจากผีสวนกลับ"));
+          if(g.stats)g.stats.equipmentBreaks+=broken.length;addLog(room,`อุปกรณ์ของ ${p.name} แตกทั้งหมด: ${broken.map(x=>x.name).join(", ")}`);
         }else{
-          const broken=p.equip.shift();
-          if(g.stats) g.stats.equipmentBreaks++;
-          addLog(room,`อุปกรณ์ของ ${p.name} แตก 1 ชิ้น: ${broken.name}`);
+          const broken=p.equip.shift();returnAmuletToBottom(room,broken,"อุปกรณ์แตกจากผีสวนกลับ");
+          if(g.stats)g.stats.equipmentBreaks++;addLog(room,`อุปกรณ์ของ ${p.name} แตก 1 ชิ้น: ${broken.name}`);
         }
       }
     }
-    io.to(room.code).emit("ritualFx",{
-      playerName:p.name,ghostName:ghost.name,cardName:c.name,color:c.color,
-      dice:d,success:ok,score:ok?c.boss:0
-    });
-    if(!ok && resolveDeathsAfterAction(room,p.id)){ emitRoom(room); return; }
-    if(ghostComplete(room)){
-      room.phase="result";
-      computeResults(room);
-      addLog(room,`ปราบ ${ghost.name} สำเร็จ → จบเกม`);
-    }
+    g.pendingRitual=null;
+    io.to(room.code).emit("ritualFx",{playerName:p.name,ghostName:ghost.name,cardName:c.name,color:c.color,dice:d,modifier,finalTotal,ruleLabel:rule.label,ruleValue:rule.value,success:ok,score:ok?c.boss:0,attackMax,counterText:pending.counterText});
+    if(!ok&&resolveDeathsAfterAction(room,p.id)){emitRoom(room);return;}
+    if(ghostComplete(room)){room.phase="result";computeResults(room);addLog(room,`ปราบ ${ghost.name} สำเร็จ → จบเกม`);}
     emitRoom(room);
   });
 
@@ -1178,21 +1363,23 @@ io.on("connection", socket=>{
       });
       addLog(room,`${p.name} Resolve ${pending.reason} → เครื่องเซ่น ${pending.count} ชิ้นกลับใต้กอง`);
       room.game.pendingRoomEffect=null;
-    }else if(pending.type==="pickAmuletDiscard"){
-      const idx=room.game.amuDiscard.findIndex(c=>c.uid===uid);
-      if(idx<0) return fail(socket,"ไม่พบการ์ดในกองทิ้ง");
-      if(p.amu.length>=5) return fail(socket,"Amulet Hand เต็ม");
-      const [c]=room.game.amuDiscard.splice(idx,1); p.amu.push(c);
-      addLog(room,`${p.name} เลือก ${c.name} จากกองทิ้งขึ้นมือ`);
-      room.game.pendingRoomEffect=null;
     }else if(pending.type==="discardAmuletOverflow"){
       const idx=p.amu.findIndex(c=>c.uid===uid);
       if(idx<0) return fail(socket,"ไม่พบ Amulet ที่เลือก");
       if(p.amu.length<=5) return fail(socket,"Amulet Hand ไม่เกินขีดจำกัดแล้ว");
       const [c]=p.amu.splice(idx,1);
-      room.game.amuDiscard.push(c);
-      addLog(room,`${p.name} เลือกทิ้ง ${c.name} → Amulet Hand เหลือ ${p.amu.length}/5`);
+      returnAmuletToBottom(room,c,"มือเกิน 5 ใบ");
+      addLog(room,`${p.name} เลือก ${c.name} กลับใต้กอง → Amulet Hand เหลือ ${p.amu.length}/5`);
       room.game.pendingRoomEffect=null;
+    }else if(pending.type==="chooseBrokenEquip"){
+      const idx=p.equip.findIndex(c=>c.uid===uid);
+      if(idx<0)return fail(socket,"เลือกอุปกรณ์ไม่ถูกต้อง");
+      const [broken]=p.equip.splice(idx,1);returnAmuletToBottom(room,broken,"Event ทำให้อุปกรณ์แตก");
+      addLog(room,`${p.name} เลือกอุปกรณ์ที่แตก: ${broken.name}`);room.game.pendingRoomEffect=null;
+    }else if(pending.type==="eventMoveTwo"){
+      const index=Number(uid);
+      if(!pending.options.some(x=>x.index===index))return fail(socket,"เลือกห้องปลายทางไม่ถูกต้อง");
+      p.pos=index;bumpRoomVisit(room,index);addLog(room,`${p.name} วิ่งจาก Event ไป ${roomAt(room,index).name}`);room.game.pendingRoomEffect=null;
     }
     emitRoom(room);
   });
@@ -1209,6 +1396,8 @@ io.on("connection", socket=>{
   socket.on("endTurn", ()=>{
     const room=rooms.get(socket.data.roomCode); if(!room) return;
     const p=checkTurn(socket,room); if(!p) return;
+    if(room.game.pendingRitual) return fail(socket,"ต้อง Resolve การทำพิธีก่อน");
+    if(room.game.sanityDecision) return fail(socket,"ยืนยันการใช้/ไม่ใช้การ์ดค่าสติก่อน");
     if(room.game.mustMove) return fail(socket,"ยังต้องเดินก่อน");
     if(room.game.moveOptional) return fail(socket,"เลือกเดินหรืออยู่ห้องเดิมก่อน");
     if(room.game.escapeRequired && room.game.actions>0) return fail(socket,"ยังมีธูปเหลือ ต้องพยายามหนีห้องพิเศษก่อน");
@@ -1327,4 +1516,4 @@ setInterval(()=>{
   }
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.5 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.6 listening on :${PORT}`));

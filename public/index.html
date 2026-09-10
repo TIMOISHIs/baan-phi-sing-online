@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Online Friends Build V1.5</title>
+<title>บ้านผีสิง — Online Friends Build V1.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
 
 <section id="home" class="screen active">
   <div class="hero">
-    <div class="eyebrow">ONLINE FRIENDS BUILD V1.5</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.6</div>
     <h1>บ้านผีสิง</h1>
     <p>สร้างโต๊ะ ส่ง Room Code ให้เพื่อน แล้วช่วยกันฟาร์มของก่อนเข้าห้องผี</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
@@ -38,7 +38,7 @@
   <div class="lobby-wrap">
     <div class="eyebrow">WAITING ROOM</div>
     <h1>Room <span id="roomCode">—</span></h1>
-    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 4 คนใน V1.5</p>
+    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 4 คนใน V1.6</p>
     <div class="room-code-tools">
       <button id="copyCodeBtn" class="secondary">📋 Copy Room Code</button>
       <button id="lobbyHelpBtn" class="secondary">? วิธีเล่น</button>
@@ -126,6 +126,7 @@
           <button id="stayBtn" class="stay-button" style="display:none">อยู่ห้องเดิม</button>
           <button id="escapeBtn" class="escape-button" style="display:none">🚪 ทอยหนีห้อง · 1🕯</button>
           <button id="rollBtn" class="primary">🎲 ทอยเต๋า</button>
+          <button id="finishSanityBtn" class="sanity-finish" style="display:none">🧠 เดินต่อด้วยค่าสตินี้</button>
         </div>
       </div>
       <div id="board" class="board"></div>
@@ -139,9 +140,10 @@
         <button id="endBtn">ส่งเทิร์น →</button>
       </div>
       <section class="my-zone">
-        <article class="character">
-          <small>CHARACTER</small><h2 id="charName">—</h2><p id="charRole">—</p>
+        <article id="characterCard" class="character character-readable" role="button" tabindex="0" aria-label="อ่านการ์ดตัวละคร">
+          <small>CHARACTER · คลิกเพื่ออ่าน</small><h2 id="charName">—</h2><p id="charRole">—</p>
           <div class="char-art">CHARACTER ART</div><p id="charSkill"></p>
+          <div id="equipStats" class="equip-stats"></div>
         </article>
         <div class="inventory">
           <div class="inventory-head">
@@ -163,7 +165,7 @@
         <div id="ghostRules" class="dice-rules"></div>
         <button id="bossHelpBtn" class="boss-help">ดูวิธีตีผีใบนี้</button>
       </article>
-      <div class="deck-card">AMULET DECK<small>ของขลัง / คาถา / Event / Heal</small></div>
+      <div class="deck-card">AMULET DECK<small>ของขลัง / คาถา / Event / รักษา / ค่าสติ</small></div>
       <div class="deck-card">SACRIFICE DECK<small>ทุกสีอยู่กองเดียวกัน</small></div>
       <div id="turnGuide" class="turn-guide turn-guide-side">
         <div class="guide-kicker">ตอนนี้ทำอะไร?</div>

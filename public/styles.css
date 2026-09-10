@@ -346,3 +346,43 @@ body:before{
 @media(max-width:560px){.amulet-dock .game-card{flex-basis:92px;height:124px}.chat-messages{height:220px}.move-fx{top:13%;max-width:90vw}.hp-fx-card{min-height:170px}.hp-fx-card b{font-size:36px}}
 
 .lobby-player{position:relative;overflow:hidden}.lobby-player:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--pcolor,#777)}.lobby-seat{display:inline-grid;place-items:center;min-width:28px;height:22px;margin-right:7px;border-radius:999px;background:var(--pcolor,#777);color:#111;font-size:8px;font-weight:900;font-style:normal}
+
+/* V1.6 — full Amulet deck, sanity decision, readable cards, equipment stats, ritual pacing */
+.character-readable{position:relative;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.character-readable:hover,.character-readable:focus-visible{transform:translateY(-2px);border-color:#9f845a;box-shadow:0 18px 45px rgba(0,0,0,.28),0 0 0 1px rgba(205,170,105,.18);outline:none}
+.character-readable>small:first-child{color:#bca579}
+.equip-stats{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;padding-top:7px;border-top:1px solid #383a37}
+.equip-stats span{padding:4px 6px;border:1px solid #46483f;border-radius:999px;background:#111312;color:#d9cfbc;font-size:8px;line-height:1}
+
+.sanity-finish{border:1px solid #7262aa;background:linear-gradient(180deg,#554779,#352f4c);color:#f1eaff;border-radius:9px;padding:8px 10px;font-weight:700}
+.sanity-finish:hover{filter:brightness(1.12)}
+
+/* Floating hand should feel like cards in the player's hand, not a black tray. */
+.amulet-dock{height:176px;width:min(680px,calc(100vw - 430px));min-width:360px;padding:0;border:0;background:transparent;box-shadow:none;backdrop-filter:none;pointer-events:none;overflow:visible}
+.amulet-dock-head{pointer-events:auto;width:max-content;max-width:90%;margin:0 auto 2px;padding:5px 10px;border:1px solid rgba(110,94,69,.72);border-radius:999px;background:rgba(18,19,17,.82);box-shadow:0 8px 28px rgba(0,0,0,.25);backdrop-filter:blur(8px)}
+.amulet-screen-hand{position:relative;height:146px;display:block;padding:0;overflow:visible;pointer-events:none}
+.amulet-dock .amulet-card{position:absolute;left:50%;bottom:0;width:108px;height:142px;min-width:108px;flex:none;margin:0;pointer-events:auto;transform-origin:50% 132%;transform:translateX(calc(-50% + var(--fan-x,0px))) translateY(var(--fan-y,0px)) rotate(var(--fan-rot,0deg));transition:transform .2s cubic-bezier(.2,.8,.2,1),filter .2s ease,box-shadow .2s ease;box-shadow:0 14px 25px rgba(0,0,0,.42)}
+.amulet-dock .amulet-card:hover,.amulet-dock .amulet-card:focus-visible{transform:translateX(calc(-50% + var(--fan-x,0px))) translateY(-28px) rotate(0deg) scale(1.07);z-index:80!important;filter:brightness(1.08);box-shadow:0 22px 42px rgba(0,0,0,.58);outline:none}
+.amulet-dock .amulet-card.sanity-ready{animation:sanityGlow 1s ease-in-out infinite alternate;border-color:#9c7cff;box-shadow:0 0 0 2px rgba(156,124,255,.25),0 0 26px rgba(133,103,255,.35),0 14px 25px rgba(0,0,0,.42)}
+@keyframes sanityGlow{from{filter:brightness(1)}to{filter:brightness(1.22) saturate(1.12)}}
+.amu-type-sanity .amulet-art{display:grid;place-items:center;font-size:26px;font-weight:900;color:#bca8ff;background:radial-gradient(circle at 50% 42%,rgba(132,96,220,.28),rgba(44,34,62,.92))}
+.amu-type-equip{border-color:#ad7e42}.amu-type-spell{border-color:#7565b8}.amu-type-revive,.amu-type-heal_self,.amu-type-heal_room,.amu-type-heal_near2,.amu-type-heal_friends_all{border-color:#568b68}
+.amulet-dock.collapsed{height:auto;width:auto;min-width:0}.amulet-dock.collapsed .amulet-screen-hand{display:none}
+
+.amulet-detail,.character-detail{display:grid;gap:10px}
+.amulet-detail-card,.character-detail-card{border:1px solid #5b5143;border-radius:18px;background:linear-gradient(180deg,#171918,#101211);padding:15px;box-shadow:0 18px 55px rgba(0,0,0,.38)}
+.amulet-detail-card>small,.character-detail-card>small{display:block;color:#9e8c70;font-size:8px;letter-spacing:.12em;text-transform:uppercase}
+.amulet-detail-card h2,.character-detail-card h2{margin:4px 0 2px;font-size:22px}.character-detail-card>p{margin:0 0 10px;color:#afa89b}
+.amulet-detail-art,.character-detail-art{height:150px;margin:12px 0;border-radius:13px;border:1px solid #3c3e39;background:linear-gradient(135deg,#242725,#171918);display:grid;place-items:center;color:#a99a82;font-size:34px;font-weight:800}
+.character-detail-art{font-size:11px;letter-spacing:.14em}
+.amulet-rule{margin-top:9px;padding:9px 10px;border-radius:10px;background:#0d0f0e;border:1px solid #30322f}.amulet-rule b{font-size:9px;color:#c5a76f}.amulet-rule p{margin:3px 0 0;line-height:1.55;color:#d5cec1;font-size:11px}
+.amulet-stats{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.amulet-stats span{padding:5px 7px;border-radius:8px;border:1px solid #41443d;background:#151715;color:#d8d1c4;font-size:9px}
+.card-use-confirm{width:100%;margin-top:2px}.manual-note{padding:8px;border-left:3px solid #7b69b9;background:#15131c;border-radius:6px}
+
+.ritual-resolve{display:grid;gap:12px}.ritual-resolve-card{padding:15px;border-radius:16px;border:1px solid #6e5a3c;background:radial-gradient(circle at 50% 15%,rgba(143,102,44,.15),transparent 48%),#111311;text-align:center}.ritual-resolve-card>small{color:#af956d;letter-spacing:.16em;font-size:8px}.ritual-resolve-card h2{margin:5px 0 12px}.ritual-equation{display:flex;justify-content:center;align-items:center;gap:10px;padding:12px;border-radius:12px;background:#0b0d0c;border:1px solid #33362f}.ritual-equation span{font-size:18px}.ritual-equation b{font-size:22px;color:#e0bf82}.ritual-resolve-card p{margin:10px 0 0}.ritual-equip-readout{margin-top:8px;color:#a9a194;font-size:9px}
+.ritual-modifier-picker{padding:11px;border-radius:12px;background:#101211;border:1px solid #373a35}.ritual-modifier-picker>p{margin:0 0 8px;color:#b9b1a4;font-size:10px}.modifier-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.modifier-choice input{position:absolute;opacity:0;pointer-events:none}.modifier-choice span{display:grid;place-items:center;min-width:38px;height:34px;padding:0 7px;border:1px solid #4a4d46;border-radius:9px;background:#171917;cursor:pointer;font-weight:800}.modifier-choice input:checked+span{border-color:#c3a361;background:#403521;color:#f4dca9;box-shadow:0 0 0 2px rgba(195,163,97,.16)}.ritual-preview{margin:9px 0;padding:8px;border-radius:8px;background:#0b0d0c;color:#d8cebb;text-align:center;font-size:10px}.ritual-modifier-picker .primary{width:100%}
+
+.ritual-fx-card{transition:border-color .25s ease,box-shadow .25s ease}.ritual-fx-card.success{border-color:#5f9a70;box-shadow:0 0 40px rgba(90,164,111,.2),0 28px 80px rgba(0,0,0,.55)}.ritual-fx-card.fail{border-color:#a15349;box-shadow:0 0 45px rgba(164,75,67,.2),0 28px 80px rgba(0,0,0,.55)}
+
+@media(max-width:1200px){.amulet-dock{width:min(600px,calc(100vw - 350px))}.amulet-dock .amulet-card{width:102px;min-width:102px;height:136px}}
+@media(max-width:860px){.amulet-dock{left:8px;right:8px;bottom:70px;transform:none;width:auto;height:164px}.amulet-screen-hand{height:134px}.amulet-dock .amulet-card{width:94px;min-width:94px;height:128px}.amulet-dock .amulet-card:hover{transform:translateX(calc(-50% + var(--fan-x,0px))) translateY(-20px) rotate(0) scale(1.04)}}

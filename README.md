@@ -1,4 +1,4 @@
-# บ้านผีสิง V1.5 — Feedback UI + Chat
+# บ้านผีสิง V1.6 — Full Amulet + Combat Presentation
 
 - รอ animation เต๋าหยุดก่อนจึงอัปเดต state/โชว์ห้องที่เดินได้
 - HP ลด/เพิ่ม: server ส่ง HP event ตรงไปยังผู้เล่นคนนั้น พร้อมสาเหตุ + notification กลางจอ + SFX
@@ -16,3 +16,7 @@
 
 ## Test
 `npm run smoke`
+
+
+## V1.6
+ดูรายละเอียดใน `V1.6-CHANGELOG.md` — รอบนี้ล็อก Amulet Deck 54 ใบ, sanity decision, equipment stats, combat modifier presentation, card inspection และ fan hand UI.

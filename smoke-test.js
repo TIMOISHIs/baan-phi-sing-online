@@ -1,4 +1,4 @@
-// V1.5 adds realtime chat; existing multiplayer smoke remains the regression gate for room/game flow.
+// V1.6 regression gate: room sync, 54-card Amulet deck metadata, sanity decision flow, reconnect, chat.
 
 const { spawn } = require("child_process");
 const http = require("http");
@@ -72,6 +72,7 @@ function makeClient() {
   try {
     const health = await waitHealth();
     if (!health.ok) throw new Error("health returned not ok");
+    if (health.build !== "1.6" || health.amuletCards !== 54) throw new Error(`unexpected build/deck metadata: ${JSON.stringify(health)}`);
 
     A = makeClient();
     B = makeClient();
@@ -128,8 +129,16 @@ function makeClient() {
     const rolledA = waitEvent(A, "state", s => s.phase === "game" && s.game.rolled === true);
     const rolledB = waitEvent(B, "state", s => s.phase === "game" && s.game.rolled === true);
     A.emit("roll");
-    const [rollStateA, rollStateB] = await Promise.all([rolledA, rolledB]);
+    let [rollStateA, rollStateB] = await Promise.all([rolledA, rolledB]);
     if (rollStateA.game.lastDice.total !== rollStateB.game.lastDice.total) throw new Error("dice state mismatch");
+
+    // V1.6 may pause after the roll when the active player holds a sanity card.
+    if (rollStateA.game.sanityDecision) {
+      const sanityAP = waitEvent(A, "state", s => s.phase === "game" && s.game.rolled === true && s.game.sanityDecision === false);
+      const sanityBP = waitEvent(B, "state", s => s.phase === "game" && s.game.rolled === true && s.game.sanityDecision === false);
+      A.emit("finishSanityDecision");
+      [rollStateA, rollStateB] = await Promise.all([sanityAP, sanityBP]);
+    }
 
     let afterMove = rollStateA;
     if (rollStateA.game.mustMove || rollStateA.game.moveOptional) {
@@ -181,6 +190,8 @@ function makeClient() {
       reconnectPreservedSeat:true,
       stablePlayerColors:true,
       realtimeChat:true,
+      amuletDeckMetadata54:true,
+      sanityDecisionFlow:true,
       leaveRoomRemovesSeat:true
     }, null, 2));
   } finally {
