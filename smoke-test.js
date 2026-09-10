@@ -1,3 +1,4 @@
+// V1.5 adds realtime chat; existing multiplayer smoke remains the regression gate for room/game flow.
 
 const { spawn } = require("child_process");
 const http = require("http");
@@ -90,8 +91,16 @@ function makeClient() {
     const bothLobbyOnBP = waitEvent(B, "state", s => s.code === code && s.phase === "lobby" && s.players.length === 2);
     const bPrivateP = waitEvent(B, "privateState", p => !!p.id);
     B.emit("joinRoom", {code, name:"Friend", sessionToken:friendToken});
-    await Promise.all([bothLobbyOnAP, bothLobbyOnBP]);
+    const [twoA, twoB] = await Promise.all([bothLobbyOnAP, bothLobbyOnBP]);
     const bPrivate = await bPrivateP;
+    const hostSeat = twoA.players.find(p => p.id === aPrivate.id)?.seat;
+    const friendSeat = twoA.players.find(p => p.id === bPrivate.id)?.seat;
+    if (hostSeat !== 1 || friendSeat !== 2) throw new Error(`seat colors invalid: ${hostSeat},${friendSeat}`);
+
+    const chatOnAP = waitEvent(A, "chatMessage", m => m.text === "ผีมาแล้ว" && m.seat === 1);
+    const chatOnBP = waitEvent(B, "chatMessage", m => m.text === "ผีมาแล้ว" && m.seat === 1);
+    A.emit("chatMessage", {text:"ผีมาแล้ว"});
+    await Promise.all([chatOnAP, chatOnBP]);
 
     // Subscribe to both public AND private game-state events before starting.
     // emitRoom sends them back-to-back, so listening only after the public state
@@ -170,6 +179,8 @@ function makeClient() {
       privateHandsProtected:true,
       turnSync:true,
       reconnectPreservedSeat:true,
+      stablePlayerColors:true,
+      realtimeChat:true,
       leaveRoomRemovesSeat:true
     }, null, 2));
   } finally {

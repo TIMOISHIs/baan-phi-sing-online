@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.4"}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.5"}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -165,6 +165,7 @@ const makeCode = () => {
   return code;
 };
 const safeName = n => String(n||"ผู้เล่น").trim().slice(0,18) || "ผู้เล่น";
+const safeChatText = t => String(t||"").replace(/[\u0000-\u001F\u007F]/g," ").replace(/\s+/g," ").trim().slice(0,180);
 const safeToken = t => {
   t=String(t||"").trim();
   return /^[A-Za-z0-9_-]{12,120}$/.test(t) ? t : randomUUID();
@@ -195,6 +196,16 @@ function addLog(room, text){
   room.log.push({at:Date.now(), text});
   if(room.log.length>120) room.log.shift();
 }
+function setHp(room,player,value,reason="HP เปลี่ยน"){
+  if(!player||player.hp==null)return 0;
+  const before=Number(player.hp)||0,max=Number(player.char?.hp)||Infinity;
+  const after=Math.max(0,Math.min(max,Number(value)||0));
+  player.hp=after;
+  const delta=after-before;
+  if(delta&&player.socketId)io.to(player.socketId).emit("hpFx",{delta,hp:after,maxHp:Number.isFinite(max)?max:null,reason});
+  return delta;
+}
+function changeHp(room,player,delta,reason){return setHp(room,player,(Number(player?.hp)||0)+(Number(delta)||0),reason)}
 function freshStats(settings){
   return {
     startedAt:Date.now(), endedAt:null, durationMs:null,
@@ -265,6 +276,7 @@ function publicSnapshot(room){
     players:room.players.map((p,i)=>({
       id:p.id,
       name:p.name,
+      seat:p.seat || i+1,
       characterKey:p.characterKey || null,
       connected:!!p.socketId,
       char:p.char || null,
@@ -304,6 +316,7 @@ function publicSnapshot(room){
       stats:g.stats||null
     } : null,
     log:room.log.slice(-50),
+    chat:(room.chat||[]).slice(-50),
     result:room.result || null,
     trade:room.trade ? {
       id:room.trade.id,
@@ -322,6 +335,7 @@ function privateSnapshot(room, socketId){
   return {
     id:p.id,
     name:p.name,
+    seat:p.seat || 1,
     sessionToken:p.token,
     amu:p.amu || [],
     sac:p.sac || [],
@@ -355,7 +369,7 @@ function applyCurse(room,dice){
   addLog(room,`${ghost.name} Passive (${rule.label}) → Curse +1`);
   if(room.game.curse>=6){
     if(room.game.stats) room.game.stats.curse.bursts++;
-    room.players.forEach(p=>p.hp=Math.max(0,p.hp-1));
+    room.players.forEach(p=>changeHp(room,p,-1,`Curse ครบ 6 → HP -1`));
     room.game.curse=0;
     addLog(room,`Curse ครบ 6 → ผู้เล่นทุกคน HP -1 • Curse รีเซ็ต 0`);
   }
@@ -416,7 +430,7 @@ function resolveDeathsAfterAction(room, activePlayerId){
   return false;
 }
 function revivePlayer(room,target,hp=1,source="การ์ดชุบชีวิต"){
-  target.hp=Math.max(1,Math.min(target.char.hp,Number(hp)||1));
+  setHp(room,target,Math.max(1,Math.min(target.char.hp,Number(hp)||1)),`${source} → ชุบชีวิต`);
   target.deadAnnounced=false;
   if(room.game?.stats) room.game.stats.revives++;
   addLog(room,`${target.name} ถูกชุบด้วย ${source} → HP ${target.hp}`);
@@ -456,10 +470,10 @@ function applySacrificeRoomEffect(room, player, card){
   if(!r) return;
   if(r.effectId==="ritual_mystery"){
     if(card.color==="pink") drawExtraSacrifices(room,player,2,"ของตำนานในห้องพิธีกรรมลึกลับ");
-    if(card.color==="black") { player.hp=Math.max(0,player.hp-3); addLog(room,`${player.name}: จั่วคุณไสยในห้องพิธีกรรมลึกลับ → HP -3`); }
+    if(card.color==="black") { changeHp(room,player,-3,"จั่วคุณไสยในห้องพิธีกรรมลึกลับ"); addLog(room,`${player.name}: จั่วคุณไสยในห้องพิธีกรรมลึกลับ → HP -3`); }
   }
   if(r.effectId==="shrine_black" && card.color==="black"){
-    player.hp=Math.max(0,player.hp-2);
+    changeHp(room,player,-2,"จั่วคุณไสยในห้องพระ");
     addLog(room,`${player.name}: จั่วคุณไสยในห้องพระ → HP -2`);
     drawExtraSacrifices(room,player,1,"ผลห้องพระ");
   }
@@ -482,9 +496,9 @@ function ghostComplete(room){
 function firstTrap(room){
   return room.game.rooms.findIndex(r=>r.type==="กับดัก");
 }
-function damagePlayersInRoom(room,pos,exceptId,amount){
+function damagePlayersInRoom(room,pos,exceptId,amount,reason="โดนผลกระทบในห้องเดียวกัน"){
   room.players.forEach(x=>{
-    if(x.id!==exceptId && x.hp>0 && x.pos===pos) x.hp=Math.max(0,x.hp-amount);
+    if(x.id!==exceptId && x.hp>0 && x.pos===pos) changeHp(room,x,-amount,reason);
   });
 }
 function applyGhostCounter(room,p,color){
@@ -492,13 +506,13 @@ function applyGhostCounter(room,p,color){
   const originalPos=p.pos;
   if(ghost.id==="ghost-prai-mon"){
     if(color==="green"){
-      p.hp=Math.max(0,p.hp-1);
-      damagePlayersInRoom(room,originalPos,p.id,1);
+      changeHp(room,p,-1,`${ghost.name} สวนกลับสีเขียว`);
+      damagePlayersInRoom(room,originalPos,p.id,1,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`);
       addLog(room,`${ghost.name} สวนกลับสีเขียว → ${p.name} HP -1 • ผู้เล่นอื่นในห้องเดียวกัน HP -1`);
     }
     if(color==="blue"){
-      p.hp=Math.max(0,p.hp-2);
-      damagePlayersInRoom(room,originalPos,p.id,1);
+      changeHp(room,p,-2,`${ghost.name} สวนกลับสีฟ้า`);
+      damagePlayersInRoom(room,originalPos,p.id,1,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`);
       const idx=firstTrap(room);
       if(idx>=0) p.pos=idx;
       addLog(room,`${ghost.name} สวนกลับสีฟ้า → ${p.name} HP -2${idx>=0?" และถูกหลอกไปห้องกับดัก":""} • ผู้เล่นอื่นในห้องเดียวกัน HP -1`);
@@ -506,20 +520,20 @@ function applyGhostCounter(room,p,color){
   }
   if(ghost.id==="ghost-pret-to"){
     if(color==="green"){
-      p.hp=Math.max(0,p.hp-1);
-      damagePlayersInRoom(room,originalPos,p.id,1);
+      changeHp(room,p,-1,`${ghost.name} สวนกลับสีเขียว`);
+      damagePlayersInRoom(room,originalPos,p.id,1,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`);
       addLog(room,`${ghost.name} สวนกลับสีเขียว → ${p.name} HP -1 • ผู้เล่นอื่นในห้องเดียวกัน HP -1`);
     }
     if(color==="blue"){
-      p.hp=Math.max(0,p.hp-2);
-      damagePlayersInRoom(room,originalPos,p.id,1);
+      changeHp(room,p,-2,`${ghost.name} สวนกลับสีฟ้า`);
+      damagePlayersInRoom(room,originalPos,p.id,1,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`);
       const idx=firstTrap(room);
       if(idx>=0) p.pos=idx;
       addLog(room,`${ghost.name} สวนกลับสีฟ้า → ${p.name} HP -2${idx>=0?" และถูกส่งไปห้องกับดัก":""} • ผู้เล่นอื่นในห้องเดียวกัน HP -1`);
     }
     if(color==="pink"){
-      p.hp=Math.max(0,p.hp-3);
-      damagePlayersInRoom(room,originalPos,p.id,2);
+      changeHp(room,p,-3,`${ghost.name} สวนกลับสีชมพู`);
+      damagePlayersInRoom(room,originalPos,p.id,2,`${ghost.name} สวนกลับใส่ผู้เล่นในห้องเดียวกัน`);
       addLog(room,`${ghost.name} สวนกลับสีชมพู → ${p.name} HP -3 • ผู้เล่นอื่นในห้องเดียวกัน HP -2 • เป้าหมาย Teleport บนการ์ดยังรอยืนยันชื่อห้อง จึงยังไม่ย้ายตำแหน่งใน V0.7`);
     }
   }
@@ -560,7 +574,7 @@ function beginTurn(room){
 
   const r=roomAt(room,p.pos);
   if(r?.effectId==="trap_hp1"){
-    p.hp=Math.max(0,p.hp-1);
+    changeHp(room,p,-1,`เริ่มเทิร์นใน ${r.name}`);
     addLog(room,`${p.name} เริ่มเทิร์นใน ${r.name} → HP -1`);
   }
   if(r?.effectId==="curse_discard" && p.hp>0){
@@ -692,9 +706,9 @@ io.on("connection", socket=>{
   socket.on("createRoom", ({name,sessionToken})=>{
     const code=makeCode();
     const token=safeToken(sessionToken);
-    const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),characterKey:null};
+    const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),seat:1,characterKey:null};
     const room={
-      code,hostId:p.id,phase:"lobby",players:[],log:[],trade:null,updatedAt:Date.now(),
+      code,hostId:p.id,phase:"lobby",players:[],log:[],chat:[],trade:null,updatedAt:Date.now(),
       settings:{...DEFAULT_SETTINGS}
     };
     room.players.push(p);
@@ -721,9 +735,10 @@ io.on("connection", socket=>{
     }
 
     if(room.phase!=="lobby") return fail(socket,"เกมเริ่มไปแล้ว — ใช้ Session เดิมเพื่อกลับเข้าห้อง");
-    if(room.players.length>=4) return fail(socket,"V1.4 เปิดเทสสูงสุด 4 คนก่อน");
+    if(room.players.length>=4) return fail(socket,"V1.5 เปิดเทสสูงสุด 4 คนก่อน");
     if(room.players.some(p=>p.socketId===socket.id)) return;
-    const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),characterKey:null};
+    const seat=[1,2,3,4].find(n=>!room.players.some(x=>(x.seat||0)===n)) || Math.min(4,room.players.length+1);
+    const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),seat,characterKey:null};
     room.players.push(p);
     socket.join(code);
     socket.data.roomCode=code;
@@ -755,6 +770,18 @@ io.on("connection", socket=>{
     removePlayerFromRoom(room,p,socket,{intentional:true});
     socket.emit("leftRoom",{ok:true,code:oldCode});
     const stillThere=rooms.get(oldCode);if(stillThere) emitRoom(stillThere);
+  });
+
+  socket.on("chatMessage", ({text})=>{
+    const room=rooms.get(socket.data.roomCode); if(!room) return;
+    const p=playerBySocket(room,socket.id); if(!p) return;
+    const now=Date.now();
+    if(now-(socket.data.lastChatAt||0)<450) return;
+    text=safeChatText(text); if(!text) return;
+    socket.data.lastChatAt=now;
+    const msg={id:randomUUID(),at:now,playerId:p.id,seat:p.seat||1,name:p.name,text};
+    room.chat=room.chat||[];room.chat.push(msg);if(room.chat.length>80)room.chat.shift();
+    io.to(room.code).emit("chatMessage",msg);
   });
 
   socket.on("selectCharacter", ({key=null})=>{
@@ -876,12 +903,12 @@ io.on("connection", socket=>{
     revealCard(room,p,c,"amulet","draw");
     const currentRoom=roomAt(room,p.pos);
     if(c.type==="event"){
-      p.hp=Math.max(0,p.hp-1);
+      changeHp(room,p,-1,`Event ${c.name}`);
       g.amuDiscard.push(c);
       addLog(room,`${p.name} จั่ว Event ${c.name} → V0.6 placeholder Event HP -1`);
       if(resolveDeathsAfterAction(room,p.id)){ emitRoom(room); return; }
       if(currentRoom?.effectId==="event_heal"){
-        p.hp=Math.min(p.char.hp,p.hp+1);
+        changeHp(room,p,1,`${currentRoom.name}: จั่ว Event`);
         addLog(room,`${currentRoom.name}: จั่ว Event → HP +1`);
       }
       if(currentRoom?.effectId==="event_pick_discard" && g.amuDiscard.length && p.amu.length<5){
@@ -934,7 +961,7 @@ io.on("connection", socket=>{
     }
     addLog(room,`${p.name} จั่วเครื่องเซ่น ${drawn.length} ใบ`);
     if(r.effectId==="under_stairs"){
-      p.hp=Math.max(0,p.hp-2);
+      changeHp(room,p,-2,"ห้องใต้บันได");
       addLog(room,`ห้องใต้บันได → HP -2`);
     }
     drawn.forEach(c=>{ if(!g.pendingRoomEffect && p.hp>0) applySacrificeRoomEffect(room,p,c); });
@@ -979,18 +1006,18 @@ io.on("connection", socket=>{
     const amount=Number(card.heal)||1;
 
     if(card.type==="heal_self"){
-      p.hp=Math.min(p.char.hp,p.hp+amount);
+      changeHp(room,p,amount,`ใช้ ${card.name}`);
       addLog(room,`${p.name} ใช้ ${card.name} → HP +${amount}`);
     }
     if(card.type==="heal_room"){
       const targets=room.players.filter(x=>x.hp>0 && x.pos===p.pos);
-      targets.forEach(x=>x.hp=Math.min(x.char.hp,x.hp+amount));
+      targets.forEach(x=>changeHp(room,x,amount,`${p.name} ใช้ ${card.name}`));
       addLog(room,`${p.name} ใช้ ${card.name} → ผู้เล่นที่ยังมีชีวิตในห้องเดียวกัน HP +${amount}`);
     }
     if(card.type==="heal_adjacent"){
       const validRooms=new Set([p.pos,...neighbors(p.pos)]);
       const targets=room.players.filter(x=>x.hp>0 && validRooms.has(x.pos));
-      targets.forEach(x=>x.hp=Math.min(x.char.hp,x.hp+amount));
+      targets.forEach(x=>changeHp(room,x,amount,`${p.name} ใช้ ${card.name}`));
       addLog(room,`${p.name} ใช้ ${card.name} → ตัวเองและเพื่อนระยะ 1 ห้อง HP +${amount}`);
     }
     g.amuDiscard.push(card);
@@ -1022,15 +1049,15 @@ io.on("connection", socket=>{
 
     if(p.char.skillType==="heal_all"){
       if(!g.moved) return fail(socket,"ต้อง Resolve การเดินก่อนใช้สกิลนี้");
-      room.players.forEach(x=>{ if(x.hp>0) x.hp=Math.min(x.char.hp,x.hp+2); });
-      p.hp=Math.min(p.char.hp,p.hp+1);
+      room.players.forEach(x=>{ if(x.hp>0) changeHp(room,x,2,`${p.name} ใช้สกิลใจ`); });
+      changeHp(room,p,1,`${p.name} ใช้สกิลใจ (โบนัสตัวเอง)`);
       g.actions=0;
       addLog(room,`${p.name} ใช้สกิลใจ → ผู้เล่นที่ยังมีชีวิต HP +2 • ตัวเองรวม +3`);
     }
 
     if(p.char.skillType==="summon_boss"){
       g.actions=0;
-      p.hp=Math.max(0,p.hp-3);
+      changeHp(room,p,-3,"ใช้สกิลพูน");
       g.bossIndex=p.pos;
       g.rolled=true; g.moved=true; g.mustMove=false; g.moveOptional=false; g.legal=[]; g.escapeRequired=false;
       addLog(room,`${p.name} ใช้สกิลพูน → ย้ายห้องพิธีกรรมมาอยู่ที่ตัว • HP -3`);
@@ -1044,7 +1071,7 @@ io.on("connection", socket=>{
       if(!neighbors(p.pos).includes(idx)||!canEnter(room,p,idx)) return fail(socket,"เลือกได้เฉพาะห้องติดกัน");
       const target=roomAt(room,idx);
       g.actions=0;
-      p.hp=Math.max(0,p.hp-target.fear);
+      changeHp(room,p,-target.fear,`ใช้สกิลเข้ม → Fear ${target.fear}`);
       p.pos=idx;
       g.rolled=true; g.moved=true; g.mustMove=false; g.moveOptional=false; g.legal=[];
       addLog(room,`${p.name} ใช้พลังกายแทนสติ → ไป ${target.name} และเสีย HP ${target.fear}`);
@@ -1059,7 +1086,7 @@ io.on("connection", socket=>{
       const r1=Math.floor(p.pos/3),c1=p.pos%3,r2=Math.floor(target.pos/3),c2=target.pos%3;
       const distance=Math.abs(r1-r2)+Math.abs(c1-c2);
       g.actions=0;
-      p.hp=Math.max(0,p.hp-distance);
+      changeHp(room,p,-distance,`ใช้สกิลแก้ว → เดินผ่าน ${distance} ห้อง`);
       p.pos=target.pos;
       g.rolled=true; g.moved=true; g.mustMove=false; g.moveOptional=false; g.legal=[];
       addLog(room,`${p.name} ใช้สกิลแก้ว → ไปหา ${target.name} ผ่าน ${distance} ห้อง • HP -${distance}`);
@@ -1300,4 +1327,4 @@ setInterval(()=>{
   }
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.4 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.5 listening on :${PORT}`));

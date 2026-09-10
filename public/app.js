@@ -12,6 +12,15 @@ let ambientEnabled=localStorage.getItem("bpsAmbientV14")==="1" || localStorage.g
 let ambientVolume=Math.max(0,Math.min(1,Number(localStorage.getItem("bpsAmbientVolV14")||localStorage.getItem("bpsAmbientVolV13")||0.24)));
 let ambientTrack=localStorage.getItem("bpsAmbientTrackV14")||"haunted";
 const TRACK_NAMES={haunted:"บ้านร้าง",candle:"พิธีเทียนดับ",redrain:"คืนฝนแดง"};
+const PLAYER_META={
+  1:{label:"P1",name:"แดงอิฐ"},2:{label:"P2",name:"ฟ้าน้ำมนต์"},3:{label:"P3",name:"ทองธูป"},4:{label:"P4",name:"ม่วงคุณไสย"}
+};
+let diceAnimating=false,queuedState=null,queuedPrivateState=null,queuedHpEvents=[];
+let hpFxBusy=false;const hpFxQueue=[];
+let moveFxTimer=null,turnFxTimer=null;
+let chatRoomCode=null,chatSeenIds=new Set(),chatUnread=0;
+function playerSeat(p){return Math.max(1,Math.min(4,Number(p?.seat)||((state?.players||[]).findIndex(x=>x.id===p?.id)+1)||1))}
+function playerMeta(p){return PLAYER_META[playerSeat(p)]||PLAYER_META[1]}
 
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.remove("hidden");setTimeout(()=>e.classList.add("hidden"),2600)}
 function closeModal(){$("#modal").classList.add("hidden")}
@@ -164,6 +173,76 @@ function playCardFlipSound(){
   const ctx=ensureAudio();if(!ctx||ctx.state!=="running"||!sfxMaster)return;
   tone(520,.12,.018,"triangle",0,sfxMaster);tone(780,.16,.012,"sine",.05,sfxMaster);
 }
+function playHpSound(delta){
+  const ctx=ensureAudio();if(!ctx||ctx.state!=="running"||!sfxMaster)return;
+  if(delta<0){tone(115,.25,.065,"sawtooth",0,sfxMaster);tone(78,.32,.045,"triangle",.04,sfxMaster)}
+  else{tone(440,.18,.035,"sine",0,sfxMaster);tone(659.25,.28,.03,"sine",.1,sfxMaster);tone(880,.3,.02,"triangle",.18,sfxMaster)}
+}
+function playStepSound(){
+  const ctx=ensureAudio();if(!ctx||ctx.state!=="running"||!sfxMaster)return;
+  tone(145,.08,.035,"triangle",0,sfxMaster);tone(118,.09,.03,"triangle",.14,sfxMaster);
+}
+function playTurnSound(isMine=false){
+  const ctx=ensureAudio();if(!ctx||ctx.state!=="running"||!sfxMaster)return;
+  tone(isMine?523.25:392,.18,.028,"triangle",0,sfxMaster);tone(isMine?783.99:587.33,.3,.025,"sine",.13,sfxMaster);
+}
+function hpReason(prev,next,name){
+  const lastAt=Math.max(0,...((prev?.log||[]).map(x=>Number(x.at)||0)));
+  const fresh=(next?.log||[]).filter(x=>(Number(x.at)||0)>lastAt);
+  const candidate=[...fresh].reverse().find(x=>String(x.text||"").includes(name)||/HP|สวนกลับ|Curse|ฟื้น|ชุบ|Event|ห้อง/.test(String(x.text||"")))||fresh.at(-1);
+  return candidate?.text||"สถานะ HP เปลี่ยน";
+}
+function queueHpFx(delta,reason=""){
+  if(!delta)return;hpFxQueue.push({delta,reason});if(!hpFxBusy)showNextHpFx();
+}
+function showNextHpFx(){
+  if(cardRevealBusy){hpFxBusy=false;setTimeout(showNextHpFx,220);return}
+  const e=hpFxQueue.shift();if(!e){hpFxBusy=false;return}hpFxBusy=true;
+  const box=$("#hpFx"),card=$("#hpFxCard"),icon=$("#hpFxIcon");
+  card.className=`hp-fx-card ${e.delta<0?"damage":"heal"}`;
+  icon.innerHTML=e.delta<0?'<i></i><i></i><i></i>':'<span>❤</span><em>✦</em>';
+  $("#hpFxValue").textContent=`HP ${e.delta>0?"+":""}${e.delta}`;
+  $("#hpFxReason").textContent=e.reason;
+  box.classList.remove("hidden","hp-pop");void box.offsetWidth;box.classList.add("hp-pop");playHpSound(e.delta);
+  setTimeout(()=>{box.classList.add("hidden");hpFxBusy=false;showNextHpFx()},1450);
+}
+function showMoveFx(p,pos){
+  if(pos==null||!state?.game)return;const meta=playerMeta(p),room=roomAt(pos),tile=document.querySelector(`[data-room-index="${pos}"]`);
+  if(tile){tile.classList.remove("move-arrive");void tile.offsetWidth;tile.classList.add("move-arrive",`pcolor-${playerSeat(p)}`);setTimeout(()=>tile.classList.remove("move-arrive",`pcolor-${playerSeat(p)}`),950)}
+  clearTimeout(moveFxTimer);$("#moveFxPawn").textContent=meta.label;$("#moveFxPawn").className=`pcolor-${playerSeat(p)}`;$("#moveFxText").textContent=`${p.name} → ${room?.name||"ห้องใหม่"}`;$("#moveFx").classList.remove("hidden","move-pop");void $("#moveFx").offsetWidth;$("#moveFx").classList.add("move-pop");playStepSound();moveFxTimer=setTimeout(()=>$("#moveFx").classList.add("hidden"),1050);
+}
+function showTurnHandoff(p,isMine=false){
+  if(!p)return;clearTimeout(turnFxTimer);const meta=playerMeta(p);$("#turnFxText").textContent=isMine?`ถึงตาคุณแล้ว! · ${meta.label}`:`ถึงตา ${p.name} · ${meta.label}`;$("#turnFx").classList.remove("hidden","turn-pop");void $("#turnFx").offsetWidth;$("#turnFx").classList.add("turn-pop");playTurnSound(isMine);turnFxTimer=setTimeout(()=>$("#turnFx").classList.add("hidden"),1200);
+}
+function setChatCollapsed(collapsed){
+  const dock=$("#chatDock");if(!dock)return;dock.classList.toggle("collapsed",collapsed);$("#chatChevron").textContent=collapsed?"▲":"▼";localStorage.setItem("bpsChatCollapsedV15",collapsed?"1":"0");if(!collapsed){chatUnread=0;updateChatUnread();setTimeout(()=>$("#chatInput")?.focus(),50)}
+}
+function updateChatUnread(){const e=$("#chatUnread");if(!e)return;e.textContent=String(chatUnread);e.classList.toggle("hidden",chatUnread<=0)}
+function resetChat(roomCode=null){chatRoomCode=roomCode;chatSeenIds=new Set();chatUnread=0;if($("#chatMessages"))$("#chatMessages").innerHTML="";updateChatUnread()}
+function appendChatMessage(msg,{fromSnapshot=false}={}){
+  if(!msg?.id||chatSeenIds.has(msg.id))return;chatSeenIds.add(msg.id);
+  const wrap=$("#chatMessages");if(!wrap)return;const row=document.createElement("div"),meta=PLAYER_META[Math.max(1,Math.min(4,Number(msg.seat)||1))];row.className=`chat-message pcolor-${Number(msg.seat)||1}`;
+  const head=document.createElement("div"),badge=document.createElement("span"),name=document.createElement("b"),time=document.createElement("small"),body=document.createElement("p");badge.className="chat-seat";badge.textContent=meta?.label||`P${msg.seat||1}`;name.textContent=msg.name||"ผู้เล่น";time.textContent=new Date(msg.at||Date.now()).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});head.append(badge,name,time);body.textContent=msg.text||"";row.append(head,body);wrap.appendChild(row);while(wrap.children.length>60)wrap.firstChild.remove();wrap.scrollTop=wrap.scrollHeight;
+  const collapsed=$("#chatDock")?.classList.contains("collapsed");if(!fromSnapshot&&collapsed&&msg.playerId!==myId()){chatUnread++;updateChatUnread()}
+}
+function syncChatFromState(s){
+  if(chatRoomCode!==s?.code)resetChat(s?.code||null);(s?.chat||[]).forEach(msg=>appendChatMessage(msg,{fromSnapshot:true}));
+}
+function applyIncomingState(s){
+  const prev=state,previousPhase=prev?.phase||null,id=myId();
+  const moved=[];
+  if(prev?.phase==="game"&&s?.phase==="game"){
+    (s.players||[]).forEach(p=>{const old=prev.players?.find(x=>x.id===p.id);if(old&&old.pos!=null&&p.pos!=null&&old.pos!==p.pos)moved.push(p)});
+  }
+  const turnChanged=prev?.phase==="game"&&s?.phase==="game"&&prev.game?.turn!==s.game?.turn;
+  state=s;persistSession();syncChatFromState(s);render();
+  if(moved.length)setTimeout(()=>moved.forEach((p,i)=>setTimeout(()=>showMoveFx(p,p.pos),i*180)),60);
+  if(turnChanged){const ap=s.players?.[s.game?.turn||0];setTimeout(()=>showTurnHandoff(ap,ap?.id===id),120)}
+  if(previousPhase==="lobby"&&s.phase==="game")setTimeout(openSetupReveal,420);
+}
+function flushDiceQueues(kind=null){
+  diceAnimating=false;const s=queuedState,p=queuedPrivateState,h=[...queuedHpEvents];queuedState=null;queuedPrivateState=null;queuedHpEvents=[];if(s)applyIncomingState(s);if(p){mine=p;persistSession();render()}const fire=()=>h.forEach(e=>queueHpFx(e.delta,e.reason||"HP เปลี่ยน"));if(kind==="ritual"&&h.length)setTimeout(fire,1900);else fire();
+}
 migrateLegacyRoom();
 
 $("#createForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("createRoom",{name:$("#createName").value,sessionToken})});
@@ -185,6 +264,8 @@ $("#ambientToggle").onclick=toggleAmbient;
 $("#audioBtn").onclick=toggleAmbient;
 $("#ambientVolume").oninput=e=>setAmbientVolume(e.target.value);
 $("#ambientTrack").onchange=e=>setAmbientTrack(e.target.value);
+$("#chatToggle").onclick=()=>setChatCollapsed(!$("#chatDock").classList.contains("collapsed"));
+$("#chatForm").addEventListener("submit",e=>{e.preventDefault();const input=$("#chatInput"),text=input.value.trim();if(!text||!state?.code)return;socket.emit("chatMessage",{text});input.value="";input.focus()});
 $("#stayBtn").onclick=()=>socket.emit("stayInRoom");
 $("#escapeBtn").onclick=()=>socket.emit("escapeRoom");
 $("#rollBtn").onclick=()=>socket.emit("roll");
@@ -230,16 +311,17 @@ socket.on("disconnect",()=>{
 socket.on("resumeFailed",()=>{resetLocalRoom();state=null;mine=null;show("home");});
 socket.on("leftRoom",()=>{
   const oldName=mine?.name||$("#createName")?.value||"ติม";
-  resetLocalRoom();state=null;mine=null;leavingRoom=false;closeModal();show("home");if($("#createName"))$("#createName").value=oldName;toast("ออกจากห้องแล้ว");
+  resetLocalRoom();resetChat(null);state=null;mine=null;leavingRoom=false;closeModal();show("home");if($("#createName"))$("#createName").value=oldName;toast("ออกจากห้องแล้ว");
   if(createAfterLeave){createAfterLeave=false;setTimeout(()=>socket.emit("createRoom",{name:oldName,sessionToken}),80);}
 });
 
 socket.on("state",s=>{
-  const previous=state?.phase||null;
-  state=s;persistSession();render();
-  if(previous==="lobby"&&s.phase==="game") setTimeout(openSetupReveal,420);
+  if(diceAnimating&&state?.phase==="game"&&s?.phase==="game"){queuedState=s;return;}
+  applyIncomingState(s);
 });
-socket.on("privateState",p=>{mine=p;persistSession();render()});
+socket.on("privateState",p=>{if(diceAnimating&&state?.phase==="game"){queuedPrivateState=p;return;}mine=p;persistSession();render()});
+socket.on("chatMessage",msg=>appendChatMessage(msg));
+socket.on("hpFx",e=>{if(diceAnimating){queuedHpEvents.push(e);return}queueHpFx(e.delta,e.reason||"HP เปลี่ยน")});
 socket.on("cardReveal",enqueueCardReveal);
 socket.on("diceFx",showDiceFx);
 socket.on("ritualFx",showRitualFx);
@@ -254,9 +336,9 @@ function renderLobby(){
   $("#roomCode").textContent=state.code;
   $("#lobbyPlayers").innerHTML="";
   state.players.forEach(p=>{
-    const chosen=state.characters?.find(c=>c.key===p.characterKey);
-    const d=document.createElement("div");d.className="lobby-player";
-    d.innerHTML=`<span>${p.id===state.hostId?"👑 ":""}${p.name}${p.connected?"":" <em>Offline</em>"}</span><small>${p.id===myId()?"คุณ · ":""}${chosen?`เลือก ${chosen.name}`:"สุ่มตัวละคร"}</small>`;
+    const chosen=state.characters?.find(c=>c.key===p.characterKey),seat=playerSeat(p),meta=playerMeta(p);
+    const d=document.createElement("div");d.className=`lobby-player pcolor-${seat}`;
+    d.innerHTML=`<span><i class="lobby-seat">${meta.label}</i>${p.id===state.hostId?"👑 ":""}${p.name}${p.connected?"":" <em>Offline</em>"}</span><small>${p.id===myId()?`${meta.name} · คุณ · `:""}${chosen?`เลือก ${chosen.name}`:"สุ่มตัวละคร"}</small>`;
     $("#lobbyPlayers").appendChild(d)
   });
   const me=state.players.find(p=>p.id===myId());
@@ -342,7 +424,7 @@ function statsNode(){
 }
 function openStats(){openModal("📊 Playtest Stats",statsNode())}
 function reportPayload(){
-  return {project:"บ้านผีสิง",build:"V1.4",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
+  return {project:"บ้านผีสิง",build:"V1.5",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
     players:(state?.players||[]).map(p=>({name:p.name,character:p.char?.name||null,score:p.score,hp:p.hp,dead:p.dead})),
     settings:state?.settings||null,result:state?.result||null,stats:currentStats(),log:state?.log||[],exportedAt:new Date().toISOString()};
 }
@@ -379,6 +461,7 @@ function showNextCardReveal(){
   },1750);
 }
 function showDiceFx(e){
+  diceAnimating=true;queuedState=null;queuedPrivateState=null;queuedHpEvents=[];
   const box=$("#diceFx"),aEl=$("#dieA"),bEl=$("#dieB"),total=$("#diceFxTotal");
   $("#diceFxPlayer").textContent=e.playerName||"";
   $("#diceFxKind").textContent=e.kind==="ritual"?"ทอยทำพิธี":e.kind==="escape"?"ทอยหนีห้อง":"ทอยเดิน";
@@ -396,6 +479,7 @@ function showDiceFx(e){
     aEl.textContent=e.a;bEl.textContent=e.b;total.textContent=`รวม ${e.total}`;
     box.classList.remove("dice-rolling");box.classList.add("dice-result");
     playDiceTick(.075);setTimeout(()=>playDiceTick(.055),100);
+    flushDiceQueues(e.kind);
     diceTimer=setTimeout(()=>box.classList.add("hidden"),1600);
   },rollMs);
 }
@@ -421,7 +505,7 @@ function renderGame(){
   $("#curse").textContent=`${g.curse}/6`;
 
   $("#playerList").innerHTML="";
-  state.players.forEach(p=>{const d=document.createElement("div");d.className="player-row "+(p.isTurn?"turn ":"")+(p.dead?"dead ":"")+(p.connected?"":"offline");d.innerHTML=`<b>${p.dead?"☠️ ":""}${p.name} · ${p.char?.name||"—"}${p.connected?"":" · Offline"}</b><small>❤️ ${p.hp}/${p.char?.hp} · 🏅 ${p.score} · ${p.pos!==null?roomAt(p.pos).name:"—"} · มือ ${p.amuCount+p.sacCount} ใบ${p.dead?" · รอชุบชีวิต":""}</small>`;$("#playerList").appendChild(d)});
+  state.players.forEach(p=>{const seat=playerSeat(p),meta=playerMeta(p),d=document.createElement("div");d.className=`player-row pcolor-${seat} `+(p.isTurn?"turn ":"")+(p.dead?"dead ":"")+(p.connected?"":"offline");d.innerHTML=`<b><span class="player-color-dot"></span>${meta.label} · ${p.dead?"☠️ ":""}${p.name} · ${p.char?.name||"—"}${p.connected?"":" · Offline"}</b><small>❤️ ${p.hp}/${p.char?.hp} · 🏅 ${p.score} · ${p.pos!==null?roomAt(p.pos).name:"—"} · มือ ${p.amuCount+p.sacCount} ใบ${p.dead?" · รอชุบชีวิต":""}</small>`;$("#playerList").appendChild(d)});
 
   $("#log").innerHTML="";
   state.log.forEach(x=>{const d=document.createElement("div");d.textContent="• "+x.text;$("#log").appendChild(d)});
@@ -432,8 +516,9 @@ function renderGame(){
     const r=roomAt(i),b=document.createElement("button");
     const style=r.boss?"boss":(r.type==="คำสาป"?"curse":(r.type==="กับดัก"?"trap":(r.type==="ปลอดภัย"||r.type==="ธรรมดา"?"safe":"mystery")));
     b.className=`room room-${style} ${r.boss?"boss":""}`;
+    b.dataset.roomIndex=String(i);
     if(g.mustMove||g.moveOptional)b.classList.add(g.legal.includes(i)?"legal":"illegal");
-    const pawns=state.players.map((p,j)=>p.pos===i?`<span class="pawn ${p.dead?"pawn-dead":""}">P${j+1}</span>`:"").join("");
+    const pawns=state.players.map(p=>p.pos===i?`<span class="pawn pcolor-${playerSeat(p)} ${p.dead?"pawn-dead":""}">P${playerSeat(p)}</span>`:"").join("");
     b.innerHTML=`<div class="room-top"><div><b>${r.boss?"👻 ":""}${r.name}</b><small>${r.type}</small></div><span class="fear-badge">${r.fear}</span></div><div class="room-art">${r.boss?"BOSS":"ROOM"}</div><div class="room-bottom">${r.effectText?`<span>${r.effectText.split("•")[0]}</span>`:"<span>คลิกเพื่อดู Effect</span>"}<div class="pawns">${pawns}</div></div>`;
     b.onclick=()=>{
       if(isMyTurn()&&(g.mustMove||g.moveOptional)&&g.legal.includes(i)) socket.emit("move",{index:i});
@@ -497,7 +582,7 @@ function renderGame(){
 function renderPrivate(){
   if(!mine)return;
   $("#charName").textContent=mine.char?.name||"—";$("#charRole").textContent=mine.char?.role||"—";$("#charSkill").textContent=mine.char?.skill||"";
-  const mp=mePublic();$("#myRoom").textContent=mp?.pos!=null?roomAt(mp.pos).name:"—";$("#limits").textContent=`Amulet ${mine.amu.length}/5 · เครื่องเซ่น ${mine.sac.length}/7`;
+  const mp=mePublic(),seat=playerSeat(mp||mine),meta=PLAYER_META[seat]||PLAYER_META[1];$("#myRoom").textContent=mp?.pos!=null?roomAt(mp.pos).name:"—";$("#limits").textContent=`${mine.sac.length}/7`;$("#amuletCount").textContent=`${mine.amu.length}/5`;$("#myPawnColor").textContent=meta.label;$("#myPawnColor").className=`my-pawn-color pcolor-${seat}`;$("#myPawnLabel").textContent=`${meta.name} · ตัวเดินของคุณ`;
   $("#equip").innerHTML="";
   for(let i=0;i<Math.min(2,mine.char?.slots||0);i++){const c=mine.equip[i];const b=document.createElement("button");b.className="equip";b.textContent=c?c.name:`Equip ${i+1}`;b.disabled=!c||!isMyTurn();if(c)b.onclick=()=>socket.emit("unequip",{uid:c.uid});$("#equip").appendChild(b)}
   $("#amuHand").innerHTML="";
@@ -669,4 +754,7 @@ document.addEventListener("pointerdown",()=>{
   ensureAudio();
   if(ambientEnabled)startAmbient();
 },{once:true,capture:true});
+$("#amuletDock").classList.toggle("collapsed",localStorage.getItem("bpsAmuletCollapsedV15")==="1");
+$("#amuletDockToggle").onclick=()=>{const d=$("#amuletDock");d.classList.toggle("collapsed");localStorage.setItem("bpsAmuletCollapsedV15",d.classList.contains("collapsed")?"1":"0")};
+setChatCollapsed(localStorage.getItem("bpsChatCollapsedV15")!=="0");
 updateAmbientUI();

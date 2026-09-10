@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Online Friends Build V1.4</title>
+<title>บ้านผีสิง — Online Friends Build V1.5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
 
 <section id="home" class="screen active">
   <div class="hero">
-    <div class="eyebrow">ONLINE FRIENDS BUILD V1.4</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.5</div>
     <h1>บ้านผีสิง</h1>
     <p>สร้างโต๊ะ ส่ง Room Code ให้เพื่อน แล้วช่วยกันฟาร์มของก่อนเข้าห้องผี</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
@@ -38,7 +38,7 @@
   <div class="lobby-wrap">
     <div class="eyebrow">WAITING ROOM</div>
     <h1>Room <span id="roomCode">—</span></h1>
-    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 4 คนใน V1.4</p>
+    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 4 คนใน V1.5</p>
     <div class="room-code-tools">
       <button id="copyCodeBtn" class="secondary">📋 Copy Room Code</button>
       <button id="lobbyHelpBtn" class="secondary">? วิธีเล่น</button>
@@ -144,10 +144,12 @@
           <div class="char-art">CHARACTER ART</div><p id="charSkill"></p>
         </article>
         <div class="inventory">
-          <div class="inventory-head"><div><h3>พื้นที่ของฉัน</h3><small id="myRoom">—</small></div><span id="limits">—</span></div>
+          <div class="inventory-head">
+            <div><h3>พื้นที่ของฉัน</h3><small id="myRoom">—</small></div>
+            <div class="my-seat-wrap"><span id="myPawnColor" class="my-pawn-color pcolor-1">P1</span><small id="myPawnLabel">สีของฉัน</small></div>
+          </div>
           <div class="equip-row"><span>สวมใส่</span><div id="equip"></div></div>
-          <div class="hand-title">Amulet Hand</div><div id="amuHand" class="hand"></div>
-          <div class="hand-title">เครื่องเซ่น</div><div id="sacHand" class="hand"></div>
+          <div class="hand-title">เครื่องเซ่น <span id="limits">—</span></div><div id="sacHand" class="hand"></div>
         </div>
       </section>
     </main>
@@ -171,6 +173,21 @@
       </div>
     </aside>
   </div>
+
+  <section id="amuletDock" class="amulet-dock">
+    <button id="amuletDockToggle" class="amulet-dock-head">
+      <span>✦ AMULET HAND</span><b id="amuletCount">0/5</b><small>คลิกเพื่อย่อ/ขยาย</small>
+    </button>
+    <div id="amuHand" class="hand amulet-screen-hand"></div>
+  </section>
+
+  <aside id="chatDock" class="chat-dock collapsed">
+    <button id="chatToggle" class="chat-head"><span>💬 ห้องแชท</span><b id="chatUnread" class="chat-unread hidden">0</b><small id="chatChevron">▲</small></button>
+    <div class="chat-body">
+      <div id="chatMessages" class="chat-messages"></div>
+      <form id="chatForm" class="chat-form"><input id="chatInput" maxlength="180" autocomplete="off" placeholder="พิมพ์คุยกับเพื่อน..."><button type="submit">ส่ง</button></form>
+    </div>
+  </aside>
 
 </section>
 
@@ -199,6 +216,16 @@
   </label>
   <label class="ambient-volume"><span>VOL</span><input id="ambientVolume" type="range" min="0" max="100" value="24"></label>
 </div>
+
+<div id="hpFx" class="hp-fx hidden">
+  <div id="hpFxCard" class="hp-fx-card">
+    <div id="hpFxIcon" class="hp-fx-icon"></div>
+    <b id="hpFxValue">HP -1</b>
+    <span id="hpFxReason">—</span>
+  </div>
+</div>
+<div id="moveFx" class="move-fx hidden"><span id="moveFxPawn">P1</span><b id="moveFxText">เดินไป ห้อง...</b></div>
+<div id="turnFx" class="turn-fx hidden"><small>ส่งเทิร์น</small><b id="turnFxText">ถึงตา P2</b></div>
 
 <div id="cardRevealFx" class="card-reveal-fx hidden">
   <div id="cardRevealCard" class="card-reveal-card">
