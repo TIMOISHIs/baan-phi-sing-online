@@ -1,11 +1,15 @@
 const socket=io();
 const $=s=>document.querySelector(s);
 const show=id=>["home","lobby","game","result"].forEach(x=>$("#"+x).classList.toggle("active",x===id));
-const tokenKey="bpsSessionTokenV09",roomKey="bpsRoomCodeV09";
+const tokenKey="bpsSessionTokenV09",roomKey="bpsRoomCodeV13",legacyRoomKey="bpsRoomCodeV09";
 const makeToken=()=>globalThis.crypto?.randomUUID?.().replaceAll("-","")||`${Date.now()}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
 let sessionToken=localStorage.getItem(tokenKey)||makeToken();
 localStorage.setItem(tokenKey,sessionToken);
 let state=null,mine=null,tutorialShown=false;
+let createAfterLeave=false,leavingRoom=false;
+let audioCtx=null,ambientMaster=null,ambientNodes=[],ambientTimer=null;
+let ambientEnabled=localStorage.getItem("bpsAmbientV13")==="1";
+let ambientVolume=Math.max(0,Math.min(1,Number(localStorage.getItem("bpsAmbientVolV13")||0.24)));
 
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.remove("hidden");setTimeout(()=>e.classList.add("hidden"),2600)}
 function closeModal(){$("#modal").classList.add("hidden")}
@@ -18,8 +22,52 @@ function isMyTurn(){return !!myId()&&activePlayer()?.id===myId()}
 function isHost(){return !!myId()&&state?.hostId===myId()}
 function persistSession(){
   if(mine?.sessionToken){sessionToken=mine.sessionToken;localStorage.setItem(tokenKey,sessionToken)}
-  if(state?.code&&mine?.id)localStorage.setItem(roomKey,state.code);
+  if(state?.code&&mine?.id){localStorage.setItem(roomKey,state.code);localStorage.removeItem(legacyRoomKey)}
 }
+
+function resetLocalRoom(){
+  localStorage.removeItem(roomKey);localStorage.removeItem(legacyRoomKey);
+}
+function leaveCurrentRoom({newRoom=false}={}){
+  if(leavingRoom)return;
+  const warning=state?.phase==="game"?"ออกจากเกมนี้เลยไหม? ที่นั่งของคุณจะถูกนำออกจากห้อง และผู้เล่นที่เหลือจะเล่นต่อได้":"ออกจากห้องนี้ไหม?";
+  if(state&&!confirm(warning))return;
+  createAfterLeave=!!newRoom;leavingRoom=true;
+  if(!state?.code){resetLocalRoom();state=null;mine=null;leavingRoom=false;show("home");return;}
+  socket.emit("leaveRoom");
+}
+function migrateLegacyRoom(){const legacy=localStorage.getItem(legacyRoomKey);if(legacy&&!localStorage.getItem(roomKey))localStorage.setItem(roomKey,legacy)}
+function updateAmbientUI(){
+  const label=ambientEnabled?"🔊 เสียงหลอน ON":"🎵 เปิดเสียงหลอน";
+  [$("#ambientToggle"),$("#audioBtn")].forEach(b=>{if(b){b.textContent=label;b.classList.toggle("active",ambientEnabled)}});
+  if($("#ambientVolume"))$("#ambientVolume").value=String(Math.round(ambientVolume*100));
+}
+function createNoiseSource(ctx){
+  const len=Math.floor(ctx.sampleRate*8),buf=ctx.createBuffer(1,len,ctx.sampleRate),data=buf.getChannelData(0);let last=0;
+  for(let i=0;i<len;i++){const white=Math.random()*2-1;last=last*0.985+white*0.015;data[i]=last*0.75;}
+  const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;return src;
+}
+function scheduleHauntTone(){
+  if(!ambientEnabled||!audioCtx||!ambientMaster)return;
+  const ctx=audioCtx,now=ctx.currentTime,choices=[174.61,196,207.65,233.08,261.63],freq=choices[Math.floor(Math.random()*choices.length)]*(Math.random()<0.18?0.5:1);
+  const o=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();o.type=Math.random()<0.55?"sine":"triangle";o.frequency.value=freq;f.type="lowpass";f.frequency.value=900;
+  g.gain.setValueAtTime(0.0001,now);g.gain.exponentialRampToValueAtTime(0.018+Math.random()*0.02,now+0.8);g.gain.exponentialRampToValueAtTime(0.0001,now+5+Math.random()*3);
+  o.connect(f).connect(g).connect(ambientMaster);o.start(now);o.stop(now+9);ambientTimer=setTimeout(scheduleHauntTone,6500+Math.random()*9500);
+}
+async function startAmbient(){
+  if(!audioCtx){
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC){toast("Browser นี้ไม่รองรับ Web Audio");return;}
+    audioCtx=new AC();ambientMaster=audioCtx.createGain();ambientMaster.gain.value=ambientVolume;ambientMaster.connect(audioCtx.destination);
+    const droneBus=audioCtx.createGain(),droneFilter=audioCtx.createBiquadFilter();droneBus.gain.value=0.05;droneFilter.type="lowpass";droneFilter.frequency.value=180;droneBus.connect(droneFilter).connect(ambientMaster);
+    [43.65,65.41].forEach((freq,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain(),lfo=audioCtx.createOscillator(),lg=audioCtx.createGain();o.type=i?"triangle":"sine";o.frequency.value=freq;g.gain.value=i?0.32:0.42;lfo.frequency.value=i?0.041:0.027;lg.gain.value=i?1.2:0.8;lfo.connect(lg).connect(o.detune);o.connect(g).connect(droneBus);o.start();lfo.start();ambientNodes.push(o,g,lfo,lg);});
+    const wind=createNoiseSource(audioCtx),windFilter=audioCtx.createBiquadFilter(),windGain=audioCtx.createGain();windFilter.type="bandpass";windFilter.frequency.value=430;windFilter.Q.value=0.45;windGain.gain.value=0.12;wind.connect(windFilter).connect(windGain).connect(ambientMaster);wind.start();ambientNodes.push(wind,windFilter,windGain);
+  }
+  await audioCtx.resume();ambientEnabled=true;localStorage.setItem("bpsAmbientV13","1");ambientMaster.gain.setTargetAtTime(Math.max(0.0001,ambientVolume),audioCtx.currentTime,0.08);clearTimeout(ambientTimer);scheduleHauntTone();updateAmbientUI();
+}
+function stopAmbient(){ambientEnabled=false;localStorage.setItem("bpsAmbientV13","0");clearTimeout(ambientTimer);ambientTimer=null;if(ambientMaster&&audioCtx)ambientMaster.gain.setTargetAtTime(0.0001,audioCtx.currentTime,0.08);updateAmbientUI()}
+function toggleAmbient(){ambientEnabled?stopAmbient():startAmbient()}
+function setAmbientVolume(value){ambientVolume=Math.max(0,Math.min(1,Number(value)/100));localStorage.setItem("bpsAmbientVolV13",String(ambientVolume));if(ambientMaster&&audioCtx&&ambientEnabled)ambientMaster.gain.setTargetAtTime(Math.max(0.0001,ambientVolume),audioCtx.currentTime,0.05)}
+migrateLegacyRoom();
 
 $("#createForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("createRoom",{name:$("#createName").value,sessionToken})});
 $("#joinForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("joinRoom",{name:$("#joinName").value,code:$("#joinCode").value,sessionToken})});
@@ -32,6 +80,13 @@ $("#settingFailedSac").onchange=e=>socket.emit("updateSettings",{key:"failedSacr
 $("#settingBreak").onchange=e=>socket.emit("updateSettings",{key:"equipmentBreak",value:e.target.value});
 $("#statsBtn").onclick=()=>openStats();
 $("#downloadReportBtn").onclick=()=>downloadReport();
+$("#lobbyLeaveBtn").onclick=()=>leaveCurrentRoom();
+$("#gameLeaveBtn").onclick=()=>leaveCurrentRoom();
+$("#resultHomeBtn").onclick=()=>leaveCurrentRoom();
+$("#resultNewRoomBtn").onclick=()=>leaveCurrentRoom({newRoom:true});
+$("#ambientToggle").onclick=toggleAmbient;
+$("#audioBtn").onclick=toggleAmbient;
+$("#ambientVolume").oninput=e=>setAmbientVolume(e.target.value);
 $("#stayBtn").onclick=()=>socket.emit("stayInRoom");
 $("#escapeBtn").onclick=()=>socket.emit("escapeRoom");
 $("#rollBtn").onclick=()=>socket.emit("roll");
@@ -74,10 +129,13 @@ socket.on("connect",()=>{
 socket.on("disconnect",()=>{
   const el=$("#connectionState");if(el){el.textContent="● Reconnecting…";el.className="connection-state offline"}
 });
-socket.on("resumeFailed",()=>{
-  localStorage.removeItem(roomKey);
-  state=null;mine=null;show("home");
+socket.on("resumeFailed",()=>{resetLocalRoom();state=null;mine=null;show("home");});
+socket.on("leftRoom",()=>{
+  const oldName=mine?.name||$("#createName")?.value||"ติม";
+  resetLocalRoom();state=null;mine=null;leavingRoom=false;closeModal();show("home");if($("#createName"))$("#createName").value=oldName;toast("ออกจากห้องแล้ว");
+  if(createAfterLeave){createAfterLeave=false;setTimeout(()=>socket.emit("createRoom",{name:oldName,sessionToken}),80);}
 });
+
 socket.on("state",s=>{
   const previous=state?.phase||null;
   state=s;persistSession();render();
@@ -185,7 +243,7 @@ function statsNode(){
 }
 function openStats(){openModal("📊 Playtest Stats",statsNode())}
 function reportPayload(){
-  return {project:"บ้านผีสิง",build:"V1.2",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
+  return {project:"บ้านผีสิง",build:"V1.3",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
     players:(state?.players||[]).map(p=>({name:p.name,character:p.char?.name||null,score:p.score,hp:p.hp,dead:p.dead})),
     settings:state?.settings||null,result:state?.result||null,stats:currentStats(),log:state?.log||[],exportedAt:new Date().toISOString()};
 }
@@ -458,3 +516,7 @@ function renderResult(){
   $("#resultStats").innerHTML="";
   $("#resultStats").appendChild(statsNode());
 }
+
+// Resume a previously enabled ambience after the next real user gesture (browser autoplay policy).
+document.addEventListener("pointerdown",()=>{if(ambientEnabled)startAmbient()},{once:true,capture:true});
+updateAmbientUI();

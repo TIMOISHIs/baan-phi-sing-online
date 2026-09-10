@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Online Test Candidate V1.2</title>
+<title>บ้านผีสิง — Online Friends Build V1.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
 
 <section id="home" class="screen active">
   <div class="hero">
-    <div class="eyebrow">ONLINE TEST CANDIDATE V1.2</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.3</div>
     <h1>บ้านผีสิง</h1>
     <p>สร้างโต๊ะ ส่ง Room Code ให้เพื่อน แล้วช่วยกันฟาร์มของก่อนเข้าห้องผี</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
@@ -38,10 +38,11 @@
   <div class="lobby-wrap">
     <div class="eyebrow">WAITING ROOM</div>
     <h1>Room <span id="roomCode">—</span></h1>
-    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 4 คนใน V1.2</p>
+    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 4 คนใน V1.3</p>
     <div class="room-code-tools">
       <button id="copyCodeBtn" class="secondary">📋 Copy Room Code</button>
       <button id="lobbyHelpBtn" class="secondary">? วิธีเล่น</button>
+      <button id="lobbyLeaveBtn" class="leave-tool">↩ ออกจากห้อง</button>
     </div>
     <div id="lobbyPlayers" class="lobby-players"></div>
     <div class="character-select">
@@ -99,9 +100,11 @@
     <div class="hud-stat">🧠 <b id="sanity">—</b><small>สติ</small></div>
     <div class="hud-stat">👻 <b id="curse">—</b><small>Curse</small></div>
     <span id="connectionState" class="connection-state online">● Online</span>
+    <button id="audioBtn" class="hud-tool audio-tool">🎵 บรรยากาศ</button>
     <button id="roomRulesBtn" class="hud-tool">▦ ห้อง</button>
     <button id="helpBtn" class="hud-tool">? วิธีเล่น</button>
     <button id="statsBtn" class="hud-tool">📊 Playtest</button>
+    <button id="gameLeaveBtn" class="leave-tool hud-leave">↩ ออกห้อง</button>
   </header>
 
   <div class="table">
@@ -118,7 +121,7 @@
 
     <main class="board-zone">
       <div class="board-top">
-        <div><h3>บ้าน 3×3</h3><small>โต๊ะกลาง · First Real Playtest Beta</small></div>
+        <div><h3>บ้าน 3×3</h3><small>โต๊ะกลาง · Online Friends Build</small></div>
         <div class="board-controls">
           <button id="stayBtn" class="stay-button" style="display:none">อยู่ห้องเดิม</button>
           <button id="escapeBtn" class="escape-button" style="display:none">🚪 ทอยหนีห้อง · 1🕯</button>
@@ -178,8 +181,17 @@
     <div id="results"></div>
     <div id="resultStats" class="result-stats"></div>
     <button id="downloadReportBtn" class="secondary report-download">⬇️ Export Playtest JSON</button>
+    <div class="result-actions">
+      <button id="resultHomeBtn" class="secondary">↩ ออกจากห้อง</button>
+      <button id="resultNewRoomBtn" class="primary">＋ สร้างห้องใหม่ทันที</button>
+    </div>
   </div>
 </section>
+
+<div id="ambientDock" class="ambient-dock">
+  <button id="ambientToggle" class="ambient-toggle">🎵 เปิดเสียงหลอน</button>
+  <label class="ambient-volume"><span>VOL</span><input id="ambientVolume" type="range" min="0" max="100" value="24"></label>
+</div>
 
 <div id="diceFx" class="dice-fx hidden">
   <div class="dice-fx-card">

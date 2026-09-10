@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.2"}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.3"}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -616,6 +616,34 @@ function checkTurn(socket,room){
   return p;
 }
 
+function transferHostAfterLeave(room,oldHostId){
+  if(room.hostId!==oldHostId) return;
+  const next=room.players.find(x=>x.socketId)||room.players[0]||null;
+  room.hostId=next?.id||null;
+  if(next) addLog(room,`${next.name} ได้เป็น Host แทน`);
+}
+function removePlayerFromRoom(room,p,socket,{intentional=true}={}){
+  const idx=room.players.findIndex(x=>x.id===p.id);
+  if(idx<0) return;
+  const wasHost=room.hostId===p.id;
+  const wasActive=room.phase==="game"&&room.game&&room.players[room.game.turn]?.id===p.id;
+  if(room.trade&&(room.trade.fromId===p.id||room.trade.toId===p.id)){
+    room.trade=null;if(room.game) room.game.traded=true;
+    addLog(room,`Trade ถูกยกเลิกเพราะ ${p.name} ออกจากห้อง`);
+  }
+  room.players.splice(idx,1);
+  if(socket){socket.leave(room.code);socket.data.roomCode=null;}
+  if(intentional) addLog(room,`${p.name} ออกจากห้อง`);
+  if(room.players.length===0){rooms.delete(room.code);return;}
+  if(wasHost) transferHostAfterLeave(room,p.id);
+  if(room.phase==="game"&&room.game){
+    if(wasActive){
+      room.game.turn=idx%room.players.length;
+      if(!checkDefeat(room)) beginTurn(room);
+    }else if(idx<room.game.turn){room.game.turn=Math.max(0,room.game.turn-1);}
+  }
+}
+
 function cardFromPlayer(p,uid){
   const az=p.amu.findIndex(c=>c.uid===uid);
   if(az>=0) return {zone:"amu",index:az,card:p.amu[az]};
@@ -671,7 +699,7 @@ io.on("connection", socket=>{
     }
 
     if(room.phase!=="lobby") return fail(socket,"เกมเริ่มไปแล้ว — ใช้ Session เดิมเพื่อกลับเข้าห้อง");
-    if(room.players.length>=4) return fail(socket,"V1.2 เปิดเทสสูงสุด 4 คนก่อน");
+    if(room.players.length>=4) return fail(socket,"V1.3 เปิดเทสสูงสุด 4 คนก่อน");
     if(room.players.some(p=>p.socketId===socket.id)) return;
     const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),characterKey:null};
     room.players.push(p);
@@ -693,6 +721,18 @@ io.on("connection", socket=>{
     socket.join(code);socket.data.roomCode=code;
     if(wasOffline) addLog(room,`${p.name} เชื่อมต่อกลับเข้าห้อง`);
     emitRoom(room);
+  });
+
+  socket.on("leaveRoom", ()=>{
+    const code=socket.data.roomCode;
+    const room=rooms.get(code);
+    if(!room){socket.data.roomCode=null;socket.emit("leftRoom",{ok:true,code:null});return;}
+    const p=playerBySocket(room,socket.id);
+    if(!p){socket.leave(code);socket.data.roomCode=null;socket.emit("leftRoom",{ok:true,code});return;}
+    const oldCode=room.code;
+    removePlayerFromRoom(room,p,socket,{intentional:true});
+    socket.emit("leftRoom",{ok:true,code:oldCode});
+    const stillThere=rooms.get(oldCode);if(stillThere) emitRoom(stillThere);
   });
 
   socket.on("selectCharacter", ({key=null})=>{
@@ -1216,4 +1256,4 @@ setInterval(()=>{
   }
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.2 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.3 listening on :${PORT}`));

@@ -156,6 +156,11 @@ function makeClient() {
     const resumedPublic = resumedState.players.find(p => p.id === oldFriendId);
     if (!resumedPublic?.connected) throw new Error("reconnected player not marked online");
 
+    const leftAckP = waitEvent(B2, "leftRoom", x => x?.ok === true);
+    const hostSeesLeaveP = waitEvent(A, "state", s => s.code === code && s.players.length === 1 && !s.players.some(p => p.id === oldFriendId));
+    B2.emit("leaveRoom");
+    await Promise.all([leftAckP, hostSeesLeaveP]);
+
     console.log(JSON.stringify({
       ok:true,
       health,
@@ -164,7 +169,8 @@ function makeClient() {
       sameMap:true,
       privateHandsProtected:true,
       turnSync:true,
-      reconnectPreservedSeat:true
+      reconnectPreservedSeat:true,
+      leaveRoomRemovesSeat:true
     }, null, 2));
   } finally {
     try { A?.disconnect(); } catch {}

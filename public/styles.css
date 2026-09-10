@@ -201,3 +201,11 @@ body:before{
 .setup-reveal{display:grid;gap:12px}.setup-ghost{text-align:center;padding:22px;border:1px solid #6e3a32;border-radius:14px;background:radial-gradient(circle at 50% 50%,#402522,#151313 70%)}.setup-ghost small{color:#b99b76;letter-spacing:.14em}.setup-ghost h2{font-size:40px;margin:4px 0}.setup-ghost span{font-size:10px;color:var(--muted)}
 .setup-notes{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.setup-notes>div{border:1px solid var(--line);border-radius:10px;padding:9px;background:#101212}.setup-notes b,.setup-notes span{display:block}.setup-notes b{font-size:11px}.setup-notes span{font-size:9px;color:var(--muted);margin-top:3px}.setup-enter{width:100%}
 @media(max-width:700px){.settings-grid{grid-template-columns:1fr}.setup-notes{grid-template-columns:1fr}.setup-ghost h2{font-size:30px}}
+
+/* V1.3 — Leave Room + Original Procedural Ambient */
+.leave-tool{border:1px solid #6d4038;background:#2a1917;color:#e2a49b;border-radius:9px;padding:8px 10px}.hud-leave{white-space:nowrap}.leave-tool:hover{border-color:#9a5147;background:#38201d}
+.result-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:13px}
+.ambient-dock{position:fixed;right:14px;bottom:14px;z-index:42;display:flex;align-items:center;gap:7px;padding:7px;background:rgba(11,13,12,.9);border:1px solid #47433a;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.35);backdrop-filter:blur(8px)}
+.ambient-toggle{border:1px solid #5b5140;background:#1a1c1a;border-radius:9px;padding:8px 10px;font-size:9px;white-space:nowrap}.ambient-toggle.active,.audio-tool.active{border-color:#a9824d;color:#e0c38c;background:#282117}
+.ambient-volume{display:flex;align-items:center;gap:5px;margin:0}.ambient-volume span{font-size:7px;color:#9b9589}.ambient-volume input{width:76px;margin:0;padding:0;accent-color:#b28c51}
+@media(max-width:720px){.ambient-dock{right:7px;bottom:7px}.ambient-volume input{width:55px}.ambient-toggle{font-size:8px;padding:7px}.hud-leave{padding:7px 8px}.hud .audio-tool{display:none}}
