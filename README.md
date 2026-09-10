@@ -1,22 +1,33 @@
-# บ้านผีสิง V1.6 — Full Amulet + Combat Presentation
+# บ้านผีสิง V1.7 — Turn Presentation & Pace
 
-- รอ animation เต๋าหยุดก่อนจึงอัปเดต state/โชว์ห้องที่เดินได้
-- HP ลด/เพิ่ม: server ส่ง HP event ตรงไปยังผู้เล่นคนนั้น พร้อมสาเหตุ + notification กลางจอ + SFX
-- เดินย้ายห้อง: destination pulse + banner + footstep SFX
-- เปลี่ยนเทิร์น: handoff notification + chime
-- Amulet Hand ย้ายเป็น floating hand ติดหน้าจอ แยกจาก “พื้นที่ของฉัน”
-- พื้นที่ของฉันเหลือ Character / สีตัวเดิน / สวมใส่ / เครื่องเซ่น
-- P1–P4 มีสีประจำที่ต่างกันและ seat ไม่สลับเมื่อคนอื่นออกจากห้อง
-- Chat Box realtime ด้านขวาเหนือเพลง เปิด/ย่อได้ มี unread badge และเก็บข้อความล่าสุดใน room memory
+Online multiplayer playtest build สำหรับบอร์ดเกม “บ้านผีสิง”
 
-หมายเหตุ: Chat และ Room state ยังเป็น in-memory เหมือนระบบเดิม จึงหายเมื่อ Railway restart/redeploy.
+## V1.7 highlights
+- Cinematic Dice Focus: ปุ่มทอยกลางจอ + dim ฉากหลัง + full-screen dice animation
+- Turn transition แบบสไลด์ขวา → กลาง → ซ้าย พร้อม SFX
+- Action buttons แบบ tactile bubble และ TURN END แยกด้านขวา
+- ธูปหมด 3 ดอก → Auto End Turn หลัง resolve effect ที่ค้างอยู่
+- Turn Pace Ring 60 วินาที ไม่มีตัวเลข และเตือนเสียงเฉพาะเจ้าของเทิร์นโดยไม่ Skip
+- Ritual flow: เลือกเครื่องเซ่น → ทอย → เลือก equipment modifier → เทียบเงื่อนไข → แสดงผล
 
-## Run
-`npm start`
+## ระบบเดิมที่ยังอยู่
+- Multiplayer room / reconnect / host transfer / chat
+- 3×3 random rooms + Ghost/Boss position
+- Amulet Deck 54 ใบตามข้อมูล playtest ปัจจุบัน
+- Floating Amulet Hand, อ่าน Amulet/Character ได้ตลอด
+- Equipment stats, Sanity cards, HP feedback, movement effect
+- Playtest settings + export stats
 
-## Test
-`npm run smoke`
+ดูรายละเอียดรอบนี้ใน `V1.7-CHANGELOG.md`
 
+## Run locally
+```bash
+npm install
+npm start
+```
+จากนั้นเปิด `http://localhost:3000`
 
-## V1.6
-ดูรายละเอียดใน `V1.6-CHANGELOG.md` — รอบนี้ล็อก Amulet Deck 54 ใบ, sanity decision, equipment stats, combat modifier presentation, card inspection และ fan hand UI.
+## Smoke test
+```bash
+npm run smoke
+```

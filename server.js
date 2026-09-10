@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.6",amuletCards:54}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.7",amuletCards:54,autoEndAtZero:true}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -62,7 +62,7 @@ const ROOMS = [
   { id:"STORAGE", name:"ห้องเก็บของ", type:"ลึกลับน่าค้นหา", fear:3, amu:true, sac:true, effectId:"storage", effectText:"จั่วได้ ‘อาหารเซ่นผี’ → HP +1 • จั่วได้ของตำนาน(ชมพู) → ทิ้งเครื่องเซ่น 2 ชิ้น (ทริกเกอร์อาหารรอข้อมูล tag การ์ด)" },
   { id:"UNDER_STAIRS", name:"ห้องใต้บันได", type:"ลึกลับน่าค้นหา", fear:3, amu:true, sac:true, capacity:1, effectId:"under_stairs", effectText:"อยู่ได้ 1 คน • จั่วเครื่องเซ่นครั้งละ 2 ชิ้น แต่ HP -2" },
   { id:"BEDROOM", name:"ห้องนอน", type:"ลึกลับน่าค้นหา", fear:3, amu:true, sac:true, effectId:"bedroom", effectText:"จั่วได้ ‘ดอกไม้ธูปเทียน’ → จั่วเพิ่ม 1 • จั่วได้ ‘อาหารเซ่นไหว้’ → HP -1 (รอข้อมูล tag การ์ดเพื่อเปิดใช้ Trigger)" },
-  { id:"OFFICE", name:"ห้องทำงาน", type:"ปลอดภัย", fear:1, amu:true, effectId:"event_pick_discard", effectText:"หากจั่วได้การ์ดเหตุการณ์ → Effect เลือกจากกองทิ้งพักไว้ใน V1.6 เพราะ Amulet ทุกใบวนกลับใต้กอง" }
+  { id:"OFFICE", name:"ห้องทำงาน", type:"ปลอดภัย", fear:1, amu:true, effectId:"event_pick_discard", effectText:"หากจั่วได้การ์ดเหตุการณ์ → Effect เลือกจากกองทิ้งพักไว้ใน V1.7 เพราะ Amulet ทุกใบวนกลับใต้กอง" }
 ];
 
 const AMULETS = [
@@ -441,7 +441,21 @@ function privateSnapshot(room, socketId){
     char:p.char || null
   };
 }
+function shouldAutoEndTurn(room){
+  if(room.phase!=="game"||!room.game)return false;
+  const g=room.game;if(g.actions>0)return false;
+  if(g.pendingRitual||g.pendingRoomEffect||g.sanityDecision||g.mustMove||g.moveOptional||room.trade)return false;
+  return !!active(room);
+}
+function maybeAutoEndTurn(room){
+  if(!shouldAutoEndTurn(room))return false;
+  const p=active(room);
+  addLog(room,`${p.name} ใช้ธูปครบ 3 ดอก → TURN END อัตโนมัติ`);
+  advanceToNextAlive(room);
+  return true;
+}
 function emitRoom(room){
+  maybeAutoEndTurn(room);
   room.updatedAt=Date.now();
   io.to(room.code).emit("state", publicSnapshot(room));
   room.players.forEach(p=>{
@@ -615,10 +629,10 @@ function applyEventCard(room,p,c){
       const r1=Math.floor(p.pos/3),c1=p.pos%3,r2=Math.floor(i/3),c2=i%3;
       if(Math.abs(r1-r2)+Math.abs(c1-c2)===2 && canEnter(room,p,i)) choices.push(i);
     }
-    if(choices.length) g.pendingRoomEffect={id:`event-move-${Date.now()}`,type:"eventMoveTwo",playerId:p.id,reason:`Event: ${c.name} • V1.6 ตีความ “วิ่งต่อไป 2 ห้อง” = เลือกปลายทางห่าง 2 ก้าว`,options:choices.map(i=>({index:i,name:roomAt(room,i).name,fear:roomAt(room,i).fear}))};
+    if(choices.length) g.pendingRoomEffect={id:`event-move-${Date.now()}`,type:"eventMoveTwo",playerId:p.id,reason:`Event: ${c.name} • V1.7 ตีความ “วิ่งต่อไป 2 ห้อง” = เลือกปลายทางห่าง 2 ก้าว`,options:choices.map(i=>({index:i,name:roomAt(room,i).name,fear:roomAt(room,i).fear}))};
   }else if(id==="atf_drop3"){
-    addLog(room,`${p.name} จั่ว ${c.name} → คำว่า ATF ใน Sheet ยังไม่ระบุว่าเป็นการ์ดกลุ่มใด จึงแสดงผลข้อความไว้ก่อนใน V1.6`);
-    if(p.socketId) io.to(p.socketId).emit("errorMessage","Event ‘ช่วยด้วยย!’: ATF ยังไม่ระบุว่าเป็นการ์ดประเภทใดใน Sheet — V1.6 ยังไม่ทิ้ง 3 ใบอัตโนมัติ");
+    addLog(room,`${p.name} จั่ว ${c.name} → คำว่า ATF ใน Sheet ยังไม่ระบุว่าเป็นการ์ดกลุ่มใด จึงแสดงผลข้อความไว้ก่อนใน V1.7`);
+    if(p.socketId) io.to(p.socketId).emit("errorMessage","Event ‘ช่วยด้วยย!’: ATF ยังไม่ระบุว่าเป็นการ์ดประเภทใดใน Sheet — V1.7 ยังไม่ทิ้ง 3 ใบอัตโนมัติ");
   }else if(id==="to_curse"){
     const choices=g.rooms.map((r,i)=>({r,i})).filter(x=>x.i!==g.bossIndex&&x.r.type==="คำสาป");
     if(choices.length){const dest=choices[Math.floor(Math.random()*choices.length)].i;p.pos=dest;addLog(room,`${p.name} โดนสิง → ไป ${roomAt(room,dest).name} ทันที`);}
@@ -884,7 +898,7 @@ io.on("connection", socket=>{
     }
 
     if(room.phase!=="lobby") return fail(socket,"เกมเริ่มไปแล้ว — ใช้ Session เดิมเพื่อกลับเข้าห้อง");
-    if(room.players.length>=4) return fail(socket,"V1.6 เปิดเทสสูงสุด 4 คนก่อน");
+    if(room.players.length>=4) return fail(socket,"V1.7 เปิดเทสสูงสุด 4 คนก่อน");
     if(room.players.some(p=>p.socketId===socket.id)) return;
     const seat=[1,2,3,4].find(n=>!room.players.some(x=>(x.seat||0)===n)) || Math.min(4,room.players.length+1);
     const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),seat,characterKey:null};
@@ -1086,7 +1100,7 @@ io.on("connection", socket=>{
         changeHp(room,p,1,`${currentRoom.name}: จั่ว Event`);
         addLog(room,`${currentRoom.name}: จั่ว Event → HP +1`);
       }
-      if(currentRoom?.effectId==="event_pick_discard") addLog(room,`${currentRoom.name}: Effect กองทิ้งพักไว้ใน V1.6 เพราะ Amulet ทุกใบวนใต้กอง`);
+      if(currentRoom?.effectId==="event_pick_discard") addLog(room,`${currentRoom.name}: Effect กองทิ้งพักไว้ใน V1.7 เพราะ Amulet ทุกใบวนใต้กอง`);
     }else if(currentRoom?.effectId==="equip_free" && c.type==="equip" && p.equip.length<Math.min(2,p.char.slots)){
       p.equip.push(c);
       addLog(room,`${p.name} จั่ว ${c.name} ในห้องน้ำ → สวมใส่ทันทีฟรี`);
@@ -1222,7 +1236,7 @@ io.on("connection", socket=>{
     const card=removeCard(p,ref);
     revealCard(room,p,card,"amulet","play");
     returnAmuletToBottom(room,card,"ใช้คาถาอาคมแบบ Manual Resolve");
-    addLog(room,`${p.name} ใช้คาถา ${card.name} • ${card.condition||""} → ${card.effect||""} (V1.6 Manual Resolve)`);
+    addLog(room,`${p.name} ใช้คาถา ${card.name} • ${card.condition||""} → ${card.effect||""} (V1.7 Manual Resolve)`);
     io.to(room.code).emit("manualSpellFx",{playerName:p.name,name:card.name,condition:card.condition||"",effect:card.effect||""});
     emitRoom(room);
   });
@@ -1516,4 +1530,4 @@ setInterval(()=>{
   }
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.6 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.7 listening on :${PORT}`));

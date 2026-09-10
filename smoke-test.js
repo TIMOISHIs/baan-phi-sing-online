@@ -1,4 +1,4 @@
-// V1.6 regression gate: room sync, 54-card Amulet deck metadata, sanity decision flow, reconnect, chat.
+// V1.7 regression gate: room sync, 54-card Amulet deck metadata, sanity decision flow, reconnect, chat.
 
 const { spawn } = require("child_process");
 const http = require("http");
@@ -72,7 +72,7 @@ function makeClient() {
   try {
     const health = await waitHealth();
     if (!health.ok) throw new Error("health returned not ok");
-    if (health.build !== "1.6" || health.amuletCards !== 54) throw new Error(`unexpected build/deck metadata: ${JSON.stringify(health)}`);
+    if (health.build !== "1.7" || health.amuletCards !== 54 || health.autoEndAtZero !== true) throw new Error(`unexpected build/deck metadata: ${JSON.stringify(health)}`);
 
     A = makeClient();
     B = makeClient();
@@ -97,6 +97,11 @@ function makeClient() {
     const hostSeat = twoA.players.find(p => p.id === aPrivate.id)?.seat;
     const friendSeat = twoA.players.find(p => p.id === bPrivate.id)?.seat;
     if (hostSeat !== 1 || friendSeat !== 2) throw new Error(`seat colors invalid: ${hostSeat},${friendSeat}`);
+
+    // Lock Host to พูน so spending all 3 incense with the skill gives a deterministic auto-end test.
+    const poonPickedP = waitEvent(A, "state", s => s.phase === "lobby" && s.players.find(p => p.id === aPrivate.id)?.characterKey === "poon");
+    A.emit("selectCharacter", {key:"poon"});
+    await poonPickedP;
 
     const chatOnAP = waitEvent(A, "chatMessage", m => m.text === "ผีมาแล้ว" && m.seat === 1);
     const chatOnBP = waitEvent(B, "chatMessage", m => m.text === "ผีมาแล้ว" && m.seat === 1);
@@ -132,7 +137,7 @@ function makeClient() {
     let [rollStateA, rollStateB] = await Promise.all([rolledA, rolledB]);
     if (rollStateA.game.lastDice.total !== rollStateB.game.lastDice.total) throw new Error("dice state mismatch");
 
-    // V1.6 may pause after the roll when the active player holds a sanity card.
+    // V1.7 may pause after the roll when the active player holds a sanity card.
     if (rollStateA.game.sanityDecision) {
       const sanityAP = waitEvent(A, "state", s => s.phase === "game" && s.game.rolled === true && s.game.sanityDecision === false);
       const sanityBP = waitEvent(B, "state", s => s.phase === "game" && s.game.rolled === true && s.game.sanityDecision === false);
@@ -153,7 +158,8 @@ function makeClient() {
 
     const turnToBP = waitEvent(A, "state", s => s.phase === "game" && s.players[1]?.isTurn === true);
     const turnToB2P = waitEvent(B, "state", s => s.phase === "game" && s.players[1]?.isTurn === true);
-    A.emit("endTurn");
+    // พูนใช้ Skill 3 ธูป -> actions = 0. V1.7 must advance the turn automatically.
+    A.emit("skill", {});
     await Promise.all([turnToBP, turnToB2P]);
 
     // Friend disconnects, then resumes same seat with same session token.
@@ -192,6 +198,7 @@ function makeClient() {
       realtimeChat:true,
       amuletDeckMetadata54:true,
       sanityDecisionFlow:true,
+      autoEndAtZero:true,
       leaveRoomRemovesSeat:true
     }, null, 2));
   } finally {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Online Friends Build V1.6</title>
+<title>บ้านผีสิง — Online Friends Build V1.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
 
 <section id="home" class="screen active">
   <div class="hero">
-    <div class="eyebrow">ONLINE FRIENDS BUILD V1.6</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.7</div>
     <h1>บ้านผีสิง</h1>
     <p>สร้างโต๊ะ ส่ง Room Code ให้เพื่อน แล้วช่วยกันฟาร์มของก่อนเข้าห้องผี</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
@@ -38,7 +38,7 @@
   <div class="lobby-wrap">
     <div class="eyebrow">WAITING ROOM</div>
     <h1>Room <span id="roomCode">—</span></h1>
-    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 4 คนใน V1.6</p>
+    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 4 คนใน V1.7</p>
     <div class="room-code-tools">
       <button id="copyCodeBtn" class="secondary">📋 Copy Room Code</button>
       <button id="lobbyHelpBtn" class="secondary">? วิธีเล่น</button>
@@ -93,7 +93,10 @@
 
 <section id="game" class="screen">
   <header class="hud">
-    <div class="turn-title"><small>TURN</small><b id="turnPlayer">—</b></div>
+    <div class="turn-title">
+      <div id="turnEnergyRing" class="turn-energy-ring" aria-label="เวลาของเทิร์น"><i></i></div>
+      <div><small>TURN</small><b id="turnPlayer">—</b></div>
+    </div>
     <div class="hud-stat">❤️ <b id="hp">—</b><small>HP</small></div>
     <div class="hud-stat">🕯 <b id="actions">—</b><small>ธูป</small></div>
     <div class="hud-stat">🏅 <b id="score">—</b><small>คะแนน</small></div>
@@ -124,20 +127,24 @@
         <div><h3>บ้าน 3×3</h3><small>โต๊ะกลาง · Online Friends Build</small></div>
         <div class="board-controls">
           <button id="stayBtn" class="stay-button" style="display:none">อยู่ห้องเดิม</button>
-          <button id="escapeBtn" class="escape-button" style="display:none">🚪 ทอยหนีห้อง · 1🕯</button>
-          <button id="rollBtn" class="primary">🎲 ทอยเต๋า</button>
+          <button id="escapeBtn" class="escape-button roll-legacy" style="display:none">🚪 ทอยหนีห้อง · 1🕯</button>
+          <button id="rollBtn" class="primary roll-legacy">🎲 ทอยเต๋า</button>
           <button id="finishSanityBtn" class="sanity-finish" style="display:none">🧠 เดินต่อด้วยค่าสตินี้</button>
         </div>
       </div>
       <div id="board" class="board"></div>
       <div id="message" class="message">รอข้อมูล...</div>
       <div class="actions-row">
-        <button id="drawAmu">จั่ว Amulet · 1🕯</button>
-        <button id="drawSac">จั่วเครื่องเซ่น · 1🕯</button>
-        <button id="tradeBtn">🤝 Trade</button>
-        <button id="ritualBtn">👻 ทำพิธี · 2🕯</button>
-        <button id="skillBtn">✨ Skill · 3🕯</button>
-        <button id="endBtn">ส่งเทิร์น →</button>
+        <div class="action-cluster">
+          <button id="drawAmu" class="action-bubble">✦ <span>จั่ว Amulet</span><small>1🕯</small></button>
+          <button id="drawSac" class="action-bubble">◆ <span>จั่วเครื่องเซ่น</span><small>1🕯</small></button>
+          <button id="tradeBtn" class="action-bubble">🤝 <span>Trade</span><small>ฟรี 1 ครั้ง</small></button>
+          <button id="ritualBtn" class="action-bubble">👻 <span>ทำพิธี</span><small>2🕯</small></button>
+          <button id="skillBtn" class="action-bubble">✨ <span>Skill</span><small>3🕯</small></button>
+        </div>
+        <div class="turn-end-zone">
+          <button id="endBtn" class="end-turn-bubble"><small>TURN</small><b>END</b><span>→</span></button>
+        </div>
       </div>
       <section class="my-zone">
         <article id="characterCard" class="character character-readable" role="button" tabindex="0" aria-label="อ่านการ์ดตัวละคร">
@@ -227,7 +234,10 @@
   </div>
 </div>
 <div id="moveFx" class="move-fx hidden"><span id="moveFxPawn">P1</span><b id="moveFxText">เดินไป ห้อง...</b></div>
-<div id="turnFx" class="turn-fx hidden"><small>ส่งเทิร์น</small><b id="turnFxText">ถึงตา P2</b></div>
+<div id="turnFx" class="turn-fx hidden">
+  <div id="turnFxSeat" class="turn-fx-seat pcolor-1">P1</div>
+  <div class="turn-fx-copy"><small>TURN PASSES TO</small><b id="turnFxText">ถึงตา P2</b><em id="turnFxChar">—</em></div>
+</div>
 
 <div id="cardRevealFx" class="card-reveal-fx hidden">
   <div id="cardRevealCard" class="card-reveal-card">
@@ -236,6 +246,17 @@
     <h2 id="cardRevealName">—</h2>
     <p id="cardRevealMeta">—</p>
     <span id="cardRevealPlayer">—</span>
+  </div>
+</div>
+
+
+<div id="rollFocus" class="roll-focus hidden">
+  <div class="roll-focus-shade"></div>
+  <div class="roll-focus-content">
+    <small id="rollFocusKicker">YOUR ROLL</small>
+    <button id="rollFocusBtn" class="roll-focus-btn">🎲 ทอยเพื่อเดิน</button>
+    <span id="rollFocusHint">เต๋า 2 ลูกกำลังรอคุณ</span>
+    <button id="rollFocusCancel" class="roll-focus-cancel hidden">ยกเลิก</button>
   </div>
 </div>
 

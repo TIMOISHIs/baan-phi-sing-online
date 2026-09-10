@@ -386,3 +386,59 @@ body:before{
 
 @media(max-width:1200px){.amulet-dock{width:min(600px,calc(100vw - 350px))}.amulet-dock .amulet-card{width:102px;min-width:102px;height:136px}}
 @media(max-width:860px){.amulet-dock{left:8px;right:8px;bottom:70px;transform:none;width:auto;height:164px}.amulet-screen-hand{height:134px}.amulet-dock .amulet-card{width:94px;min-width:94px;height:128px}.amulet-dock .amulet-card:hover{transform:translateX(calc(-50% + var(--fan-x,0px))) translateY(-20px) rotate(0) scale(1.04)}}
+
+/* V1.7 — cinematic turn / dice focus / safer action hierarchy */
+.turn-title{display:flex;align-items:center;gap:9px}.turn-title>div:last-child{min-width:0}.turn-title b{display:block;white-space:nowrap}
+.turn-energy-ring,.turn-timer-ring{
+  --turn-angle:0deg;--pcolor:#d0a84c;position:relative;display:grid;place-items:center;border-radius:50%;
+  background:conic-gradient(var(--pcolor) var(--turn-angle),rgba(255,255,255,.1) 0);
+  box-shadow:0 0 14px color-mix(in srgb,var(--pcolor) 20%,transparent)
+}
+.turn-energy-ring{width:36px;height:36px;flex:0 0 36px}.turn-energy-ring:before,.turn-timer-ring:before{content:"";position:absolute;inset:4px;border-radius:50%;background:#101212;border:1px solid rgba(255,255,255,.08)}
+.turn-energy-ring i{position:relative;z-index:1;width:7px;height:7px;border-radius:50%;background:var(--pcolor);box-shadow:0 0 8px var(--pcolor)}
+.turn-energy-ring.timer-full,.turn-timer-ring.timer-full{animation:turnTimerPulse 1.05s ease-in-out infinite alternate}
+@keyframes turnTimerPulse{to{filter:brightness(1.5);box-shadow:0 0 26px color-mix(in srgb,var(--pcolor) 48%,transparent)}}
+.turn-timer-ring{width:22px;height:22px;flex:0 0 22px;margin-left:auto}.turn-timer-ring:before{inset:3px;background:#171918}.turn-timer-ring i{position:relative;z-index:1;width:5px;height:5px;border-radius:50%;background:var(--pcolor)}
+.player-row b{display:flex;align-items:center;gap:4px}
+
+/* Main action buttons are tactile bubbles. End Turn is deliberately separated. */
+.actions-row{display:flex;align-items:stretch;gap:12px;margin-top:12px}.action-cluster{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+.actions-row .action-bubble{
+  position:relative;display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;column-gap:6px;align-items:center;min-width:118px;
+  border:1px solid #5a5144;border-bottom-width:4px;background:linear-gradient(#2a2d2c,#171a19);border-radius:15px;padding:10px 12px;
+  box-shadow:0 7px 16px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.06);transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease
+}
+.actions-row .action-bubble>span{font-size:10px;font-weight:800;text-align:left}.actions-row .action-bubble>small{grid-column:2;color:#9e978a;font-size:8px;text-align:left}
+.actions-row .action-bubble:not(:disabled):hover{transform:translateY(-2px);border-color:#9b8058;box-shadow:0 10px 22px rgba(0,0,0,.38),0 0 0 1px rgba(191,158,99,.12)}
+.actions-row .action-bubble:not(:disabled):active{transform:translateY(2px);border-bottom-width:1px;margin-bottom:3px;box-shadow:0 3px 8px rgba(0,0,0,.28)}
+.turn-end-zone{margin-left:auto;display:flex;align-items:center;padding-left:10px;border-left:1px solid #403a31}
+.end-turn-bubble{min-width:88px;min-height:62px;border:1px solid #8b4c43;border-bottom:5px solid #512a26;border-radius:22px;background:radial-gradient(circle at 35% 25%,#6d3932,#301a18 72%);box-shadow:0 8px 20px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.08);display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center;padding:8px 12px;transition:.12s ease}
+.end-turn-bubble small{font-size:7px;letter-spacing:.16em;color:#d5a39b}.end-turn-bubble b{font-size:16px;line-height:1}.end-turn-bubble span{grid-column:2;grid-row:1/3;font-size:20px;color:#e6b1a8}.end-turn-bubble:not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.08)}.end-turn-bubble:not(:disabled):active{transform:translateY(2px);border-bottom-width:1px;margin-bottom:4px}
+
+/* The normal top-right roll controls remain as fallback DOM hooks, but V1.7 presents rolling in the center. */
+.roll-legacy{display:none!important}
+.roll-focus{position:fixed;inset:0;z-index:72;pointer-events:none;display:grid;place-items:center}.roll-focus-shade{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(0,0,0,.18),rgba(0,0,0,.45));opacity:.78;animation:rollShadeIn .24s ease-out}.roll-focus-content{position:relative;z-index:1;display:grid;place-items:center;gap:7px;pointer-events:auto;text-align:center;animation:rollFocusIn .28s cubic-bezier(.2,.9,.2,1.12)}
+.roll-focus-content>small{font-size:9px;letter-spacing:.22em;color:#d2b277;text-shadow:0 2px 8px #000}.roll-focus-content>span{font-size:9px;color:#bbb2a3;text-shadow:0 2px 8px #000}
+.roll-focus-btn{min-width:230px;min-height:70px;padding:13px 26px;border:2px solid #d0ad70;border-bottom:7px solid #73552f;border-radius:24px;background:radial-gradient(circle at 50% 15%,#d1ad6c,#8f6b38 68%,#5e4529);color:#17130e;font-size:18px;font-weight:900;box-shadow:0 20px 55px rgba(0,0,0,.58),0 0 0 5px rgba(205,170,105,.08),inset 0 2px 0 rgba(255,255,255,.26);animation:rollButtonBreath 1.35s ease-in-out infinite alternate}
+.roll-focus-btn:hover{transform:translateY(-3px) scale(1.02);filter:brightness(1.06)}.roll-focus-btn:active{transform:translateY(3px);border-bottom-width:2px;margin-bottom:5px}.roll-focus-btn:disabled{animation:none}
+.roll-focus-cancel{border:0;background:rgba(15,17,16,.8);color:#b9b1a4;border-radius:999px;padding:6px 11px;font-size:8px}
+.roll-focus.ritual-armed{z-index:76}.roll-focus.ritual-armed .roll-focus-shade{opacity:.95;background:radial-gradient(circle at 50% 50%,rgba(65,32,27,.25),rgba(0,0,0,.62))}
+@keyframes rollButtonBreath{to{box-shadow:0 24px 65px rgba(0,0,0,.62),0 0 0 10px rgba(205,170,105,.11),0 0 30px rgba(205,170,105,.16),inset 0 2px 0 rgba(255,255,255,.28)}}
+@keyframes rollFocusIn{from{opacity:0;transform:scale(.8) translateY(14px)}to{opacity:1;transform:scale(1) translateY(0)}}@keyframes rollShadeIn{from{opacity:0}to{opacity:.78}}
+
+/* Dice now owns the full screen for a few seconds; game state remains gated behind it. */
+.dice-fx{position:fixed!important;inset:0!important;left:0!important;top:0!important;transform:none!important;z-index:120!important;display:grid;place-items:center;background:radial-gradient(circle at 50% 46%,rgba(18,17,14,.42),rgba(0,0,0,.82) 74%);backdrop-filter:blur(2px);pointer-events:auto}
+.dice-fx-card{min-width:330px!important;padding:24px 30px!important;border-radius:24px!important;background:radial-gradient(circle at 50% 30%,rgba(48,43,34,.98),rgba(12,14,13,.99) 72%)!important;box-shadow:0 38px 110px rgba(0,0,0,.78)!important}
+.dice-fx-card>small{font-size:10px}.dice-fx-card>span{font-size:10px!important}.dice-pair{gap:16px!important;margin:14px!important}.dice-pair span{width:92px!important;height:92px!important;font-size:48px!important;border-radius:19px!important}.dice-fx-card>b{font-size:21px}
+
+/* Full-screen right-to-left turn handoff card. */
+.turn-fx{position:fixed!important;inset:0!important;left:0!important;top:0!important;transform:none!important;z-index:118!important;pointer-events:auto;display:flex;align-items:center;justify-content:center;gap:18px;padding:20px;background:rgba(0,0,0,.36);backdrop-filter:blur(1.5px);border:0!important;border-radius:0!important;box-shadow:none!important;text-align:left!important;opacity:0}
+.turn-fx-seat{--pcolor:var(--p1);width:76px;height:76px;border-radius:50%;display:grid;place-items:center;background:var(--pcolor);color:#111;font-size:24px;font-weight:950;border:4px solid rgba(255,255,255,.72);box-shadow:0 0 36px color-mix(in srgb,var(--pcolor) 42%,transparent),0 20px 55px rgba(0,0,0,.55)}
+.turn-fx-copy{min-width:220px;padding:15px 20px;border-left:3px solid var(--pcolor,#d0a84c);background:rgba(15,17,16,.94);border-radius:0 16px 16px 0;box-shadow:0 22px 60px rgba(0,0,0,.52)}.turn-fx-copy small{display:block;color:#a79d8f;font-size:8px;letter-spacing:.2em}.turn-fx-copy b{display:block;color:#eee8dc!important;font-size:25px!important;line-height:1.12;margin-top:2px}.turn-fx-copy em{display:block;color:#c2b7a7;font-size:10px;font-style:normal;margin-top:4px}
+.turn-fx.turn-slide{animation:turnSlide 1.9s cubic-bezier(.22,.72,.2,1) both}
+@keyframes turnSlide{0%{opacity:0;transform:translateX(52vw)}18%{opacity:1;transform:translateX(0)}70%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(-55vw)}}
+
+@media(max-width:760px){
+  .actions-row{align-items:stretch}.action-cluster{display:grid;grid-template-columns:1fr 1fr}.actions-row .action-bubble{min-width:0}.turn-end-zone{padding-left:7px}.end-turn-bubble{min-width:70px;padding:7px 9px}.roll-focus-btn{min-width:min(250px,78vw)}.dice-fx-card{min-width:min(320px,88vw)!important}.turn-fx{gap:10px}.turn-fx-seat{width:62px;height:62px;font-size:20px}.turn-fx-copy{min-width:0;max-width:68vw}.turn-fx-copy b{font-size:20px!important}
+}
+.roll-focus.ritual-armed{pointer-events:auto}.roll-focus.ritual-armed .roll-focus-shade{pointer-events:auto}
