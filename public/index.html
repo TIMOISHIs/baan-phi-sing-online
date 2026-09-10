@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>บ้านผีสิง — Online Test Candidate V1.2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div id="toast" class="toast hidden"></div>
+
+<section id="home" class="screen active">
+  <div class="hero">
+    <div class="eyebrow">ONLINE TEST CANDIDATE V1.2</div>
+    <h1>บ้านผีสิง</h1>
+    <p>สร้างโต๊ะ ส่ง Room Code ให้เพื่อน แล้วช่วยกันฟาร์มของก่อนเข้าห้องผี</p>
+    <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
+  </div>
+  <div class="join-grid">
+    <form id="createForm" class="card-panel">
+      <h2>สร้างโต๊ะ</h2>
+      <label>ชื่อ<input id="createName" value="ติม" maxlength="18"></label>
+      <button class="primary">Create Room</button>
+    </form>
+    <form id="joinForm" class="card-panel">
+      <h2>เข้าห้องเพื่อน</h2>
+      <label>ชื่อ<input id="joinName" placeholder="ชื่อผู้เล่น" maxlength="18"></label>
+      <label>Room Code<input id="joinCode" placeholder="ABCDE" maxlength="5"></label>
+      <button class="secondary">Join Room</button>
+    </form>
+  </div>
+</section>
+
+<section id="lobby" class="screen">
+  <div class="lobby-wrap">
+    <div class="eyebrow">WAITING ROOM</div>
+    <h1>Room <span id="roomCode">—</span></h1>
+    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 4 คนใน V1.2</p>
+    <div class="room-code-tools">
+      <button id="copyCodeBtn" class="secondary">📋 Copy Room Code</button>
+      <button id="lobbyHelpBtn" class="secondary">? วิธีเล่น</button>
+    </div>
+    <div id="lobbyPlayers" class="lobby-players"></div>
+    <div class="character-select">
+      <div class="character-select-head">
+        <div><h3>เลือกตัวละคร</h3><p class="muted">เลือกเองได้ หรือปล่อยสุ่มไว้</p></div>
+        <button id="randomCharBtn" class="secondary">🎲 สุ่มให้ฉัน</button>
+      </div>
+      <div id="characterGrid" class="character-grid"></div>
+    </div>
+    <section id="playtestSettings" class="playtest-settings">
+      <div class="settings-heading">
+        <div><h3>Playtest Settings</h3><p>Host ปรับได้ก่อนกดเริ่มเกม • Recommended = ค่าเริ่มต้นที่เราล็อกไว้</p></div>
+        <span class="beta-badge">V1.0</span>
+      </div>
+      <div class="settings-grid">
+        <label><span>Movement</span>
+          <select id="settingForced">
+            <option value="true">บังคับเดิน (Recommended)</option>
+            <option value="false">เลือกเดินหรืออยู่ห้องเดิม</option>
+          </select>
+        </label>
+        <label><span>Sacrifice Draw</span>
+          <select id="settingSacDraw">
+            <option value="onePerTurn">สูงสุด 1 ครั้ง/เทิร์น (Recommended)</option>
+            <option value="perIncense">จั่วได้ตามธูปที่เหลือ</option>
+          </select>
+        </label>
+        <label><span>ตีผีพลาด — เครื่องเซ่น</span>
+          <select id="settingFailedSac">
+            <option value="bottom">กลับใต้กอง (Recommended)</option>
+            <option value="remove">ออกจากเกม</option>
+          </select>
+        </label>
+        <label><span>ตีผีพลาด — ของสวมใส่</span>
+          <select id="settingBreak">
+            <option value="one">แตก 1 ชิ้น (Recommended)</option>
+            <option value="all">แตกทั้งหมด</option>
+          </select>
+        </label>
+      </div>
+      <div id="settingsSummary" class="settings-summary"></div>
+    </section>
+
+    <button id="startBtn" class="primary start-game-btn">Host เริ่มเกม</button>
+    <p id="hostNote" class="muted"></p>
+  </div>
+</section>
+
+<section id="game" class="screen">
+  <header class="hud">
+    <div class="turn-title"><small>TURN</small><b id="turnPlayer">—</b></div>
+    <div class="hud-stat">❤️ <b id="hp">—</b><small>HP</small></div>
+    <div class="hud-stat">🕯 <b id="actions">—</b><small>ธูป</small></div>
+    <div class="hud-stat">🏅 <b id="score">—</b><small>คะแนน</small></div>
+    <div class="hud-stat">🧠 <b id="sanity">—</b><small>สติ</small></div>
+    <div class="hud-stat">👻 <b id="curse">—</b><small>Curse</small></div>
+    <span id="connectionState" class="connection-state online">● Online</span>
+    <button id="roomRulesBtn" class="hud-tool">▦ ห้อง</button>
+    <button id="helpBtn" class="hud-tool">? วิธีเล่น</button>
+    <button id="statsBtn" class="hud-tool">📊 Playtest</button>
+  </header>
+
+  <div class="table">
+    <aside class="rail">
+      <div class="panel">
+        <h3>ผู้เล่น</h3>
+        <div id="playerList"></div>
+      </div>
+      <div class="panel log-panel">
+        <h3>Game Log</h3>
+        <div id="log"></div>
+      </div>
+    </aside>
+
+    <main class="board-zone">
+      <div class="board-top">
+        <div><h3>บ้าน 3×3</h3><small>โต๊ะกลาง · First Real Playtest Beta</small></div>
+        <div class="board-controls">
+          <button id="stayBtn" class="stay-button" style="display:none">อยู่ห้องเดิม</button>
+          <button id="escapeBtn" class="escape-button" style="display:none">🚪 ทอยหนีห้อง · 1🕯</button>
+          <button id="rollBtn" class="primary">🎲 ทอยเต๋า</button>
+        </div>
+      </div>
+      <div id="board" class="board"></div>
+      <div id="message" class="message">รอข้อมูล...</div>
+      <div id="turnGuide" class="turn-guide">
+        <div class="guide-kicker">ตอนนี้ทำอะไร?</div>
+        <div id="guideTitle" class="guide-title">รอเกมเริ่ม</div>
+        <div id="guideText" class="guide-text"></div>
+        <div id="guideSteps" class="guide-steps"></div>
+      </div>
+      <div class="actions-row">
+        <button id="drawAmu">จั่ว Amulet · 1🕯</button>
+        <button id="drawSac">จั่วเครื่องเซ่น · 1🕯</button>
+        <button id="tradeBtn">🤝 Trade</button>
+        <button id="ritualBtn">👻 ทำพิธี · 2🕯</button>
+        <button id="skillBtn">✨ Skill · 3🕯</button>
+        <button id="endBtn">ส่งเทิร์น →</button>
+      </div>
+    </main>
+
+    <aside class="boss-column">
+      <article class="ghost-card">
+        <div class="ghost-head"><span>▦</span><div><small>GHOST</small><h2 id="ghostName">—</h2></div><b id="ghostFear">Fear —</b></div>
+        <div id="ghostArt" class="ghost-art">GHOST</div>
+        <div class="passive"><b>Passive</b><p id="ghostPassive">—</p></div>
+        <small>พิธีที่ยังต้องทำ</small><div id="bossSlots" class="slots"></div>
+        <div id="ghostRules" class="dice-rules"></div>
+        <button id="bossHelpBtn" class="boss-help">ดูวิธีตีผีใบนี้</button>
+      </article>
+      <div class="deck-card">AMULET DECK<small>ของขลัง / คาถา / Event / Heal</small></div>
+      <div class="deck-card">SACRIFICE DECK<small>ทุกสีอยู่กองเดียวกัน</small></div>
+    </aside>
+  </div>
+
+  <section class="my-zone">
+    <article class="character">
+      <small>CHARACTER</small><h2 id="charName">—</h2><p id="charRole">—</p>
+      <div class="char-art">CHARACTER ART</div><p id="charSkill"></p>
+    </article>
+    <div class="inventory">
+      <div class="inventory-head"><div><h3>พื้นที่ของฉัน</h3><small id="myRoom">—</small></div><span id="limits">—</span></div>
+      <div class="equip-row"><span>สวมใส่</span><div id="equip"></div></div>
+      <div class="hand-title">Amulet Hand</div><div id="amuHand" class="hand"></div>
+      <div class="hand-title">เครื่องเซ่น</div><div id="sacHand" class="hand"></div>
+    </div>
+  </section>
+</section>
+
+<section id="result" class="screen">
+  <div class="result-wrap">
+    <div id="resultEyebrow" class="eyebrow">GHOST DEFEATED</div><h1 id="resultTitle">ปราบผีสำเร็จ</h1>
+    <p id="resultText" class="muted">คะแนนจากพิธี + คะแนนเครื่องเซ่นบนมือ</p>
+    <div id="results"></div>
+    <div id="resultStats" class="result-stats"></div>
+    <button id="downloadReportBtn" class="secondary report-download">⬇️ Export Playtest JSON</button>
+  </div>
+</section>
+
+<div id="diceFx" class="dice-fx hidden">
+  <div class="dice-fx-card">
+    <small id="diceFxKind">ROLL</small>
+    <div class="dice-pair"><span id="dieA">1</span><span id="dieB">1</span></div>
+    <b id="diceFxTotal">รวม 2</b><span id="diceFxPlayer"></span>
+  </div>
+</div>
+<div id="ritualFx" class="ritual-fx hidden">
+  <div id="ritualFxCard" class="ritual-fx-card">
+    <small>RITUAL</small><h2 id="ritualFxTitle">—</h2>
+    <div id="ritualFxDice" class="ritual-fx-dice">—</div><p id="ritualFxText">—</p>
+  </div>
+</div>
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-head"><h3 id="modalTitle"></h3><button id="closeModal">ปิด</button></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

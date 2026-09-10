@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="th">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>บ้านผีสิง — PLAY NOW V1.1</title><style>
+:root{
+ --bg:#0d0e0e;--panel:#171918;--line:#393c39;--text:#efe9de;--muted:#9f998e;
+ --gold:#b89355;--red:#8a3a32;--green:#63b26f;--blue:#5d9dca;--pink:#c96d96;
+}
+*{box-sizing:border-box}
+body{margin:0;background:
+ radial-gradient(circle at 50% 0,#2e2821 0,#151716 45%,#090a0a 100%);
+ color:var(--text);font-family:system-ui,-apple-system,"Noto Sans Thai","Segoe UI",sans-serif;min-height:100vh}
+button,input,select{font:inherit}button{color:inherit;cursor:pointer}
+button:disabled{opacity:.32;cursor:not-allowed}
+.screen{display:none}.screen.active{display:block}
+#setup{padding:7vh 20px;max-width:1100px;margin:auto}
+.hero{text-align:center;margin-bottom:22px}.eyebrow{font-size:11px;letter-spacing:.18em;color:#c9a66f;font-weight:700}
+.hero h1{font-size:clamp(48px,8vw,86px);margin:2px 0}.hero p{color:var(--muted)}
+.setup-panel{max-width:720px;margin:auto;background:rgba(19,21,20,.92);border:1px solid var(--line);border-radius:22px;padding:20px}
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;color:var(--muted);font-size:11px}
+input,select{width:100%;display:block;margin-top:5px;border:1px solid var(--line);border-radius:10px;background:#0f1110;color:var(--text);padding:10px}
+.player-names{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.primary{border:1px solid #c29b5e;background:linear-gradient(#bb9456,#806231);color:#111;border-radius:11px;padding:11px 15px;font-weight:750}
+.secondary{border:1px solid var(--line);background:#1d201f;border-radius:10px;padding:9px 11px}
+.start{width:100%;margin-top:10px}
+.note{font-size:10px;color:var(--muted);line-height:1.55}
+
+#game{max-width:1600px;margin:auto}
+.hud{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;padding:9px 13px;background:rgba(9,10,10,.94);border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
+.hud .turn{margin-right:auto}.hud small{display:block;color:var(--muted);font-size:8px}.stat{text-align:center;min-width:63px;border-left:1px solid var(--line);padding-left:9px}
+.table{margin:12px;padding:12px;border-radius:22px;background:
+ linear-gradient(rgba(7,8,7,.12),rgba(7,8,7,.12)),
+ repeating-linear-gradient(90deg,#241f19 0,#241f19 92px,#2a231c 93px,#1d1915 184px);
+ display:grid;grid-template-columns:180px minmax(520px,1fr) 245px;gap:12px;box-shadow:inset 0 0 80px rgba(0,0,0,.55)}
+.panel,.board-zone,.boss-card,.my-zone{border:1px solid var(--line);border-radius:15px;background:rgba(17,19,18,.91)}
+.panel{padding:10px;margin-bottom:10px}.panel h3,.board-head h3{margin:0}
+.players .p{border:1px solid var(--line);border-radius:9px;padding:7px;margin-top:6px;font-size:10px;background:#111313}.players .p.active{border-color:#a98249;background:#211e19}.players .p.dead{opacity:.5}.players small{display:block;color:var(--muted)}
+.log{font-size:9px;color:var(--muted);height:190px;overflow:auto;line-height:1.45}
+.board-zone{padding:12px;background:radial-gradient(circle at 50% 45%,#1e2922,#121713 70%)}
+.board-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:9px}.board-head small{color:var(--muted)}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.room{
+ min-height:165px;background:#fff;color:#1e1e1e;border:6px solid #b57dff;border-radius:9px;overflow:hidden;
+ display:grid;grid-template-rows:47px 1fr 58px;text-align:left;padding:0;box-shadow:0 8px 18px rgba(0,0,0,.28)
+}
+.room.safe{border-color:#23ac78}.room.curse{border-color:#e98e07}.room.trap{border-color:#ef8091}.room.boss{border-color:#8a3a32}
+.room-head{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:#fff}.room-head b,.room-head small{display:block}.room-head b{font-size:11px}.room-head small{font-size:7px;color:#aaa}
+.fear{width:25px;height:25px;border:2px solid currentColor;transform:rotate(45deg);display:grid;place-items:center;font-size:9px;font-weight:800}.fear span{transform:rotate(-45deg)}
+.room-art{display:grid;place-items:center;background:linear-gradient(145deg,#e4e3df,#d1d2ce);color:#aaa;font-size:8px;letter-spacing:.14em;position:relative}
+.room.safe .room-art{background:linear-gradient(145deg,#d7e7dd,#bfcfc4)}
+.room.curse .room-art{background:linear-gradient(145deg,#ead6b7,#c7aa7c)}
+.room.trap .room-art{background:linear-gradient(145deg,#e9d1d4,#c9a5aa)}
+.room.boss .room-art{background:radial-gradient(circle,#53302c,#181111 70%);color:#8d6d68}
+.room-bottom{padding:7px;background:#fff;border-top:1px solid #ddd;font-size:7px;line-height:1.3}.room-bottom .pawns{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap}
+.pawn{width:20px;height:20px;border-radius:50%;background:#ddd3c2;color:#111;display:grid;place-items:center;font-size:8px;font-weight:800}.pawn.dead{filter:grayscale(1);opacity:.5}
+.room.legal{outline:3px solid #b7d17d;outline-offset:2px}.room.illegal{opacity:.3}
+.guide{margin-top:9px;border:1px solid #554a39;border-radius:10px;padding:9px 11px;background:#171610}.guide small{color:#c7a86f;letter-spacing:.12em}.guide b{display:block;font-size:15px;margin:2px 0}.guide p{margin:0;color:var(--muted);font-size:9px}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.actions button{border:1px solid var(--line);background:#1b1e1c;border-radius:8px;padding:8px 9px;font-size:10px}.actions .ritual{border-color:#6d3e36;background:#251817}
+.boss-card{padding:10px;box-shadow:7px 8px 0 #080909}.boss-head{display:flex;gap:7px}.boss-head div{flex:1}.boss-head h2{margin:0;font-size:20px}.boss-head small{color:var(--muted)}.ghost-art{height:128px;border:1px solid #3a2b28;border-radius:9px;margin:8px 0;display:grid;place-items:center;text-align:center;background:radial-gradient(circle,#4a302c,#111 70%);color:#9a756d}.passive{font-size:9px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px 0;color:#c8c1b6}.passive p{margin:3px 0;color:var(--muted)}
+.slots{display:flex;gap:5px;flex-wrap:wrap;margin:7px 0}.slot{width:26px;height:26px;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center}.slot.done{opacity:.25;text-decoration:line-through}.slot.green{color:#7bcf82;border-color:#63a96b}.slot.blue{color:#77b9e5;border-color:#5a92b9}.slot.pink{color:#e38ab1;border-color:#bd668c}
+.rule{border:1px solid var(--line);border-radius:8px;padding:6px;margin-top:5px;font-size:9px}.rule span{display:block;color:var(--muted);font-size:8px}
+.my-zone{margin:0 12px 16px;padding:12px;display:grid;grid-template-columns:180px 1fr;gap:12px}
+.character{height:285px;background:#fff;color:#1f1f1f;border:6px solid #050505;border-radius:9px;overflow:hidden;display:grid;grid-template-rows:50px 1fr 82px}.char-head{text-align:center;padding:5px}.char-head b{font-size:15px}.char-head small{display:block;color:#aaa;font-size:8px}.char-art{display:grid;place-items:center;background:linear-gradient(145deg,#d49459,#805039);color:#fff;font-weight:800;letter-spacing:.06em}.char-foot{text-align:center;border-top:1px solid #111;padding:7px;font-size:9px;line-height:1.35}
+.inventory{min-width:0}.inv-head{display:flex;justify-content:space-between}.inv-head h3{margin:0}.inv-head small{color:var(--muted)}.equip{display:flex;gap:6px;margin:7px 0}.equip button{border:1px dashed #555;background:#111313;border-radius:8px;padding:7px 9px;font-size:9px}.hand-title{font-size:9px;color:var(--muted);margin-top:6px}.hand{display:flex;gap:7px;overflow-x:auto;padding:5px 0}
+.card{flex:0 0 110px;height:145px;background:#ece8df;color:#191919;border:2px solid #444;border-radius:10px;padding:8px;text-align:left}.card .art{height:55px;background:#d3d0c8;border-radius:7px;margin:6px 0}.card small{display:block;color:#666;font-size:8px}.card.green{border:4px solid var(--green)}.card.blue{border:4px solid var(--blue)}.card.pink{border:4px solid var(--pink)}.card.black{border:4px solid #555;background:#d4d0c6}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.68);display:grid;place-items:center;padding:18px}.modal.hidden{display:none}.modal-card{width:min(620px,100%);max-height:85vh;overflow:auto;background:#151717;border:1px solid var(--line);border-radius:16px;padding:14px}.modal-head{display:flex;justify-content:space-between;gap:10px}.modal-head h3{margin:0}.option{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#101212;border-radius:9px;padding:9px;margin-top:7px}.option small{display:block;color:var(--muted)}
+.result{padding:8vh 20px;max-width:700px;margin:auto;text-align:center}.result h1{font-size:52px;margin:0}.result-row{display:flex;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:7px;text-align:left}.winner{border-color:#b99355}
+.dicefx{position:fixed;left:50%;top:70px;transform:translateX(-50%);z-index:60;background:#111;border:1px solid #756044;border-radius:14px;padding:9px 14px;text-align:center;box-shadow:0 18px 50px #000}.dicefx.hidden{display:none}.dicepair{display:flex;gap:7px;margin:5px}.die{width:42px;height:42px;border-radius:8px;background:#eee9df;color:#111;display:grid;place-items:center;font-size:23px;font-weight:800}
+@media(max-width:1050px){.table{grid-template-columns:155px 1fr}.bosscol{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px}.my-zone{grid-template-columns:150px 1fr}}
+@media(max-width:720px){.setup-grid,.player-names{grid-template-columns:1fr}.table{grid-template-columns:1fr;margin:7px;padding:8px}.left{display:grid;grid-template-columns:1fr 1fr;gap:7px}.panel{margin:0}.room{min-height:130px}.bosscol{display:block}.my-zone{grid-template-columns:1fr;margin:7px}.character{display:none}.actions button{flex:1 1 calc(50% - 6px)}}
+</style></head>
+<body>
+<section id="setup" class="screen active">
+  <div class="hero"><div class="eyebrow">PLAY NOW · V1.1</div><h1>บ้านผีสิง</h1><p>Hot-seat Playtest — เปิดไฟล์นี้แล้วเล่นได้เลย ไม่ต้องติดตั้งอะไร</p></div>
+  <div class="setup-panel">
+    <div class="setup-grid">
+      <label>จำนวนผู้เล่น<select id="count"><option>1</option><option>2</option><option selected>3</option><option>4</option></select></label>
+      <label>Movement<select id="forced"><option value="true" selected>บังคับเดิน (Recommended)</option><option value="false">เลือกอยู่ห้องเดิมได้</option></select></label>
+    </div>
+    <div class="player-names">
+      <label>Player 1<input id="n0" value="ติม"></label>
+      <label>Player 2<input id="n1" value="เพื่อน A"></label>
+      <label>Player 3<input id="n2" value="เพื่อน B"></label>
+      <label style="display:none">Player 4<input id="n3" value="เพื่อน C"></label>
+    </div>
+    <button id="start" class="primary start">👻 เข้าไปในบ้าน</button>
+    <p class="note">Build นี้ทำไว้ให้ติม “ลองเล่น Flow ได้ทันที” ก่อน Multiplayer URL จริง • Event/สกิลบางใบที่ต้นฉบับยังไม่ล็อกจะถูกติดเป็น placeholder แทนการเดากติกา</p>
+  </div>
+</section>
+
+<section id="game" class="screen">
+<header class="hud">
+ <div class="turn"><small>TURN</small><b id="turnName">—</b></div>
+ <div class="stat">❤️ <b id="hp">—</b><small>HP</small></div>
+ <div class="stat">🕯 <b id="act">—</b><small>ธูป</small></div>
+ <div class="stat">🏅 <b id="score">—</b><small>คะแนน</small></div>
+ <div class="stat">🧠 <b id="sanity">—</b><small>สติ</small></div>
+ <div class="stat">👻 <b id="curse">—</b><small>Curse</small></div>
+</header>
+<div class="table">
+ <aside class="left">
+  <div class="panel"><h3>ผู้เล่น</h3><div id="players" class="players"></div></div>
+  <div class="panel"><h3>Game Log</h3><div id="log" class="log"></div></div>
+ </aside>
+ <main class="board-zone">
+   <div class="board-head"><div><h3>บ้าน 3×3</h3><small>Map กลางโต๊ะ</small></div><div><button id="stayBtn" class="secondary" style="display:none">อยู่ห้องเดิม</button> <button id="escapeBtn" class="secondary" style="display:none">🚪 ทอยหนี · 1🕯</button> <button id="rollBtn" class="primary">🎲 ทอยเต๋า</button></div></div>
+   <div id="board" class="board"></div>
+   <div class="guide"><small>ตอนนี้ทำอะไร?</small><b id="guideTitle">—</b><p id="guideText"></p></div>
+   <div class="actions"><button id="drawAmu">จั่ว Amulet · 1🕯</button><button id="drawSac">จั่วเครื่องเซ่น · 1🕯</button><button id="ritual" class="ritual">👻 ทำพิธี · 2🕯</button><button id="skill">✨ Skill · 3🕯</button><button id="end">ส่งเทิร์น →</button></div>
+ </main>
+ <aside class="bosscol">
+   <article class="boss-card"><div class="boss-head"><span>▦</span><div><small>GHOST</small><h2 id="ghostName">—</h2></div><b>Fear 6</b></div><div class="ghost-art">ควันธูป<br>และเงาร่าง</div><div class="passive"><b>Passive</b><p id="ghostPassive"></p></div><small>เครื่องเซ่นที่ต้องใช้</small><div id="slots" class="slots"></div><div id="ghostRules"></div></article>
+ </aside>
+</div>
+<section class="my-zone">
+ <article class="character"><div class="char-head"><b id="charName">—</b><small id="charRole">—</small></div><div id="charArt" class="char-art">CHARACTER</div><div id="charSkill" class="char-foot"></div></article>
+ <div class="inventory"><div class="inv-head"><div><h3>พื้นที่ของผู้เล่นปัจจุบัน</h3><small>กด Amulet เพื่อใช้/สวมใส่ • กด Equip เพื่อถอด</small></div><small id="limits"></small></div><div id="equip" class="equip"></div><div class="hand-title">Amulet Hand</div><div id="amu" class="hand"></div><div class="hand-title">เครื่องเซ่น</div><div id="sac" class="hand"></div></div>
+</section>
+</section>
+
+<section id="result" class="screen"><div class="result"><div class="eyebrow">GAME END</div><h1 id="resultTitle">—</h1><p id="resultSub" class="note"></p><div id="scoreRows"></div><button id="again" class="primary" style="margin-top:14px">เล่นใหม่</button></div></section>
+
+<div id="dicefx" class="dicefx hidden"><small id="fxLabel"></small><div class="dicepair"><span id="fxA" class="die">1</span><span id="fxB" class="die">1</span></div><b id="fxTotal"></b></div>
+<div id="modal" class="modal hidden"><div class="modal-card"><div class="modal-head"><h3 id="modalTitle"></h3><button id="close" class="secondary">ปิด</button></div><div id="modalBody"></div></div></div>
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const chars=[
+ {name:"เข้ม",role:"นักมวยเร่ร่อน",hp:10,slots:1,skill:"ใช้ 3 ธูป: เดินเข้าห้องติดกันโดยไม่ใช้สติ แต่เสีย HP ตาม Fear",skillType:"khem"},
+ {name:"พูน",role:"หมอผีสายดำ",hp:10,slots:1,skill:"ใช้ 3 ธูป: ย้าย Boss Room มาที่ตัวเอง และ HP -3",skillType:"poon"},
+ {name:"ใจ",role:"สาวสายอนามัย",hp:9,slots:1,skill:"ใช้ 3 ธูป: ผู้เล่นที่ยังมีชีวิต +2 HP และตัวเองรวม +3",skillType:"jai"},
+ {name:"แก้ว",role:"เด็กผู้ลุ่มหลง",hp:6,slots:2,skill:"ใช้ 3 ธูป: ไปหาเพื่อน เสีย HP -1 ต่อระยะห้อง",skillType:"kaew"},
+ {name:"เรือง",role:"ตำรวจหนุ่ม",hp:8,slots:2,skill:"สกิลยังไม่ล็อกข้อมูล",skillType:null},
+ {name:"เดช",role:"หมอธรรม",hp:7,slots:2,skill:"สกิลยังไม่ล็อกข้อมูล",skillType:null},
+ {name:"เอ๋ง",role:"หมาขี้กลัว",hp:5,slots:2,skill:"ดูการ์ดล่วงหน้า 4 ใบ เลือก 2 — ยังไม่เปิดใน Build นี้",skillType:null},
+ {name:"สีสวาด",role:"แมว",hp:4,slots:2,skill:"ฟื้นคืนชีพ — Flow ยังไม่ล็อก",skillType:null}
+];
+const roomsPool=[
+ {name:"ห้องคำสาป",type:"คำสาป",kind:"curse",fear:4,amu:true,escape:{kind:"odd",label:"ทอยเลขคี่ทั้ง 2 ลูก"},effect:"ต้นเทิร์น: ทิ้งเครื่องเซ่น 1 ใบ • หนีออกใช้ 1 ธูป / ครั้ง"},
+ {name:"ห้องคำสาป",type:"คำสาป",kind:"curse",fear:4,amu:true,escape:{kind:"even",label:"ทอยเลขคู่ทั้ง 2 ลูก"},effect:"ต้นเทิร์น: ทิ้งเครื่องเซ่น 1 ใบ • หนีออกใช้ 1 ธูป / ครั้ง"},
+ {name:"ห้องกับดัก",type:"กับดัก",kind:"trap",fear:4,amu:true,escape:{kind:"le",value:5,label:"ผลรวม 5 หรือต่ำกว่า"},effect:"ต้นเทิร์น: HP -1 • หนีออกใช้ 1 ธูป / ครั้ง"},
+ {name:"ห้องกับดัก",type:"กับดัก",kind:"trap",fear:4,amu:true,escape:{kind:"ge",value:6,label:"ผลรวม 6 ขึ้นไป"},effect:"ต้นเทิร์น: HP -1 • หนีออกใช้ 1 ธูป / ครั้ง"},
+ {name:"ห้องใต้บันได",type:"เครื่องเซ่น",kind:"mystery",fear:3,sac:true,amu:true,effect:"จั่ว Amulet และเครื่องเซ่นได้ • การ์ดห้องจริงมี Effect เพิ่มเมื่อจั่ว"},
+ {name:"ห้องเก็บของ",type:"เครื่องเซ่น",kind:"mystery",fear:3,sac:true,amu:true,effect:"แหล่งหาเครื่องเซ่นและ Amulet"},
+ {name:"ห้องพระ",type:"ลึกลับ",kind:"mystery",fear:3,sac:true,amu:true,effect:"มีปฏิกิริยากับเครื่องเซ่นบางประเภท"},
+ {name:"ห้องพิธีกรรมลึกลับ",type:"ลึกลับ",kind:"mystery",fear:3,sac:true,amu:true,effect:"เครื่องเซ่นสีชมพู/ดำมีผลพิเศษ"},
+ {name:"โถงทางเดิน",type:"ธรรมดา",kind:"safe",fear:1,amu:true,effect:"จั่ว Amulet ได้"},
+ {name:"ห้องน้ำ",type:"ธรรมดา",kind:"safe",fear:1,amu:true,effect:"ถ้าจั่วของสวมใส่ มีโอกาสสวมได้ทันที"},
+ {name:"ห้องนอน",type:"ธรรมดา",kind:"safe",fear:1,amu:true,effect:"จั่ว Amulet ได้"},
+ {name:"ห้องทำงาน",type:"ธรรมดา",kind:"safe",fear:1,amu:true,effect:"มี Interaction กับกองทิ้ง"}
+];
+const amulets=[
+ {name:"มีดหมอ",type:"equip",fear:-1,desc:"Fear -1 เมื่อสวมใส่"},
+ {name:"ตะกรุดไม้",type:"equip",fear:-2,desc:"Fear -2 เมื่อสวมใส่"},
+ {name:"เกราะเพชร",type:"equip",fear:-2,desc:"Fear -2 • ป้องกันตามการ์ด"},
+ {name:"น้ำมนต์ศักดิ์สิทธิ์",type:"heal",heal:1,desc:"HP +1"},
+ {name:"ยาหอมราชโอสถ",type:"healroom",heal:2,desc:"ผู้เล่นในห้องเดียวกัน HP +2"},
+ {name:"ยาฟื้นชีพโอสถ",type:"revive",desc:"ชุบเพื่อน HP 0 → HP 1"},
+ {name:"แคล้วคลาด",type:"spell",desc:"คาถาอาคม — Effect เต็มรอ Content pass"},
+ {name:"เหตุการณ์หลอน",type:"event",desc:"Event: V1.1 Play Now ใช้ HP -1 เป็น placeholder"}
+];
+const sacrifices=[
+ {name:"ดอกบัว",color:"green",icon:"◆",boss:2,end:1},
+ {name:"หมาก",color:"green",icon:"◆",boss:2,end:1},
+ {name:"เทียน",color:"green",icon:"◆",boss:2,end:1},
+ {name:"สายสิญจ์",color:"green",icon:"◆",boss:2,end:1},
+ {name:"เหล้าขาว",color:"blue",icon:"■",boss:3,end:2},
+ {name:"ดอกดาวเรือง",color:"blue",icon:"■",boss:3,end:2},
+ {name:"พระเครื่อง",color:"pink",icon:"⬟",boss:4,end:3},
+ {name:"ผ้า 3 สี",color:"pink",icon:"⬟",boss:4,end:3},
+ {name:"น้ำมันพราย",color:"black",icon:"⬢",boss:6,end:-3},
+ {name:"หุ่นพยนต์",color:"black",icon:"⬢",boss:6,end:-3}
+];
+const ghosts=[
+ {name:"ผีพรายมนต์",fear:6,need:{green:4,blue:2},dice:{green:{op:">=",v:6,label:"6+"},blue:{op:"<=",v:7,label:"7-"}},passive:"ผลรวมเต๋า = 8 → Curse +1",passiveFn:d=>d.total===8},
+ {name:"ผีเปรตโต",fear:6,need:{green:3,blue:2,pink:1},dice:{green:{op:"<=",v:8,label:"8-"},blue:{op:">=",v:8,label:"8+"},pink:{op:"<=",v:5,label:"5-"}},passive:"มีลูกเต๋าหน้า 1 หรือ 6 → Curse +1",passiveFn:d=>[1,6].includes(d.a)||[1,6].includes(d.b)}
+];
+let S=null;
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const roll=()=>{const a=1+Math.floor(Math.random()*6),b=1+Math.floor(Math.random()*6);return{a,b,total:a+b}};
+const cur=()=>S.players[S.turn];
+const roomAt=i=>i===S.bossIndex?{name:"เขตพิธีกรรม",type:"BOSS",kind:"boss",fear:S.ghost.fear,boss:true,effect:`ห้องของ ${S.ghost.name} • ทำพิธีได้ที่นี่`}:S.rooms[i];
+const neigh=i=>{const r=Math.floor(i/3),c=i%3,o=[];[[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr,dc])=>{const rr=r+dr,cc=c+dc;if(rr>=0&&rr<3&&cc>=0&&cc<3)o.push(rr*3+cc)});return o};
+const el=(tag,cls,html)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(html!==undefined)x.innerHTML=html;return x};
+function log(t){S.log.push(t);if(S.log.length>80)S.log.shift()}
+function diceFx(d,label){$("#fxLabel").textContent=label;$("#fxA").textContent=d.a;$("#fxB").textContent=d.b;$("#fxTotal").textContent=`รวม ${d.total}`;$("#dicefx").classList.remove("hidden");setTimeout(()=>$("#dicefx").classList.add("hidden"),900)}
+function modal(title,body){$("#modalTitle").textContent=title;$("#modalBody").innerHTML="";if(typeof body==="string")$("#modalBody").textContent=body;else $("#modalBody").appendChild(body);$("#modal").classList.remove("hidden")}
+function closeModal(){$("#modal").classList.add("hidden")}
+function checkCurse(d){if(S.ghost.passiveFn(d)){S.curse++;log(`${S.ghost.name}: Curse +1`);if(S.curse>=6){S.players.forEach(p=>{if(p.hp>0)p.hp=Math.max(0,p.hp-1)});S.curse=0;log("Curse ครบ 6 → ผู้เล่นทุกคน HP -1")}}}
+function escapeOK(rule,d){return rule.kind==="odd"?(d.a%2&&d.b%2):rule.kind==="even"?(!(d.a%2)&&!(d.b%2)):rule.kind==="le"?d.total<=rule.value:d.total>=rule.value}
+function allDead(){return S.players.every(p=>p.hp<=0)}
+function nextAlive(){for(let k=1;k<=S.players.length;k++){const i=(S.turn+k)%S.players.length;if(S.players[i].hp>0)return i}return null}
+function beginTurn(){
+ if(allDead()){finish(false);return}
+ let p=cur();
+ if(p.hp<=0){const n=nextAlive();if(n===null){finish(false);return}S.turn=n;p=cur()}
+ S.actions=3;S.rolled=false;S.moved=false;S.mustMove=false;S.legal=[];S.sanity=null;S.sacDrawn=false;S.escape=null;
+ const r=roomAt(p.pos);
+ if(r.kind==="trap"){p.hp=Math.max(0,p.hp-1);log(`${p.name} เริ่มในห้องกับดัก → HP -1`)}
+ if(r.kind==="curse"&&p.sac.length){const c=p.sac.shift();S.sacDeck.push(c);log(`${p.name} เริ่มในห้องคำสาป → เสียเครื่องเซ่น ${c.name}`)}
+ if(p.hp<=0){log(`${p.name} เสียชีวิต`);beginTurn();return}
+ if(r.escape)S.escape=r.escape;
+ render();
+}
+function start(){
+ const count=Number($("#count").value),names=[0,1,2,3].slice(0,count).map(i=>$("#n"+i).value.trim()||`ผู้เล่น ${i+1}`);
+ const ch=shuffle(chars).slice(0,count),rooms=shuffle(roomsPool).slice(0,9),ghost=shuffle(ghosts)[0],bossIndex=Math.floor(Math.random()*9);
+ S={players:names.map((name,i)=>({name,char:ch[i],hp:ch[i].hp,score:0,pos:bossIndex,amu:shuffle(amulets.filter(x=>x.type!=="event")).slice(0,3),sac:[],equip:[]})),
+ rooms,ghost,bossIndex,turn:0,actions:3,rolled:false,moved:false,mustMove:false,legal:[],sanity:null,curse:0,sacDrawn:false,log:[],
+ amuDeck:shuffle([...amulets,...amulets,...amulets]),sacDeck:shuffle([...sacrifices,...sacrifices,...sacrifices,...sacrifices]),done:{green:0,blue:0,pink:0,black:0},settings:{forced:$("#forced").value==="true"}};
+ log(`คืนนี้เจอ ${ghost.name}`);log(`ผู้เล่นทุกคนเริ่มที่ Boss Room ช่อง ${bossIndex+1}`);$("#setup").classList.remove("active");$("#game").classList.add("active");beginTurn();setupReveal();
+}
+function setupReveal(){const b=el("div");b.innerHTML=`<p><b>${S.ghost.name}</b> • Fear ${S.ghost.fear}</p><p class="note">ทุกคนเริ่มที่เขตพิธีกรรม ออกไปหาเครื่องเซ่นและ Amulet แล้วกลับมาปราบผี</p>`;modal("เริ่มเกม",b)}
+function doRoll(){
+ const p=cur();if(S.escape||S.rolled||p.hp<=0)return;
+ const d=roll();diceFx(d,"ทอยเดิน");checkCurse(d);const fear=Math.max(0,roomAt(p.pos).fear+p.equip.reduce((n,c)=>n+(c.fear||0),0));S.sanity=Math.max(0,d.total-fear);S.rolled=true;S.legal=neigh(p.pos).filter(i=>roomAt(i).fear<=S.sanity);
+ if(S.legal.length){S.mustMove=S.settings.forced;if(!S.settings.forced)S.optional=true}else S.moved=true;
+ log(`${p.name} ทอย ${d.total} • Fear ${fear} → สติ ${S.sanity}`);render()
+}
+function move(i){if(!(S.mustMove||S.optional)||!S.legal.includes(i))return;const p=cur();p.pos=i;S.mustMove=false;S.optional=false;S.moved=true;S.legal=[];log(`${p.name} เดินเข้า ${roomAt(i).name}`);render()}
+function stay(){if(!S.optional)return;S.optional=false;S.moved=true;S.legal=[];log(`${cur().name} อยู่ห้องเดิม`);render()}
+function escape(){
+ if(!S.escape||S.actions<1)return;S.actions--;const d=roll();diceFx(d,"ทอยหนี");checkCurse(d);
+ if(escapeOK(S.escape,d)){log(`${cur().name} หนีห้องสำเร็จ`);S.escape=null}else log(`${cur().name} หนีห้องไม่สำเร็จ`);
+ render()
+}
+function drawAmu(){
+ const p=cur();if(!S.moved||S.actions<1||p.amu.length>=5)return;S.actions--;let c=S.amuDeck.shift();if(!c){return}
+ if(c.type==="event"){p.hp=Math.max(0,p.hp-1);S.amuDeck.push(c);log(`${p.name} จั่ว Event → HP -1 (placeholder)`)}else{p.amu.push(c);log(`${p.name} จั่ว Amulet ${c.name}`)}render()
+}
+function drawSac(){
+ const p=cur(),r=roomAt(p.pos);if(!S.moved||S.actions<1||S.sacDrawn||!r.sac||p.sac.length>=7)return;S.actions--;S.sacDrawn=true;const c=S.sacDeck.shift();if(!c)return;p.sac.push(c);log(`${p.name} จั่วเครื่องเซ่น ${c.name}`);render()
+}
+function useAmu(i){
+ const p=cur(),c=p.amu[i];if(!S.moved||S.actions<1)return;
+ if(c.type==="equip"){if(p.equip.length>=Math.min(2,p.char.slots))return;S.actions--;p.amu.splice(i,1);p.equip.push(c);log(`${p.name} สวม ${c.name}`)}
+ else if(c.type==="heal"){S.actions--;p.hp=Math.min(p.char.hp,p.hp+(c.heal||1));p.amu.splice(i,1);log(`${p.name} ใช้ ${c.name}`)}
+ else if(c.type==="healroom"){S.actions--;S.players.filter(x=>x.hp>0&&x.pos===p.pos).forEach(x=>x.hp=Math.min(x.char.hp,x.hp+(c.heal||2)));p.amu.splice(i,1);log(`${p.name} ใช้ ${c.name}`)}
+ else if(c.type==="revive"){const dead=S.players.map((x,j)=>({x,j})).filter(o=>o.j!==S.turn&&o.x.hp<=0);if(!dead.length)return;const box=el("div");dead.forEach(o=>{const b=el("button","option",`ชุบ ${o.x.name} → HP 1`);b.onclick=()=>{S.actions--;o.x.hp=1;p.amu.splice(i,1);log(`${p.name} ชุบ ${o.x.name}`);closeModal();render()};box.appendChild(b)});modal("ยาฟื้นชีพโอสถ",box);return}
+ else{modal(c.name,c.desc);return}
+ render()
+}
+function unequip(i){const p=cur();if(!S.moved||S.actions<1||!p.equip[i]||p.amu.length>=5)return;S.actions--;p.amu.push(p.equip.splice(i,1)[0]);render()}
+function ritual(){
+ const p=cur(),r=roomAt(p.pos);if(!S.moved||S.actions<2||!r.boss)return;const eligible=p.sac.map((c,i)=>({c,i})).filter(o=>(S.ghost.need[o.c.color]||0)>(S.done[o.c.color]||0));
+ if(!eligible.length)return;const box=el("div");eligible.forEach(o=>{const rule=S.ghost.dice[o.c.color],b=el("button","option",`<b>${o.c.icon} ${o.c.name}</b><small>ต้องทอย ${rule.label} • สำเร็จ +${o.c.boss} คะแนน</small>`);b.onclick=()=>resolveRitual(o.i);box.appendChild(b)});modal(`ทำพิธี — ${S.ghost.name}`,box)
+}
+function resolveRitual(i){
+ const p=cur(),c=p.sac[i],rule=S.ghost.dice[c.color];S.actions-=2;const d=roll();diceFx(d,"ทอยทำพิธี");checkCurse(d);const ok=rule.op===">="?d.total>=rule.v:d.total<=rule.v;p.sac.splice(i,1);
+ if(ok){S.done[c.color]=(S.done[c.color]||0)+1;p.score+=c.boss;log(`${p.name} ใช้ ${c.name} สำเร็จ +${c.boss}`)}
+ else{S.sacDeck.push(c);if(c.color==="green")p.hp=Math.max(0,p.hp-1);if(c.color==="blue")p.hp=Math.max(0,p.hp-2);if(c.color==="pink")p.hp=Math.max(0,p.hp-3);if(p.equip.length)p.equip.shift();log(`${p.name} ทำพิธีพลาด • ผีสวนกลับ`)}
+ closeModal();if(Object.entries(S.ghost.need).every(([c,n])=>(S.done[c]||0)>=n)){finish(true);return}if(p.hp<=0)log(`${p.name} เสียชีวิต`);render()
+}
+function skill(){
+ const p=cur();if(S.actions<3||S.escape)return;
+ if(p.char.skillType==="jai"){if(!S.moved)return;S.players.forEach(x=>{if(x.hp>0)x.hp=Math.min(x.char.hp,x.hp+2)});p.hp=Math.min(p.char.hp,p.hp+1);S.actions=0;log(`${p.name} ใช้สกิลใจ`);render();return}
+ if(p.char.skillType==="poon"){S.actions=0;p.hp=Math.max(0,p.hp-3);S.bossIndex=p.pos;S.rolled=true;S.moved=true;S.mustMove=false;S.optional=false;log(`${p.name} ย้าย Boss Room มาที่ตัว`);render();return}
+ if(p.char.skillType==="khem"){if(S.rolled||S.moved)return;const box=el("div");neigh(p.pos).forEach(i=>{const r=roomAt(i),b=el("button","option",`${r.name} • Fear ${r.fear} → HP -${r.fear}`);b.onclick=()=>{S.actions=0;p.hp=Math.max(0,p.hp-r.fear);p.pos=i;S.rolled=true;S.moved=true;closeModal();log(`${p.name} ใช้สกิลเข้มไป ${r.name}`);render()};box.appendChild(b)});modal("Skill — เข้ม",box);return}
+ if(p.char.skillType==="kaew"){if(S.rolled||S.moved)return;const box=el("div");S.players.forEach((x,j)=>{if(j===S.turn||x.hp<=0)return;const dist=Math.abs(Math.floor(p.pos/3)-Math.floor(x.pos/3))+Math.abs(p.pos%3-x.pos%3),b=el("button","option",`ไปหา ${x.name} • HP -${dist}`);b.onclick=()=>{S.actions=0;p.hp=Math.max(0,p.hp-dist);p.pos=x.pos;S.rolled=true;S.moved=true;closeModal();log(`${p.name} ใช้สกิลแก้ว`);render()};box.appendChild(b)});modal("Skill — แก้ว",box);return}
+ modal("Skill",p.char.skill)
+}
+function endTurn(){if(S.mustMove||S.optional||(S.escape&&S.actions>0))return;S.turn=nextAlive();if(S.turn===null){finish(false);return}beginTurn()}
+function finish(win){
+ $("#game").classList.remove("active");$("#result").classList.add("active");$("#resultTitle").textContent=win?"ปราบผีสำเร็จ":"ทุกคนเสียชีวิต";$("#resultSub").textContent=win?S.ghost.name:"บ้านนี้กลืนผู้เล่นทุกคนไปแล้ว";const rows=S.players.map(p=>({p,total:p.score+p.sac.reduce((n,c)=>n+c.end,0)})).sort((a,b)=>b.total-a.total),best=rows[0]?.total;$("#scoreRows").innerHTML="";rows.forEach(o=>{$("#scoreRows").appendChild(el("div","result-row "+(win&&o.total===best?"winner":""),`<span>${win&&o.total===best?"🏆 ":""}${o.p.name} · ${o.p.char.name}</span><b>${o.total} คะแนน</b>`))})
+}
+function roomInfo(i){const r=roomAt(i);modal(r.name,`Fear ${r.fear} • ${r.type}\n${r.effect||""}`)}
+function render(){
+ const p=cur(),r=roomAt(p.pos);
+ $("#turnName").textContent=`${p.name} · ${p.char.name}`;$("#hp").textContent=`${p.hp}/${p.char.hp}`;$("#act").textContent=`${S.actions}/3`;$("#score").textContent=p.score;$("#sanity").textContent=S.sanity??"—";$("#curse").textContent=`${S.curse}/6`;
+ $("#players").innerHTML="";S.players.forEach((x,i)=>{$("#players").appendChild(el("div","p "+(i===S.turn?"active ":"")+(x.hp<=0?"dead":""),`<b>${x.hp<=0?"☠️ ":""}${x.name} · ${x.char.name}</b><small>❤️ ${x.hp}/${x.char.hp} · 🏅 ${x.score} · ${roomAt(x.pos).name}</small>`))});
+ $("#log").innerHTML=S.log.slice().reverse().map(x=>`<div>• ${x}</div>`).join("");
+ $("#board").innerHTML="";for(let i=0;i<9;i++){const q=roomAt(i),b=el("button",`room ${q.kind||""} ${q.boss?"boss":""}`);if(S.mustMove||S.optional)b.classList.add(S.legal.includes(i)?"legal":"illegal");b.innerHTML=`<div class="room-head"><div><b>${q.boss?"👻 ":""}${q.name}</b><small>${q.type}</small></div><div class="fear"><span>${q.fear}</span></div></div><div class="room-art">${q.boss?S.ghost.name:"ROOM ART"}</div><div class="room-bottom">${q.effect||"คลิกเพื่อดู Effect"}<div class="pawns">${S.players.map((x,j)=>x.pos===i?`<span class="pawn ${x.hp<=0?"dead":""}">P${j+1}</span>`:"").join("")}</div></div>`;b.onclick=()=>{if((S.mustMove||S.optional)&&S.legal.includes(i))move(i);else roomInfo(i)};$("#board").appendChild(b)}
+ $("#ghostName").textContent=S.ghost.name;$("#ghostPassive").textContent=S.ghost.passive;$("#slots").innerHTML="";const sym={green:"◆",blue:"■",pink:"⬟",black:"⬢"};Object.entries(S.ghost.need).forEach(([c,n])=>{for(let i=0;i<n;i++)$("#slots").appendChild(el("span",`slot ${c} ${i<(S.done[c]||0)?"done":""}`,sym[c]))});$("#ghostRules").innerHTML="";Object.entries(S.ghost.dice).forEach(([c,x])=>{$("#ghostRules").appendChild(el("div","rule",`<b>${sym[c]} ${x.label}</b><span>${c}</span>`))});
+ $("#charName").textContent=p.char.name;$("#charRole").textContent=p.char.role;$("#charSkill").textContent=p.char.skill;$("#charArt").textContent=p.char.name;
+ $("#equip").innerHTML="";for(let i=0;i<p.char.slots;i++){const c=p.equip[i],b=el("button","secondary",c?c.name:`Equip ${i+1}`);b.disabled=!c;b.onclick=()=>unequip(i);$("#equip").appendChild(b)}
+ $("#amu").innerHTML="";p.amu.forEach((c,i)=>{const b=el("button","card",`<b>${c.name}</b><small>${c.type}</small><div class="art"></div><small>${c.desc}</small>`);b.onclick=()=>useAmu(i);$("#amu").appendChild(b)});
+ $("#sac").innerHTML="";p.sac.forEach(c=>$("#sac").appendChild(el("div",`card ${c.color}`,`<b>${c.name}</b><small>${c.color}</small><div class="art"></div><small>ตี +${c.boss} • จบ ${c.end>=0?"+":""}${c.end}</small>`)));
+ $("#limits").textContent=`Amulet ${p.amu.length}/5 • เครื่องเซ่น ${p.sac.length}/7`;
+ const phase=S.escape?"หนีห้องก่อน":!S.rolled?"ทอยเต๋า":S.mustMove?"ต้องเลือกห้องกรอบเขียว":S.optional?"เดินหรืออยู่ห้องเดิม":S.actions<=0?"ส่งเทิร์น":r.boss?"เตรียมทำพิธีหรือจัดของ":"ใช้ธูปทำ Action";
+ $("#guideTitle").textContent=phase;$("#guideText").textContent=S.escape?`ใช้ 1 ธูปต่อครั้ง • ${S.escape.label}`:!S.rolled?"ทอย 2 ลูกเพื่อคำนวณสติจาก Fear ห้องปัจจุบัน":S.mustMove?`สติ ${S.sanity} • ต้องเดินถ้ามีห้องเข้าได้`:S.optional?"เลือกกรอบเขียว หรือกดอยู่ห้องเดิม":`เหลือธูป ${S.actions} ดอก`;
+ $("#rollBtn").disabled=!!S.escape||S.rolled;$("#escapeBtn").style.display=S.escape?"inline-block":"none";$("#escapeBtn").disabled=!S.escape||S.actions<1;$("#stayBtn").style.display=S.optional?"inline-block":"none";
+ $("#drawAmu").disabled=!S.moved||S.actions<1||p.amu.length>=5;$("#drawSac").disabled=!S.moved||S.actions<1||S.sacDrawn||!r.sac||p.sac.length>=7;$("#ritual").disabled=!S.moved||S.actions<2||!r.boss||!p.sac.some(c=>(S.ghost.need[c.color]||0)>(S.done[c.color]||0));$("#skill").disabled=S.actions<3||!p.char.skillType;$("#end").disabled=S.mustMove||S.optional||(S.escape&&S.actions>0)
+}
+$("#start").onclick=start;$("#rollBtn").onclick=doRoll;$("#stayBtn").onclick=stay;$("#escapeBtn").onclick=escape;$("#drawAmu").onclick=drawAmu;$("#drawSac").onclick=drawSac;$("#ritual").onclick=ritual;$("#skill").onclick=skill;$("#end").onclick=endTurn;$("#close").onclick=closeModal;$("#again").onclick=()=>location.reload();
+$("#count").onchange=()=>{const n=Number($("#count").value);[0,1,2,3].forEach(i=>$("#n"+i).parentElement.style.display=i<n?"block":"none")};
+})();
+</script>
+</body></html>
