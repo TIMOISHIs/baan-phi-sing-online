@@ -287,14 +287,25 @@ function applyIncomingState(s){
   const nextTurnId=s?.phase==="game"?s.players?.[s.game?.turn||0]?.id:null;
   const prevTurnSeq=Number(prev?.game?.stats?.turns)||0,nextTurnSeq=Number(s?.game?.stats?.turns)||0;
   const turnChanged=!!prevTurnId&&!!nextTurnId&&(prevTurnId!==nextTurnId||prevTurnSeq!==nextTurnSeq);
-  const enteringGame=previousPhase==="lobby"&&s.phase==="game";
+  const enteringGame=(previousPhase==="lobby"||previousPhase==="ghostSelect")&&s.phase==="game";
   const resumingGame=!prev&&s.phase==="game";
   if(turnChanged||enteringGame||resumingGame){turnTransitionActive=true;stopTurnTimer();ritualRollSelection=null;hideRollFocus();}
   state=s;persistSession();syncChatFromState(s);render();
   if(moved.length)setTimeout(()=>moved.forEach((p,i)=>setTimeout(()=>showMoveFx(p,p.pos),i*180)),60);
   if(turnChanged){const ap=s.players?.[s.game?.turn||0];queueTurnHandoff(ap,ap?.id===id,90)}
-  if(enteringGame)setTimeout(openSetupReveal,420);
-  else if(resumingGame){const ap=s.players?.[s.game?.turn||0];queueTurnHandoff(ap,ap?.id===id,180)}
+  if(enteringGame){
+    hideGhostSelectionOverlay();
+    if(previousPhase==="lobby"){
+      setTimeout(openSetupReveal,420);
+    }else{
+      const ap=s.players?.[s.game?.turn||0];
+      queueTurnHandoff(ap,ap?.id===id,520);
+    }
+  }
+  else if(resumingGame){
+    const ap=s.players?.[s.game?.turn||0];
+    queueTurnHandoff(ap,ap?.id===id,180);
+  }
 }
 function flushDiceQueues(kind=null){
   diceAnimating=false;const s=queuedState,p=queuedPrivateState,h=[...queuedHpEvents];queuedState=null;queuedPrivateState=null;queuedHpEvents=[];if(s)applyIncomingState(s);if(p){mine=p;persistSession();render()}const fire=()=>h.forEach(e=>queueHpFx(e.delta,e.reason||"HP เปลี่ยน"));if(kind==="ritual"&&h.length)setTimeout(fire,1900);else fire();
@@ -409,17 +420,321 @@ socket.on("privateState",p=>{
   }
 });
 socket.on("chatMessage",msg=>appendChatMessage(msg));
+socket.on("ghostRandomStarted",()=>{
+  if(state?.phase!=="ghostSelect")return;
+  setTimeout(()=>runGhostCycleAnimation(),80);
+});
+
+socket.on("ghostReveal",e=>{
+  if(!e?.ghost)return;
+  revealFinalGhost(e.ghost);
+});
+
 socket.on("hpFx",e=>{if(diceAnimating){queuedHpEvents.push(e);return}const fire=()=>queueHpFx(e.delta,e.reason||"HP เปลี่ยน");if(/สวนกลับ|ดูดเลือด/.test(e.reason||""))setTimeout(fire,2600);else fire()});
 socket.on("cardReveal",enqueueCardReveal);
 socket.on("diceFx",e=>{rollRequestPending=false;showDiceFx(e)});
 socket.on("ritualFx",showRitualFx);
 socket.on("manualSpellFx",e=>toast(`${e.playerName} ใช้ ${e.name} • Resolve ตามข้อความการ์ด`));
 
+
+let ghostRandomAnimating=false;
+let ghostCycleTimers=[];
+
+function clearGhostCycleTimers(){
+  ghostCycleTimers.forEach(t=>clearTimeout(t));
+  ghostCycleTimers=[];
+}
+
+function ghostSymbol(color){
+  return {
+    green:"◆",
+    blue:"■",
+    pink:"⬟",
+    black:"⬢"
+  }[color]||"•";
+}
+
+function ghostNeedText(g){
+  return Object.entries(g?.need||{})
+    .filter(([,n])=>Number(n)>0)
+    .map(([color,n])=>`${ghostSymbol(color)} ${n}`)
+    .join("  ");
+}
+
+function ensureGhostSelectionOverlay(){
+  let box=document.getElementById("ghostSelectOverlay");
+
+  if(box)return box;
+
+  box=document.createElement("div");
+  box.id="ghostSelectOverlay";
+  box.className="ghost-select-overlay hidden";
+
+  box.innerHTML=`
+    <div class="ghost-select-shell">
+      <div class="ghost-select-eyebrow">THE HAUNTING BEGINS</div>
+      <h1>คืนนี้จะเจอผีตัวไหน?</h1>
+      <p class="ghost-select-note">
+        ผีมีทั้งหมด 9 ใบ • สุ่มครั้งเดียวและล็อกทันที
+      </p>
+
+      <div id="ghostSelectGrid" class="ghost-select-grid"></div>
+
+      <div class="ghost-select-footer">
+        <p id="ghostSelectStatus">
+          รอ Host กดสุ่มผี
+        </p>
+        <button id="ghostRandomBtn" class="primary ghost-random-button">
+          👻 สุ่มผี
+        </button>
+      </div>
+
+      <div id="ghostFinalReveal" class="ghost-final-reveal hidden"></div>
+    </div>`;
+
+  document.body.appendChild(box);
+
+  box.querySelector("#ghostRandomBtn").onclick=()=>{
+    if(ghostRandomAnimating)return;
+    ensureAudio();
+    socket.emit("randomGhost");
+  };
+
+  return box;
+}
+
+function hideGhostSelectionOverlay(){
+  const box=document.getElementById("ghostSelectOverlay");
+  if(box)box.classList.add("hidden");
+  clearGhostCycleTimers();
+  ghostRandomAnimating=false;
+}
+
+function renderGhostSelection(){
+  if(state?.phase!=="ghostSelect")return;
+
+  const overlay=ensureGhostSelectionOverlay();
+  overlay.classList.remove("hidden");
+
+  const grid=overlay.querySelector("#ghostSelectGrid");
+  const status=overlay.querySelector("#ghostSelectStatus");
+  const btn=overlay.querySelector("#ghostRandomBtn");
+
+  const ghosts=state.ghosts||[];
+  const selectedId=state.ghostSelection?.selectedId||null;
+  const locked=!!state.ghostSelection?.locked;
+
+  grid.innerHTML="";
+
+  ghosts.forEach(g=>{
+    const card=document.createElement("div");
+    card.className=
+      "ghost-pick-card "+
+      (selectedId===g.id?"ghost-selected ":"");
+
+    card.dataset.ghostId=g.id;
+
+    card.innerHTML=`
+      <div class="ghost-pick-art">
+        <span>GHOST ART</span>
+      </div>
+
+      <div class="ghost-pick-copy">
+        <small>${g.tier||"GHOST"}</small>
+        <b>${g.name}</b>
+        <em>${g.archetype||""}</em>
+
+        <div class="ghost-pick-need">
+          ${ghostNeedText(g)}
+        </div>
+      </div>`;
+
+    grid.appendChild(card);
+  });
+
+  btn.style.display=isHost()?"inline-flex":"none";
+  btn.disabled=locked||ghostRandomAnimating;
+
+  if(ghostRandomAnimating){
+    status.textContent="กำลังสุ่มผี...";
+    btn.textContent="👻 กำลังสุ่ม...";
+  }
+  else if(locked && selectedId){
+    const selected=ghosts.find(g=>g.id===selectedId);
+    status.textContent=`ล็อกแล้ว: ${selected?.name||"ผี"}`;
+    btn.textContent="👻 สุ่มแล้ว";
+  }
+  else{
+    status.textContent=isHost()
+      ?"กดสุ่มได้ครั้งเดียว • ไม่มี Reroll"
+      :"รอ Host กดสุ่มผี";
+    btn.textContent="👻 สุ่มผี";
+  }
+}
+
+function playGhostCycleSound(i=0){
+  try{
+    ensureAudio();
+    if(!sfxMaster)return;
+    const freq=150+(i%9)*20;
+    tone(freq,.055,.014,"triangle",0,sfxMaster);
+  }catch{}
+}
+
+function playGhostRevealSound(){
+  try{
+    ensureAudio();
+    if(!sfxMaster)return;
+
+    tone(82,.55,.035,"sawtooth",0,sfxMaster);
+    tone(123,.42,.028,"triangle",.12,sfxMaster);
+    tone(196,.50,.024,"sine",.34,sfxMaster);
+  }catch{}
+}
+
+function runGhostCycleAnimation(){
+  const overlay=ensureGhostSelectionOverlay();
+
+  overlay.classList.remove("hidden");
+
+  const cards=[
+    ...overlay.querySelectorAll(".ghost-pick-card")
+  ];
+
+  if(!cards.length)return;
+
+  clearGhostCycleTimers();
+  ghostRandomAnimating=true;
+
+  const btn=overlay.querySelector("#ghostRandomBtn");
+  const status=overlay.querySelector("#ghostSelectStatus");
+
+  if(btn){
+    btn.disabled=true;
+    btn.textContent="👻 กำลังสุ่ม...";
+  }
+
+  if(status)status.textContent="กำลังเรียกวิญญาณ...";
+
+  const delays=[
+    65,65,65,70,70,75,80,85,
+    95,105,120,140,165,195,235,285
+  ];
+
+  let elapsed=0;
+
+  delays.forEach((delay,i)=>{
+    elapsed+=delay;
+
+    const timer=setTimeout(()=>{
+      cards.forEach(c=>c.classList.remove("ghost-cycle-active"));
+
+      const card=cards[i%cards.length];
+      card.classList.add("ghost-cycle-active");
+
+      playGhostCycleSound(i);
+    },elapsed);
+
+    ghostCycleTimers.push(timer);
+  });
+}
+
+function revealFinalGhost(g){
+  if(!g)return;
+
+  clearGhostCycleTimers();
+  ghostRandomAnimating=false;
+
+  const overlay=ensureGhostSelectionOverlay();
+  overlay.classList.remove("hidden");
+
+  overlay.querySelectorAll(".ghost-pick-card")
+    .forEach(card=>{
+      card.classList.remove("ghost-cycle-active");
+      card.classList.toggle(
+        "ghost-selected",
+        card.dataset.ghostId===g.id
+      );
+    });
+
+  const reveal=overlay.querySelector("#ghostFinalReveal");
+
+  const rules=Object.entries(g.need||{})
+    .filter(([,n])=>Number(n)>0)
+    .map(([color,n])=>{
+      const rule=g.dice?.[color];
+      return `
+        <div class="ghost-final-rule ${color}">
+          <b>${ghostSymbol(color)} × ${n}</b>
+          <span>ทอย ${rule?.label||"?"}</span>
+        </div>`;
+    })
+    .join("");
+
+  reveal.innerHTML=`
+    <div class="ghost-final-card">
+      <div class="ghost-final-kicker">คืนนี้เจอ</div>
+
+      <div class="ghost-final-art">
+        GHOST ART
+      </div>
+
+      <h2>${g.name}</h2>
+      <span>${g.tier||""} · ${g.archetype||""}</span>
+
+      <p>${g.passiveText||""}</p>
+
+      <div class="ghost-final-rules">
+        ${rules}
+      </div>
+
+      <small>
+        ผีถูกล็อกแล้ว • ไม่มีการสุ่มใหม่
+      </small>
+    </div>`;
+
+  reveal.classList.remove("hidden");
+  void reveal.offsetWidth;
+  reveal.classList.add("ghost-reveal-pop");
+
+  const status=overlay.querySelector("#ghostSelectStatus");
+  if(status)status.textContent=`ได้ ${g.name} — ล็อกทันที`;
+
+  const btn=overlay.querySelector("#ghostRandomBtn");
+  if(btn){
+    btn.disabled=true;
+    btn.textContent="👻 ล็อกผีแล้ว";
+  }
+
+  playGhostRevealSound();
+}
+
 function render(){
   if(!state)return;
-  if(state.phase==="lobby"){show("lobby");renderLobby();return}
-  if(state.phase==="result"||state.phase==="defeat"){show("result");renderResult();return}
-  show("game");renderGame();
+  if(state.phase==="lobby"){
+    hideGhostSelectionOverlay();
+    show("lobby");
+    renderLobby();
+    return;
+  }
+
+  if(state.phase==="ghostSelect"){
+    show("lobby");
+    renderLobby();
+    renderGhostSelection();
+    return;
+  }
+
+  if(state.phase==="result"||state.phase==="defeat"){
+    hideGhostSelectionOverlay();
+    show("result");
+    renderResult();
+    return;
+  }
+
+  hideGhostSelectionOverlay();
+  show("game");
+  renderGame();
 }
 let charRandomAnimating=false;
 
