@@ -1,27 +1,31 @@
-name: Multiplayer Smoke Test
+name: V1.8 Multiplayer Regression
 
 on:
   push:
-    branches: [main]
+    branches: [main, v1.8-playtest]
   pull_request:
     branches: [main]
   workflow_dispatch:
 
 jobs:
-  smoke-test:
+  regression:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-
+          node-version: '20'
+          cache: npm
       - name: Install dependencies
-        run: npm install
-
-      - name: Run multiplayer smoke test
+        run: npm install --no-audit --no-fund
+      - name: Syntax check
+        run: |
+          node --check server.js
+          node --check public/app.js
+          node --check v18-static-integration-test.cjs
+          node --check v18-regression-test.cjs
+      - name: Run V1.8 regression
         run: npm run smoke

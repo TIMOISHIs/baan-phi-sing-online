@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Online Friends Build V1.7</title>
+<title>บ้านผีสิง — Online Friends Build V1.8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
 
 <section id="home" class="screen active">
   <div class="hero">
-    <div class="eyebrow">ONLINE FRIENDS BUILD V1.7</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.8</div>
     <h1>บ้านผีสิง</h1>
     <p>สร้างโต๊ะ ส่ง Room Code ให้เพื่อน แล้วช่วยกันฟาร์มของก่อนเข้าห้องผี</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
@@ -38,7 +38,7 @@
   <div class="lobby-wrap">
     <div class="eyebrow">WAITING ROOM</div>
     <h1>Room <span id="roomCode">—</span></h1>
-    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 4 คนใน V1.7</p>
+    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 6 คนใน V1.8</p>
     <div class="room-code-tools">
       <button id="copyCodeBtn" class="secondary">📋 Copy Room Code</button>
       <button id="lobbyHelpBtn" class="secondary">? วิธีเล่น</button>
@@ -47,19 +47,12 @@
     <div id="lobbyPlayers" class="lobby-players"></div>
     <div class="character-select">
       <div class="character-select-head">
-        <div>
-          <h3>เลือกตัวละคร</h3>
-          <p class="muted">เลือกเองหรือสุ่มได้เรื่อย ๆ จนกว่าจะกด “ยืนยันตัวละคร”</p>
-        </div>
+        <div><h3>เลือกตัวละคร</h3><p class="muted">เลือกเองหรือสุ่มได้เรื่อย ๆ จนกว่าจะกด “ยืนยันตัวละคร”</p></div>
         <button id="randomCharBtn" class="secondary">🎲 สุ่มตัวละคร</button>
       </div>
-
       <div id="characterGrid" class="character-grid"></div>
-
       <div class="character-confirm-bar">
-        <div id="charSelectionStatus" class="char-selection-status">
-          เลือกตัวละคร 1 ใบเพื่อดู Preview
-        </div>
+        <div id="charSelectionStatus" class="char-selection-status">เลือกตัวละคร 1 ใบเพื่อดู Preview</div>
         <div class="character-confirm-actions">
           <button id="releaseCharBtn" class="secondary">↩ เปลี่ยนตัวละคร</button>
           <button id="confirmCharBtn" class="primary">✓ ยืนยันตัวละคร</button>
@@ -114,7 +107,7 @@
     </div>
     <div class="hud-stat">❤️ <b id="hp">—</b><small>HP</small></div>
     <div class="hud-stat">🕯 <b id="actions">—</b><small>ธูป</small></div>
-    <div class="hud-stat">🏅 <b id="score">—</b><small>คะแนน</small></div>
+    <div class="hud-stat">💰 <b id="score">—</b><small>เงิน</small></div>
     <div class="hud-stat">🧠 <b id="sanity">—</b><small>สติ</small></div>
     <div class="hud-stat">👻 <b id="curse">—</b><small>Curse</small></div>
     <span id="connectionState" class="connection-state online">● Online</span>
@@ -164,7 +157,7 @@
       <section class="my-zone">
         <article id="characterCard" class="character character-readable" role="button" tabindex="0" aria-label="อ่านการ์ดตัวละคร">
           <small>CHARACTER · คลิกเพื่ออ่าน</small><h2 id="charName">—</h2><p id="charRole">—</p>
-          <div class="char-art">CHARACTER ART</div><p id="charSkill"></p>
+          <div id="charArt" class="char-art">CHARACTER ART</div><p id="charSkill"></p>
           <div id="equipStats" class="equip-stats"></div>
         </article>
         <div class="inventory">
@@ -187,8 +180,8 @@
         <div id="ghostRules" class="dice-rules"></div>
         <button id="bossHelpBtn" class="boss-help">ดูวิธีตีผีใบนี้</button>
       </article>
-      <div class="deck-card">AMULET DECK<small>ของขลัง / คาถา / Event / รักษา / ค่าสติ</small></div>
-      <div class="deck-card">SACRIFICE DECK<small>ทุกสีอยู่กองเดียวกัน</small></div>
+      <div class="deck-card">AMULET DECK<small>ของขลัง / คาถา / Event / ช่วยเหลือ / เรียกสติ</small><b id="amuDeckCount" class="deck-count">—</b></div>
+      <div class="deck-card">SACRIFICE DECK<small>ทุกสีอยู่กองเดียวกัน</small><b id="sacDeckCount" class="deck-count">—</b></div>
       <div id="turnGuide" class="turn-guide turn-guide-side">
         <div class="guide-kicker">ตอนนี้ทำอะไร?</div>
         <div id="guideTitle" class="guide-title">รอเกมเริ่ม</div>
@@ -218,7 +211,7 @@
 <section id="result" class="screen">
   <div class="result-wrap">
     <div id="resultEyebrow" class="eyebrow">GHOST DEFEATED</div><h1 id="resultTitle">ปราบผีสำเร็จ</h1>
-    <p id="resultText" class="muted">คะแนนจากพิธี + คะแนนเครื่องเซ่นบนมือ</p>
+    <p id="resultText" class="muted">คะแนนจากเงิน + คะแนนเครื่องเซ่นบนมือ</p>
     <div id="results"></div>
     <div id="resultStats" class="result-stats"></div>
     <button id="downloadReportBtn" class="secondary report-download">⬇️ Export Playtest JSON</button>
