@@ -442,3 +442,257 @@ body:before{
   .actions-row{align-items:stretch}.action-cluster{display:grid;grid-template-columns:1fr 1fr}.actions-row .action-bubble{min-width:0}.turn-end-zone{padding-left:7px}.end-turn-bubble{min-width:70px;padding:7px 9px}.roll-focus-btn{min-width:min(250px,78vw)}.dice-fx-card{min-width:min(320px,88vw)!important}.turn-fx{gap:10px}.turn-fx-seat{width:62px;height:62px;font-size:20px}.turn-fx-copy{min-width:0;max-width:68vw}.turn-fx-copy b{font-size:20px!important}
 }
 .roll-focus.ritual-armed{pointer-events:auto}.roll-focus.ritual-armed .roll-focus-shade{pointer-events:auto}
+
+
+/* =========================================================
+   V1.8 — Lobby Character Confirm / Ready
+   ========================================================= */
+
+.character-confirm-bar{
+  margin-top:16px;
+  padding:14px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:16px;
+  background:rgba(0,0,0,.18);
+  display:flex;
+  gap:14px;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+
+.char-selection-status{
+  min-width:240px;
+  color:rgba(255,255,255,.78);
+}
+
+.character-confirm-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.ready-button{
+  border:1px solid rgba(119,255,181,.36);
+  background:rgba(46,130,82,.25);
+  color:#d9ffe8;
+  border-radius:12px;
+  padding:10px 16px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.ready-button.ready-active{
+  background:rgba(77,195,119,.32);
+  box-shadow:
+    0 0 0 1px rgba(111,255,167,.18),
+    0 0 22px rgba(71,255,142,.12);
+}
+
+.char-pick{
+  position:relative;
+  overflow:visible;
+  transition:
+    transform .18s ease,
+    opacity .18s ease,
+    filter .18s ease,
+    box-shadow .18s ease;
+}
+
+.char-pick.preview{
+  transform:translateY(-7px) scale(1.02);
+  box-shadow:
+    0 0 0 2px rgba(255,220,126,.72),
+    0 12px 34px rgba(0,0,0,.35);
+}
+
+.char-pick.confirmed{
+  box-shadow:
+    0 0 0 2px rgba(111,255,165,.84),
+    0 0 28px rgba(80,255,145,.14);
+}
+
+.char-pick.taken{
+  filter:grayscale(.72) brightness(.55);
+  opacity:.62;
+}
+
+.char-taken-label,
+.char-confirmed-label{
+  position:absolute;
+  z-index:8;
+  top:9px;
+  left:50%;
+  transform:translateX(-50%);
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:11px;
+  font-weight:900;
+  white-space:nowrap;
+  pointer-events:none;
+}
+
+.char-taken-label{
+  background:rgba(16,16,18,.86);
+  color:#f3dede;
+  border:1px solid rgba(255,255,255,.14);
+}
+
+.char-confirmed-label{
+  background:rgba(45,129,76,.92);
+  color:#eaffef;
+  border:1px solid rgba(144,255,178,.38);
+}
+
+.char-pick.random-flash{
+  z-index:10;
+  transform:translateY(-10px) scale(1.045);
+  filter:none;
+  opacity:1;
+  box-shadow:
+    0 0 0 3px rgba(255,219,119,.92),
+    0 0 34px rgba(255,191,64,.55);
+}
+
+.lobby-player.is-ready{
+  box-shadow:
+    inset 3px 0 rgba(102,255,155,.72),
+    0 0 20px rgba(76,255,135,.05);
+}
+
+.start-game-btn:disabled{
+  opacity:.38;
+  filter:grayscale(.45);
+  cursor:not-allowed;
+}
+
+.char-reveal-stage{
+  position:relative;
+  text-align:center;
+  padding:8px 4px 4px;
+  min-width:min(420px,82vw);
+}
+
+.char-reveal-glow{
+  position:absolute;
+  inset:12% 18%;
+  border-radius:50%;
+  background:radial-gradient(
+    circle,
+    rgba(255,214,103,.26),
+    rgba(255,214,103,.04) 45%,
+    transparent 72%
+  );
+  filter:blur(8px);
+  animation:charRevealGlow 1.2s ease both;
+  pointer-events:none;
+}
+
+.char-reveal-card{
+  position:relative;
+  margin:auto;
+  width:min(310px,72vw);
+  min-height:390px;
+  border-radius:20px;
+  padding:18px;
+  border:1px solid rgba(255,231,164,.30);
+  background:
+    linear-gradient(180deg,rgba(67,58,42,.98),rgba(20,24,20,.98));
+  box-shadow:
+    0 25px 80px rgba(0,0,0,.65),
+    0 0 50px rgba(255,210,97,.12);
+  animation:charRevealPop .7s cubic-bezier(.2,.9,.2,1.15) both;
+}
+
+.char-reveal-kicker{
+  font-size:10px;
+  letter-spacing:.18em;
+  opacity:.55;
+}
+
+.char-reveal-art{
+  height:185px;
+  margin:13px 0 15px;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  border:1px dashed rgba(255,255,255,.14);
+  background:rgba(0,0,0,.18);
+  font-size:11px;
+  letter-spacing:.12em;
+  opacity:.58;
+}
+
+.char-reveal-card h2{
+  margin:4px 0;
+  font-size:28px;
+}
+
+.char-reveal-card > span{
+  opacity:.68;
+}
+
+.char-reveal-card p{
+  font-size:13px;
+  line-height:1.6;
+  opacity:.84;
+}
+
+.char-reveal-card > small{
+  display:block;
+  margin-top:12px;
+  opacity:.54;
+}
+
+.char-reveal-stats{
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  margin:12px 0;
+}
+
+.char-reveal-stats b{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.09);
+  padding:7px 10px;
+  border-radius:10px;
+}
+
+.char-reveal-close{
+  margin-top:16px;
+}
+
+@keyframes charRevealPop{
+  0%{
+    transform:translateY(45px) scale(.72) rotate(-3deg);
+    opacity:0;
+    filter:blur(5px);
+  }
+  60%{
+    transform:translateY(-7px) scale(1.035) rotate(.7deg);
+    opacity:1;
+    filter:blur(0);
+  }
+  100%{
+    transform:none;
+    opacity:1;
+  }
+}
+
+@keyframes charRevealGlow{
+  0%{transform:scale(.35);opacity:0}
+  45%{transform:scale(1.12);opacity:1}
+  100%{transform:scale(1);opacity:.72}
+}
+
+@media(max-width:700px){
+  .character-confirm-bar{
+    align-items:stretch;
+  }
+  .character-confirm-actions{
+    width:100%;
+  }
+  .character-confirm-actions button{
+    flex:1 1 140px;
+  }
+}

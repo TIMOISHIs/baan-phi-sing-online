@@ -47,10 +47,25 @@
     <div id="lobbyPlayers" class="lobby-players"></div>
     <div class="character-select">
       <div class="character-select-head">
-        <div><h3>เลือกตัวละคร</h3><p class="muted">เลือกเองได้ หรือปล่อยสุ่มไว้</p></div>
-        <button id="randomCharBtn" class="secondary">🎲 สุ่มให้ฉัน</button>
+        <div>
+          <h3>เลือกตัวละคร</h3>
+          <p class="muted">เลือกเองหรือสุ่มได้เรื่อย ๆ จนกว่าจะกด “ยืนยันตัวละคร”</p>
+        </div>
+        <button id="randomCharBtn" class="secondary">🎲 สุ่มตัวละคร</button>
       </div>
+
       <div id="characterGrid" class="character-grid"></div>
+
+      <div class="character-confirm-bar">
+        <div id="charSelectionStatus" class="char-selection-status">
+          เลือกตัวละคร 1 ใบเพื่อดู Preview
+        </div>
+        <div class="character-confirm-actions">
+          <button id="releaseCharBtn" class="secondary">↩ เปลี่ยนตัวละคร</button>
+          <button id="confirmCharBtn" class="primary">✓ ยืนยันตัวละคร</button>
+          <button id="readyBtn" class="ready-button">Ready</button>
+        </div>
+      </div>
     </div>
     <section id="playtestSettings" class="playtest-settings">
       <div class="settings-heading">

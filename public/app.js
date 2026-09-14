@@ -305,7 +305,13 @@ $("#createForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("c
 $("#joinForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("joinRoom",{name:$("#joinName").value,code:$("#joinCode").value,sessionToken})});
 $("#startBtn").onclick=()=>socket.emit("startGame");
 $("#copyCodeBtn").onclick=async()=>{try{await navigator.clipboard.writeText(state.code);toast(`Copy ${state.code} แล้ว`)}catch{toast(`Room Code: ${state.code}`)}};
-$("#randomCharBtn").onclick=()=>socket.emit("selectCharacter",{key:"random"});
+$("#randomCharBtn").onclick=()=>runCharacterRandom();
+$("#confirmCharBtn").onclick=()=>socket.emit("confirmCharacter");
+$("#releaseCharBtn").onclick=()=>socket.emit("releaseCharacter");
+$("#readyBtn").onclick=()=>{
+  const me=state?.players?.find(p=>p.id===myId());
+  socket.emit("setReady",{ready:!me?.ready});
+};
 $("#settingForced").onchange=e=>socket.emit("updateSettings",{key:"forcedMovement",value:e.target.value});
 $("#settingSacDraw").onchange=e=>socket.emit("updateSettings",{key:"sacrificeDraw",value:e.target.value});
 $("#settingFailedSac").onchange=e=>socket.emit("updateSettings",{key:"failedSacrifice",value:e.target.value});
@@ -383,7 +389,25 @@ socket.on("state",s=>{
   if(diceAnimating&&state?.phase==="game"&&s?.phase==="game"){queuedState=s;return;}
   applyIncomingState(s);
 });
-socket.on("privateState",p=>{if(diceAnimating&&state?.phase==="game"){queuedPrivateState=p;return;}mine=p;persistSession();render()});
+socket.on("privateState",p=>{
+  if(diceAnimating&&state?.phase==="game"){
+    queuedPrivateState=p;
+    return;
+  }
+
+  const oldPreview=mine?.characterPreviewKey||null;
+  mine=p;
+  persistSession();
+  render();
+
+  if(
+    state?.phase==="lobby" &&
+    p?.characterPreviewKey &&
+    p.characterPreviewKey!==oldPreview
+  ){
+    setTimeout(()=>showCharacterPreviewReveal(p.characterPreviewKey),120);
+  }
+});
 socket.on("chatMessage",msg=>appendChatMessage(msg));
 socket.on("hpFx",e=>{if(diceAnimating){queuedHpEvents.push(e);return}const fire=()=>queueHpFx(e.delta,e.reason||"HP เปลี่ยน");if(/สวนกลับ|ดูดเลือด/.test(e.reason||""))setTimeout(fire,2600);else fire()});
 socket.on("cardReveal",enqueueCardReveal);
@@ -397,39 +421,293 @@ function render(){
   if(state.phase==="result"||state.phase==="defeat"){show("result");renderResult();return}
   show("game");renderGame();
 }
+let charRandomAnimating=false;
+
+function playCharacterRevealSound(){
+  try{
+    ensureAudio();
+    if(sfxMaster){
+      tone(392,.14,.024,"triangle",0,sfxMaster);
+      tone(523.25,.18,.026,"sine",.12,sfxMaster);
+      tone(783.99,.28,.020,"sine",.25,sfxMaster);
+    }
+  }catch{}
+}
+
+function characterByKey(key){
+  return (state?.characters||[]).find(c=>c.key===key)||null;
+}
+
+function showCharacterPreviewReveal(key){
+  if(!key || state?.phase!=="lobby")return;
+  const c=characterByKey(key);
+  if(!c)return;
+
+  const box=document.createElement("div");
+  box.className="char-reveal-stage";
+  box.innerHTML=`
+    <div class="char-reveal-glow"></div>
+    <div class="char-reveal-card">
+      <div class="char-reveal-kicker">CHARACTER PREVIEW</div>
+      <div class="char-reveal-art">CHARACTER ART</div>
+      <h2>${c.name}</h2>
+      <span>${c.role}</span>
+      <div class="char-reveal-stats">
+        <b>♥ ${c.hp}</b>
+        <b>Equip ${c.slots}</b>
+      </div>
+      <p>${c.skill}</p>
+      <small>ยังไม่ล็อกตัวละคร • สามารถสุ่มใหม่หรือเลือกใบอื่นได้</small>
+    </div>`;
+
+  const ok=document.createElement("button");
+  ok.className="primary char-reveal-close";
+  ok.textContent="ดูตัวละครนี้";
+  ok.onclick=()=>closeModal();
+  box.appendChild(ok);
+
+  playCharacterRevealSound();
+  openModal("สุ่มได้ตัวละคร",box);
+}
+
+function runCharacterRandom(){
+  if(charRandomAnimating || state?.phase!=="lobby")return;
+
+  const me=state.players.find(p=>p.id===myId());
+  if(!me)return;
+
+  if(me.ready){
+    toast("กด Unready ก่อนเปลี่ยนตัวละคร");
+    return;
+  }
+  if(me.characterConfirmed){
+    toast("กด “เปลี่ยนตัวละคร” ก่อนสุ่มใหม่");
+    return;
+  }
+
+  const claimed=new Set(
+    state.players
+      .filter(p=>p.id!==myId() && p.characterConfirmed && p.characterKey)
+      .map(p=>p.characterKey)
+  );
+
+  const eligible=(state.characters||[]).filter(c=>!claimed.has(c.key));
+  if(!eligible.length){
+    toast("ไม่มีตัวละครว่างแล้ว");
+    return;
+  }
+
+  charRandomAnimating=true;
+  renderLobby();
+
+  const keys=eligible.map(c=>c.key);
+  const delays=[
+    65,65,65,65,70,70,75,75,
+    85,95,110,125,145,170,210,260
+  ];
+
+  let step=0;
+
+  const flash=()=>{
+    document.querySelectorAll(".char-pick")
+      .forEach(el=>el.classList.remove("random-flash"));
+
+    const key=keys[step % keys.length];
+    const target=document.querySelector(`.char-pick[data-char-key="${key}"]`);
+    if(target) target.classList.add("random-flash");
+
+    if(step < delays.length-1){
+      const delay=delays[step];
+      step++;
+      setTimeout(flash,delay);
+    }else{
+      setTimeout(()=>{
+        document.querySelectorAll(".char-pick")
+          .forEach(el=>el.classList.remove("random-flash"));
+        charRandomAnimating=false;
+        socket.emit("selectCharacter",{key:"random"});
+      },300);
+    }
+  };
+
+  flash();
+}
+
 function renderLobby(){
   $("#roomCode").textContent=state.code;
   $("#lobbyPlayers").innerHTML="";
+
   state.players.forEach(p=>{
-    const chosen=state.characters?.find(c=>c.key===p.characterKey),seat=playerSeat(p),meta=playerMeta(p);
-    const d=document.createElement("div");d.className=`lobby-player pcolor-${seat}`;
-    d.innerHTML=`<span><i class="lobby-seat">${meta.label}</i>${p.id===state.hostId?"👑 ":""}${p.name}${p.connected?"":" <em>Offline</em>"}</span><small>${p.id===myId()?`${meta.name} · คุณ · `:""}${chosen?`เลือก ${chosen.name}`:"สุ่มตัวละคร"}</small>`;
-    $("#lobbyPlayers").appendChild(d)
+    const chosen=state.characters?.find(c=>c.key===p.characterKey);
+    const seat=playerSeat(p),meta=playerMeta(p);
+    const d=document.createElement("div");
+    d.className=`lobby-player pcolor-${seat} ${p.ready?"is-ready":""}`;
+
+    let status="กำลังเลือกตัวละคร";
+    if(p.characterConfirmed && chosen){
+      status=`${chosen.name} · ${p.ready?"✓ Ready":"ยืนยันแล้ว"}`;
+    }
+
+    d.innerHTML=`
+      <span>
+        <i class="lobby-seat">${meta.label}</i>
+        ${p.id===state.hostId?"👑 ":""}${p.name}
+        ${p.connected?"":" <em>Offline</em>"}
+      </span>
+      <small>
+        ${p.id===myId()?`${meta.name} · คุณ · `:""}${status}
+      </small>`;
+
+    $("#lobbyPlayers").appendChild(d);
   });
+
   const me=state.players.find(p=>p.id===myId());
-  const taken=new Set(state.players.filter(p=>p.id!==myId()&&p.characterKey).map(p=>p.characterKey));
+  const previewKey=mine?.characterPreviewKey || null;
+
+  const taken=new Set(
+    state.players
+      .filter(p=>p.id!==myId() && p.characterConfirmed && p.characterKey)
+      .map(p=>p.characterKey)
+  );
+
   $("#characterGrid").innerHTML="";
+
   (state.characters||[]).forEach(c=>{
+    const isPreview=previewKey===c.key;
+    const isConfirmed=me?.characterConfirmed && me?.characterKey===c.key;
+    const isTaken=taken.has(c.key);
+
     const b=document.createElement("button");
-    b.className="char-pick "+(me?.characterKey===c.key?"selected ":"")+(taken.has(c.key)?"taken":"");
-    b.disabled=taken.has(c.key);
-    b.innerHTML=`<div class="mini-character-card char-theme-${c.key}">
-      <div class="mini-char-head"><span class="incense-badge">🕯3</span><div><b>${c.name}</b><small>${c.role}</small></div><span class="hp-badge">♥ ${c.hp}</span></div>
-      <div class="char-pick-art"><span>${c.name}</span><small>CHARACTER ART</small></div>
-      <div class="mini-char-foot"><b>ใช้ธูป 3 ดอก</b><p>${c.skill.replace(/^ใช้ 3 ธูป:\s*/,"")}</p><small>Equip ${c.slots} ช่อง</small></div>
-    </div>`;
-    b.onclick=()=>socket.emit("selectCharacter",{key:c.key});
-    $("#characterGrid").appendChild(b)
+    b.dataset.charKey=c.key;
+
+    b.className=
+      "char-pick "+
+      (isPreview?"selected preview ":"")+
+      (isConfirmed?"confirmed ":"")+
+      (isTaken?"taken ":"");
+
+    b.disabled=
+      isTaken ||
+      !!me?.ready ||
+      !!me?.characterConfirmed ||
+      charRandomAnimating;
+
+    b.innerHTML=`
+      ${isTaken?'<span class="char-taken-label">ถูกเลือกแล้ว</span>':""}
+      ${isConfirmed?'<span class="char-confirmed-label">✓ ยืนยันแล้ว</span>':""}
+
+      <div class="mini-character-card char-theme-${c.key}">
+        <div class="mini-char-head">
+          <span class="incense-badge">🕯3</span>
+          <div>
+            <b>${c.name}</b>
+            <small>${c.role}</small>
+          </div>
+          <span class="hp-badge">♥ ${c.hp}</span>
+        </div>
+
+        <div class="char-pick-art">
+          <span>${c.name}</span>
+          <small>CHARACTER ART</small>
+        </div>
+
+        <div class="mini-char-foot">
+          <b>ใช้ธูป 3 ดอก</b>
+          <p>${c.skill.replace(/^ใช้ธูป 3 ดอก:\s*/,"")}</p>
+          <small>Equip ${c.slots} ช่อง</small>
+        </div>
+      </div>`;
+
+    b.onclick=()=>{
+      if(charRandomAnimating)return;
+      socket.emit("selectCharacter",{key:c.key});
+    };
+
+    $("#characterGrid").appendChild(b);
   });
+
+  const preview=characterByKey(previewKey);
+  const confirmed=characterByKey(me?.characterKey);
+
+  if(me?.ready && confirmed){
+    $("#charSelectionStatus").innerHTML=
+      `🔒 <b>${confirmed.name}</b> พร้อมแล้ว`;
+  }else if(me?.characterConfirmed && confirmed){
+    $("#charSelectionStatus").innerHTML=
+      `✓ ยืนยัน <b>${confirmed.name}</b> แล้ว · กด Ready เมื่อพร้อม`;
+  }else if(preview){
+    $("#charSelectionStatus").innerHTML=
+      `กำลังดู <b>${preview.name}</b> · สุ่มใหม่ได้จนกว่าจะยืนยัน`;
+  }else{
+    $("#charSelectionStatus").textContent=
+      "เลือกเองหรือกดสุ่มตัวละครได้";
+  }
+
+  $("#randomCharBtn").disabled=
+    !!me?.ready ||
+    !!me?.characterConfirmed ||
+    charRandomAnimating;
+
+  $("#randomCharBtn").textContent=
+    charRandomAnimating ? "🎲 กำลังสุ่ม..." : "🎲 สุ่มตัวละคร";
+
+  $("#confirmCharBtn").disabled=
+    !previewKey ||
+    !!me?.characterConfirmed ||
+    !!me?.ready ||
+    charRandomAnimating;
+
+  $("#releaseCharBtn").disabled=
+    (!previewKey && !me?.characterConfirmed) ||
+    !!me?.ready ||
+    charRandomAnimating;
+
+  $("#readyBtn").disabled=
+    (!me?.characterConfirmed && !me?.ready) ||
+    charRandomAnimating;
+
+  $("#readyBtn").classList.toggle("ready-active",!!me?.ready);
+  $("#readyBtn").textContent=
+    me?.ready ? "✓ Ready แล้ว · กดเพื่อ Unready" : "Ready";
+
+  const allReady=
+    state.players.length>0 &&
+    state.players.every(p=>
+      p.connected &&
+      p.characterConfirmed &&
+      p.characterKey &&
+      p.ready
+    );
+
   $("#startBtn").style.display=isHost()?"inline-block":"none";
-  $("#hostNote").textContent=isHost()?"คุณเป็น Host — ตัวที่ไม่เลือกจะสุ่มให้อัตโนมัติ":"รอ Host เริ่มเกม";
+  $("#startBtn").disabled=isHost() ? !allReady : true;
+
+  const pending=state.players.filter(p=>
+    !p.connected ||
+    !p.characterConfirmed ||
+    !p.characterKey ||
+    !p.ready
+  );
+
+  if(isHost()){
+    $("#hostNote").textContent=allReady
+      ? "ทุกคนพร้อมแล้ว ✦ Host เริ่มเกมได้"
+      : `รอ: ${pending.map(p=>p.name).join(", ")} ยืนยันตัวละคร + Ready ให้ครบ`;
+  }else{
+    $("#hostNote").textContent=me?.ready
+      ? "พร้อมแล้ว · รอ Host เริ่มเกม"
+      : "เลือกตัวละคร → ยืนยัน → Ready";
+  }
 
   const st=state.settings||{};
   $("#settingForced").value=String(st.forcedMovement!==false);
   $("#settingSacDraw").value=st.sacrificeDraw||"onePerTurn";
   $("#settingFailedSac").value=st.failedSacrifice||"bottom";
   $("#settingBreak").value=st.equipmentBreak||"one";
-  ["#settingForced","#settingSacDraw","#settingFailedSac","#settingBreak"].forEach(id=>$(id).disabled=!isHost());
+
+  ["#settingForced","#settingSacDraw","#settingFailedSac","#settingBreak"]
+    .forEach(id=>$(id).disabled=!isHost());
+
   $("#playtestSettings").classList.toggle("read-only",!isHost());
   $("#settingsSummary").textContent=settingsText(st);
 }

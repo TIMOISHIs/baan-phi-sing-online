@@ -39,15 +39,14 @@ function normalizeSetting(key,value){
 }
 
 const CHARS = [
-  { key:"khem", name:"เข้ม", role:"เข้มนักมวยเร่ร่อน", hp:10, slots:1, skillType:"force_move", skill:"ใช้ 3 ธูป: ใช้พลังกายแทนสติในตานั้น • เสีย HP ตาม Fear ของห้องปลายทาง" },
-  { key:"poon", name:"พูน", role:"หมอผีสายดำ", hp:10, slots:1, skillType:"summon_boss", skill:"ใช้ 3 ธูป: ย้ายห้องพิธีกรรมมาอยู่ที่ตัว • HP -3" },
-  { key:"yueang", name:"เยื้อง", role:"เสือสายย่อง", hp:10, slots:1, skillType:null, skill:"ความสามารถพิเศษยังไม่ล็อกในข้อมูล" },
-  { key:"jai", name:"ใจ", role:"สาวสายอนามัย", hp:9, slots:1, skillType:"heal_all", skill:"ใช้ 3 ธูป: ฟื้น HP ทุกคน +2 • ตนเองรวมเป็น +3" },
-  { key:"rueang", name:"เรือง", role:"ตำรวจหนุ่ม", hp:8, slots:2, skillType:null, skill:"ความสามารถพิเศษยังไม่ล็อกในข้อมูล" },
-  { key:"det", name:"เดช", role:"หมอธรรม", hp:7, slots:2, skillType:null, skill:"ความสามารถพิเศษยังไม่ล็อกในข้อมูล" },
-  { key:"kaew", name:"แก้ว", role:"เด็กผู้ลุ่มหลง", hp:6, slots:2, skillType:"move_to_friend", skill:"ใช้ 3 ธูป: เดินไปหาเพื่อน • เสีย HP -1 ต่อห้องที่ผ่าน" },
-  { key:"aeng", name:"เอ๋ง", role:"หมาขี้กลัว", hp:5, slots:2, skillType:null, skill:"ดูการ์ดล่วงหน้า 4 ใบ เลือก 2 • ยังรอระบุว่าดูจากกองใด" },
-  { key:"sisawat", name:"สีสวาด", role:"แมว", hp:4, slots:2, skillType:null, skill:"ฟื้นคืนชีพด้วย HP 4 เมื่อ HP = 0 • Flow การใช้กำลังออกแบบ" }
+  { key:"por-krai", name:"พ่อไกร", role:"สายแทงค์", hp:10, slots:3, skillType:"self_revive", skill:"ใช้ธูป 3 ดอก: ฟื้น HP +3 • ใช้ได้เมื่อ HP 0 ตอนถึงเทิร์นตัวเอง" },
+  { key:"mae-mali", name:"แม่มะลิ", role:"สายต้น", hp:7, slots:3, skillType:"draw_five_stop_event", skill:"ใช้ธูป 3 ดอก: จั่ว Amulet สูงสุด 5 ใบ • ถ้าเจอ Event ให้ Resolve แล้วหยุดทันที" },
+  { key:"doctor", name:"หมอสาว", role:"สายฮีล", hp:9, slots:3, skillType:"heal_all_living", skill:"ใช้ธูป 3 ดอก: เพื่อนที่ยังมีชีวิตทุกคน HP +1 ไม่จำกัดระยะ • ตัวเอง HP -3" },
+  { key:"nerd", name:"เด็กเนิร์ด", role:"สายติม", hp:7, slots:3, skillType:"move_to_friend_hp2", skill:"ใช้ธูป 3 ดอก: เลือกวาร์ปไปหาเพื่อน 1 คน • ตัวเอง HP -2" },
+  { key:"black-shaman", name:"หมอผีดำ", role:"สายตี", hp:8, slots:3, skillType:"remote_ritual_hp3", skill:"ใช้ธูป 3 ดอก: ท้าดวลผีจากห้องไหนก็ได้ • เลือกเครื่องเซ่นและทอยตามปกติ • HP -3" },
+  { key:"mor-tham", name:"หมอธรรม", role:"สายซัพ", hp:7, slots:3, skillType:"free_any_trap_curse", skill:"ใช้ธูป 3 ดอก: ปลดตัวเองหรือเพื่อนจากห้องคำสาป/กับดักได้ทั่วกระดาน" },
+  { key:"temple-dog", name:"หมาวัด", role:"สายคุ้ย", hp:7, slots:2, skillType:"peek_four_choose_two", skill:"ใช้ธูป 3 ดอก: เลือกดูบนสุดหรือล่างสุด 4 ใบ แล้วเลือกเก็บ 2 ใบ • อีก 2 ใบคืนด้านเดิมตามลำดับ" },
+  { key:"stray-cat", name:"แมวจร", role:"สายส่ง", hp:1, slots:2, skillType:"remote_help", skill:"ใช้ธูป 3 ดอก: ใช้การ์ดหมวดช่วยเหลือ 1 ใบให้เพื่อนคนใดก็ได้ ไม่จำกัดห้อง" }
 ];
 
 const ROOMS = [
@@ -369,6 +368,8 @@ function publicSnapshot(room){
       name:p.name,
       seat:p.seat || i+1,
       characterKey:p.characterKey || null,
+      characterConfirmed:!!p.characterConfirmed,
+      ready:!!p.ready,
       connected:!!p.socketId,
       char:p.char || null,
       hp:p.hp ?? null,
@@ -438,7 +439,10 @@ function privateSnapshot(room, socketId){
     equip:p.equip || [],
     score:p.score || 0,
     hp:p.hp ?? null,
-    char:p.char || null
+    char:p.char || null,
+    characterPreviewKey:p.characterPreviewKey || null,
+    characterConfirmed:!!p.characterConfirmed,
+    ready:!!p.ready
   };
 }
 function shouldAutoEndTurn(room){
@@ -761,15 +765,8 @@ function startRoom(room){
   const ghost=shuffle(GHOSTS)[0];
   const bossIndex=ghost.position;
 
-  const used=new Set();
   room.players.forEach(p=>{
-    const picked=CHARS.find(c=>c.key===p.characterKey);
-    if(picked && !used.has(picked.key)){ p.char=picked; used.add(picked.key); }
-    else p.char=null;
-  });
-  const remaining=shuffle(CHARS.filter(c=>!used.has(c.key)));
-  room.players.forEach(p=>{
-    if(!p.char){ p.char=remaining.shift(); p.characterKey=p.char.key; }
+    p.char=CHARS.find(c=>c.key===p.characterKey)||null;
   });
 
   const allAmu=AMULETS.map(uidCard);
@@ -785,8 +782,13 @@ function startRoom(room){
     p.amu=[];
     for(let n=0;n<3;n++){const c=amuNonEvents.shift();if(c)p.amu.push(c);}
   });
+  const starterIndex=room.players.reduce((best,p,i,arr)=>{
+    if(i===0) return 0;
+    return (p.char?.hp||0)>(arr[best].char?.hp||0) ? i : best;
+  },0);
+
   room.game={
-    turn:0, rooms:map, bossIndex, actions:3, sanity:null,sanityBase:null,sanityBonus:0,sanityDecision:false,moveFear:null,lastDice:null,
+    turn:starterIndex, rooms:map, bossIndex, actions:3, sanity:null,sanityBase:null,sanityBonus:0,sanityDecision:false,moveFear:null,lastDice:null,
     rolled:false,moved:false,mustMove:false,moveOptional:false,legal:[],sacDrawn:false,traded:false,
     curse:0,bossDone:{green:0,blue:0,pink:0,black:0}, pendingRoomEffect:null,pendingRitual:null,
     ghost, escapeRequired:false, escapeRule:null, escapeAttempts:0,
@@ -798,6 +800,7 @@ function startRoom(room){
   addLog(room,`เริ่มเกม ${room.players.length} คน`);
   addLog(room,`สุ่ม Ghost: ${ghost.name} → ใช้ตำแหน่งบนการ์ด ช่อง ${bossIndex+1}`);
   addLog(room,"ผู้เล่นทุกคนเริ่มที่ Boss Room และได้รับ Amulet คนละ 3 ใบ");
+  addLog(room,`ผู้เล่น HP สูงสุดเริ่มก่อน: ${room.players[starterIndex].name} (${room.players[starterIndex].char.name} HP ${room.players[starterIndex].char.hp})`);
   beginTurn(room);
 }
 
@@ -869,7 +872,7 @@ io.on("connection", socket=>{
   socket.on("createRoom", ({name,sessionToken})=>{
     const code=makeCode();
     const token=safeToken(sessionToken);
-    const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),seat:1,characterKey:null};
+    const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),seat:1,characterKey:null,characterPreviewKey:null,characterConfirmed:false,ready:false};
     const room={
       code,hostId:p.id,phase:"lobby",players:[],log:[],chat:[],trade:null,updatedAt:Date.now(),
       settings:{...DEFAULT_SETTINGS}
@@ -901,7 +904,7 @@ io.on("connection", socket=>{
     if(room.players.length>=4) return fail(socket,"V1.7 เปิดเทสสูงสุด 4 คนก่อน");
     if(room.players.some(p=>p.socketId===socket.id)) return;
     const seat=[1,2,3,4].find(n=>!room.players.some(x=>(x.seat||0)===n)) || Math.min(4,room.players.length+1);
-    const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),seat,characterKey:null};
+    const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),seat,characterKey:null,characterPreviewKey:null,characterConfirmed:false,ready:false};
     room.players.push(p);
     socket.join(code);
     socket.data.roomCode=code;
@@ -951,16 +954,79 @@ io.on("connection", socket=>{
     const room=rooms.get(socket.data.roomCode); if(!room) return;
     if(room.phase!=="lobby") return fail(socket,"เลือกตัวละครได้เฉพาะก่อนเริ่มเกม");
     const p=playerBySocket(room,socket.id); if(!p) return;
-    if(key===null||key==="random"){
-      p.characterKey=null;
-      addLog(room,`${p.name} เลือกสุ่มตัวละคร`);
-      emitRoom(room); return;
+    if(p.ready) return fail(socket,"กด Unready ก่อนเปลี่ยนตัวละคร");
+    if(p.characterConfirmed) return fail(socket,"ปล่อยตัวละครเดิมก่อนเลือกใหม่");
+
+    const claimed=new Set(
+      room.players
+        .filter(x=>x.id!==p.id && x.characterConfirmed && x.characterKey)
+        .map(x=>x.characterKey)
+    );
+
+    const eligible=CHARS.filter(c=>!claimed.has(c.key));
+    if(!eligible.length) return fail(socket,"ไม่มีตัวละครว่างแล้ว");
+
+    let chosen=null;
+    if(key===null || key==="random"){
+      chosen=eligible[Math.floor(Math.random()*eligible.length)];
+    }else{
+      chosen=CHARS.find(x=>x.key===key);
+      if(!chosen) return fail(socket,"ไม่พบตัวละครนี้");
+      if(claimed.has(chosen.key)) return fail(socket,"ตัวละครนี้ถูกยืนยันโดยผู้เล่นอื่นแล้ว");
     }
-    const c=CHARS.find(x=>x.key===key);
-    if(!c) return fail(socket,"ไม่พบตัวละครนี้");
-    if(room.players.some(x=>x.id!==p.id&&x.characterKey===key)) return fail(socket,"ตัวละครนี้มีคนเลือกแล้ว");
-    p.characterKey=key;
-    addLog(room,`${p.name} เลือก ${c.name}`);
+
+    p.characterPreviewKey=chosen.key;
+    p.ready=false;
+    addLog(room,`${p.name} กำลังดู ${chosen.name} (ยังไม่ยืนยัน)`);
+    emitRoom(room);
+  });
+
+  socket.on("confirmCharacter", ()=>{
+    const room=rooms.get(socket.data.roomCode); if(!room) return;
+    if(room.phase!=="lobby") return fail(socket,"ยืนยันตัวละครได้เฉพาะใน Lobby");
+    const p=playerBySocket(room,socket.id); if(!p) return;
+    if(p.ready) return fail(socket,"กด Unready ก่อนเปลี่ยนการยืนยัน");
+    if(!p.characterPreviewKey) return fail(socket,"เลือกหรือสุ่มตัวละครก่อน");
+
+    const chosen=CHARS.find(c=>c.key===p.characterPreviewKey);
+    if(!chosen) return fail(socket,"ไม่พบตัวละครที่เลือก");
+
+    const taken=room.players.some(
+      x=>x.id!==p.id && x.characterConfirmed && x.characterKey===chosen.key
+    );
+    if(taken) return fail(socket,"ตัวละครนี้เพิ่งถูกผู้เล่นอื่นยืนยันไปแล้ว ลองเลือกใหม่");
+
+    p.characterKey=chosen.key;
+    p.characterConfirmed=true;
+    p.ready=false;
+    addLog(room,`${p.name} ยืนยันตัวละคร ${chosen.name}`);
+    emitRoom(room);
+  });
+
+  socket.on("releaseCharacter", ()=>{
+    const room=rooms.get(socket.data.roomCode); if(!room) return;
+    if(room.phase!=="lobby") return fail(socket,"เปลี่ยนตัวละครได้เฉพาะใน Lobby");
+    const p=playerBySocket(room,socket.id); if(!p) return;
+    if(p.ready) return fail(socket,"กด Unready ก่อนเปลี่ยนตัวละคร");
+
+    const old=CHARS.find(c=>c.key===p.characterKey);
+    p.characterKey=null;
+    p.characterPreviewKey=null;
+    p.characterConfirmed=false;
+    p.ready=false;
+    if(old) addLog(room,`${p.name} ปล่อย ${old.name} กลับเข้ากอง`);
+    emitRoom(room);
+  });
+
+  socket.on("setReady", ({ready})=>{
+    const room=rooms.get(socket.data.roomCode); if(!room) return;
+    if(room.phase!=="lobby") return fail(socket,"Ready ได้เฉพาะใน Lobby");
+    const p=playerBySocket(room,socket.id); if(!p) return;
+
+    const next=!!ready;
+    if(next && !p.characterConfirmed) return fail(socket,"ต้องยืนยันตัวละครก่อน Ready");
+    p.ready=next;
+    addLog(room,`${p.name} ${next?"พร้อมแล้ว":"ยกเลิก Ready"}`);
     emitRoom(room);
   });
 
@@ -980,6 +1046,10 @@ io.on("connection", socket=>{
     if(!room || !checkHost(socket,room)) return;
     if(room.players.length<1) return fail(socket,"ต้องมีผู้เล่นอย่างน้อย 1 คน");
     if(room.players.some(p=>!p.socketId)) return fail(socket,"มีผู้เล่น Offline อยู่ — รอให้กลับเข้าห้องก่อนเริ่ม");
+    const pending=room.players.filter(p=>!p.characterConfirmed || !p.characterKey || !p.ready);
+    if(pending.length){
+      return fail(socket,`ยังเริ่มไม่ได้: ${pending.map(p=>p.name).join(", ")} ยังยืนยันตัวละคร/Ready ไม่ครบ`);
+    }
     startRoom(room);
     emitRoom(room);
   });
