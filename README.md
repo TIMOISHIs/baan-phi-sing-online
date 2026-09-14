@@ -1,33 +1,36 @@
-# บ้านผีสิง V1.7 — Turn Presentation & Pace
+# บ้านผีสิง V1.8 — Playtest Candidate
 
-Online multiplayer playtest build สำหรับบอร์ดเกม “บ้านผีสิง”
+Online multiplayer playtest build สำหรับบอร์ดเกม “บ้านผีสิง” โดยใช้การ์ดจาก Figma/PDF ชุดล่าสุดเป็น source of truth สำหรับ V1.8
 
-## V1.7 highlights
-- Cinematic Dice Focus: ปุ่มทอยกลางจอ + dim ฉากหลัง + full-screen dice animation
-- Turn transition แบบสไลด์ขวา → กลาง → ซ้าย พร้อม SFX
-- Action buttons แบบ tactile bubble และ TURN END แยกด้านขวา
-- ธูปหมด 3 ดอก → Auto End Turn หลัง resolve effect ที่ค้างอยู่
-- Turn Pace Ring 60 วินาที ไม่มีตัวเลข และเตือนเสียงเฉพาะเจ้าของเทิร์นโดยไม่ Skip
-- Ritual flow: เลือกเครื่องเซ่น → ทอย → เลือก equipment modifier → เทียบเงื่อนไข → แสดงผล
+## V1.8 highlights
 
-## ระบบเดิมที่ยังอยู่
-- Multiplayer room / reconnect / host transfer / chat
-- 3×3 random rooms + Ghost/Boss position
-- Amulet Deck 54 ใบตามข้อมูล playtest ปัจจุบัน
-- Floating Amulet Hand, อ่าน Amulet/Character ได้ตลอด
-- Equipment stats, Sanity cards, HP feedback, movement effect
-- Playtest settings + export stats
-
-ดูรายละเอียดรอบนี้ใน `V1.7-CHANGELOG.md`
+- Lobby เลือกตัวละคร 8 ตัว: Manual / Random / Confirm / Ready และห้ามตัวละครซ้ำหลังยืนยัน
+- Host สุ่ม Ghost 1 จาก 9 ตัวแบบ one-shot reveal ไม่มี reroll
+- ผู้เล่นสูงสุด 6 คน และผู้เล่น HP สูงสุดเริ่มก่อน
+- Card migration ครบ 147 ใบ: Room 13, Character 8, Ghost 9, Amulet 63, Sacrifice 54
+- Amulet มี Draw pile + Discard pile; กองหมดจึงสับกองทิ้งกลับมา
+- Spell ใช้ 1 ธูปและทอยตามเงื่อนไข, Help 18, Sanity + / - / ±, Event 12
+- Character Skill ทั้ง 8 ตัวตามกติกา V1.8
+- เงินใช้เป็น resource กลางสำหรับ Trade และนับคะแนนท้ายเกม
+- Deck counter แสดงจำนวน Amulet จั่ว/ทิ้ง และ Sacrifice ที่เหลือ
+- Ghost ทั้ง 9 มี playtest balance คนละ archetype และ ritual requirement รวม 6 ช่อง
+- Artwork จาก PDF ถูกครอปและผูกเข้าการ์ดผ่าน `public/assets/cards/manifest.json`
 
 ## Run locally
+
 ```bash
 npm install
 npm start
 ```
-จากนั้นเปิด `http://localhost:3000`
 
-## Smoke test
+เปิด `http://localhost:3000`
+
+## Validation
+
 ```bash
-npm run smoke
+npm test
 ```
+
+`npm test` รัน V1.8 extended regression ซึ่งรวม static inventory/card checks และ core multiplayer rule flows.
+
+ดูรายละเอียดใน `V1.8-CHANGELOG.md`

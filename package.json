@@ -1,12 +1,15 @@
 {
-  "name": "baan-phi-sing-v1-7-turn-presentation",
-  "version": "1.7.0",
+  "name": "baan-phi-sing-v1-8-playtest",
+  "version": "1.8.0",
   "private": true,
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "smoke": "node smoke-test.js"
+    "smoke": "node v18-regression-test.cjs",
+    "smoke:legacy": "node smoke-test.js",
+    "test:static": "node v18-static-integration-test.cjs",
+    "test": "node v18-regression-test.cjs"
   },
   "dependencies": {
     "express": "^4.21.2",
