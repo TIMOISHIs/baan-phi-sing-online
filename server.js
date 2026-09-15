@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.8.4",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.8.5",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -184,16 +184,31 @@ const SACRIFICES = [
 ];
 
 const GHOSTS = [
-{id:"ghost-occult-master",name:"ผีจอมขมังเวทย์",tier:"สายคำสาป",archetype:"Curse Control",fear:6,position:4,need:{green:2,blue:2,pink:1,black:1},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},passive:{kind:"totalEquals",value:8,label:"ผลรวมเต๋า = 8"},passiveText:"ผลรวมเต๋า = 8 → Curse +1",counterText:{green:"พลาด: HP -1",blue:"พลาด: HP -1 • Curse +1",pink:"พลาด: HP -2 • Curse +1",black:"พลาด: HP -2 • Curse +2"}},
-{id:"ghost-treasure-guard",name:"ผีเฝ้าสมบัติ",tier:"สายทรัพย์",archetype:"Money Pressure",fear:5,position:0,need:{green:2,blue:2,pink:2},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:8,label:"8+"},black:{op:">=",value:8,label:"8+"}},passive:{kind:"dieIncludes",values:[1],label:"มีลูกเต๋าหน้า 1"},passiveText:"มีลูกเต๋าหน้า 1 → เสียเงิน 1 • ถ้าไม่มีเงิน HP -1",counterText:{green:"พลาด: เงิน -1",blue:"พลาด: เงิน -1 • ถ้าไม่มีเงิน HP -1",pink:"พลาด: เงิน -2 • ถ้าไม่มีเงิน HP -1",black:"พลาด: เงิน -2"}},
-{id:"ghost-pob-jaothi",name:"ปอบเจ้าที่",tier:"สายโจมตี",archetype:"HP Drain",fear:6,position:8,need:{green:3,blue:2,black:1},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},passive:{kind:"totalEquals",value:7,label:"ผลรวมเต๋า = 7"},passiveText:"ผลรวมเต๋า = 7 → ผู้ทอย HP -1",counterText:{green:"พลาด: HP -1",blue:"พลาด: HP -2",pink:"พลาด: HP -2",black:"พลาด: HP -3"}},
-{id:"ghost-pregnant",name:"ผีตายทั้งกลม",tier:"สายหมู่",archetype:"Splash Damage",fear:6,position:2,need:{green:2,blue:2,pink:2},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},passive:{kind:"dieIncludes",values:[6],label:"มีลูกเต๋าหน้า 6"},passiveText:"มีลูกเต๋าหน้า 6 → ผู้ทอยและเพื่อนในห้องเดียวกัน HP -1",counterText:{green:"พลาด: ผู้ทำพิธี HP -1",blue:"พลาด: ทุกคนในห้อง HP -1",pink:"พลาด: ผู้ทำพิธี HP -2 • คนอื่นในห้อง HP -1",black:"พลาด: ทุกคนในห้อง HP -2"}},
-{id:"ghost-oil-pillar",name:"เสาตกน้ำมัน",tier:"สายปั่นทาง",archetype:"Movement Disruption",fear:5,position:6,need:{green:2,blue:3,pink:1},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},passive:{kind:"doubles",label:"ลูกเต๋าออกเลขเหมือนกัน"},passiveText:"เต๋าออกเลขเหมือนกัน → ถูกผลักไปห้องติดกันแบบสุ่ม",counterText:{green:"พลาด: ถูกผลักไปห้องติดกัน",blue:"พลาด: HP -1 • ถูกผลักไปห้องติดกัน",pink:"พลาด: HP -2 • ถูกผลักไปห้องติดกัน",black:"พลาด: HP -2 • ถูกผลักออกจาก Boss Room"}},
-{id:"ghost-headless",name:"ผีหัวขาด",tier:"สายหลงทาง",archetype:"Position Shuffle",fear:6,position:1,need:{green:3,blue:1,pink:1,black:1},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},passive:{kind:"dieIncludes",values:[2],label:"มีลูกเต๋าหน้า 2"},passiveText:"มีลูกเต๋าหน้า 2 → Curse +1",counterText:{green:"พลาด: ย้ายออกจาก Boss Room แบบสุ่ม",blue:"พลาด: HP -1 • ย้ายห้องแบบสุ่ม",pink:"พลาด: HP -2 • ย้ายห้องแบบสุ่ม",black:"พลาด: HP -2 • ถูกส่งไปอีกมุมของบ้าน"}},
-{id:"ghost-widow",name:"ผีแม่หม้าย",tier:"สายโดดเดี่ยว",archetype:"Isolation",fear:5,position:3,need:{green:2,blue:2,pink:1,black:1},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},passive:{kind:"totalEquals",value:9,label:"ผลรวมเต๋า = 9"},passiveText:"ผลรวมเต๋า = 9 → ถ้ามีหลายคนในห้องเดียวกัน ทุกคนในห้อง HP -1",counterText:{green:"พลาด: HP -1",blue:"พลาด: ถ้ามีเพื่อนในห้อง ทุกคน HP -1",pink:"พลาด: HP -2 • เพื่อนในห้อง HP -1",black:"พลาด: ทุกคนในห้อง HP -2"}},
-{id:"ghost-kumarn",name:"กุมารทอง",tier:"สายขโมย",archetype:"Resource Thief",fear:5,position:5,need:{green:3,blue:2,pink:1},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},passive:{kind:"totalEquals",value:5,label:"ผลรวมเต๋า = 5"},passiveText:"ผลรวมเต๋า = 5 → เงิน -1 • ถ้าไม่มีเงิน เสีย Amulet 1 ใบ",counterText:{green:"พลาด: เงิน -1",blue:"พลาด: เงิน -1 หรือเสีย Amulet 1 ใบ",pink:"พลาด: เงิน -2 หรือเสีย Amulet 1 ใบ",black:"พลาด: เงิน -2 • HP -1"}},
-{id:"ghost-wanderer",name:"ผีเร่ร่อน",tier:"สายหลอกทาง",archetype:"Misdirection",fear:5,position:7,need:{green:2,blue:2,pink:2},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},passive:{kind:"totalEquals",value:6,label:"ผลรวมเต๋า = 6"},passiveText:"ผลรวมเต๋า = 6 → ผู้ทอยถูกพาไปห้องติดกันแบบสุ่ม",counterText:{green:"พลาด: ย้ายไปห้องติดกัน",blue:"พลาด: HP -1 • ย้ายไปห้องติดกัน",pink:"พลาด: HP -1 • ย้ายไปห้องแบบสุ่ม",black:"พลาด: HP -2 • ย้ายไปห้องแบบสุ่ม"}}
+{id:"ghost-occult-master",name:"ผีจอมขมังเวทย์",tier:"สายคำสาป",archetype:"Curse Control",fear:6,position:4,need:{green:2,blue:2,pink:1,black:1},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},curseTrigger:{kind:"totalEquals",value:8,label:"ผลรวมเต๋า = 8"},curseText:"ผลรวมเต๋า = 8 → Curse +1",counterText:{green:"พลาด: HP -1",blue:"พลาด: HP -1 • Curse +1",pink:"พลาด: HP -2 • Curse +1",black:"พลาด: HP -2 • Curse +2"}},
+{id:"ghost-treasure-guard",name:"ผีเฝ้าสมบัติ",tier:"สายทรัพย์",archetype:"Money Pressure",fear:5,position:0,need:{green:2,blue:2,pink:2},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:8,label:"8+"},black:{op:">=",value:8,label:"8+"}},curseTrigger:{kind:"dieIncludes",values:[1],label:"มีลูกเต๋าหน้า 1"},curseText:"มีลูกเต๋าหน้า 1 → เสียเงิน 1 • ถ้าไม่มีเงิน HP -1",counterText:{green:"พลาด: เงิน -1",blue:"พลาด: เงิน -1 • ถ้าไม่มีเงิน HP -1",pink:"พลาด: เงิน -2 • ถ้าไม่มีเงิน HP -1",black:"พลาด: เงิน -2"}},
+{id:"ghost-pob-jaothi",name:"ปอบเจ้าที่",tier:"สายโจมตี",archetype:"HP Drain",fear:6,position:8,need:{green:3,blue:2,black:1},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},curseTrigger:{kind:"totalEquals",value:7,label:"ผลรวมเต๋า = 7"},curseText:"ผลรวมเต๋า = 7 → ผู้ทอย HP -1",counterText:{green:"พลาด: HP -1",blue:"พลาด: HP -2",pink:"พลาด: HP -2",black:"พลาด: HP -3"}},
+{id:"ghost-pregnant",name:"ผีตายทั้งกลม",tier:"สายหมู่",archetype:"Splash Damage",fear:6,position:2,need:{green:2,blue:2,pink:2},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},curseTrigger:{kind:"dieIncludes",values:[6],label:"มีลูกเต๋าหน้า 6"},curseText:"มีลูกเต๋าหน้า 6 → ผู้ทอยและเพื่อนในห้องเดียวกัน HP -1",counterText:{green:"พลาด: ผู้ทำพิธี HP -1",blue:"พลาด: ทุกคนในห้อง HP -1",pink:"พลาด: ผู้ทำพิธี HP -2 • คนอื่นในห้อง HP -1",black:"พลาด: ทุกคนในห้อง HP -2"}},
+{id:"ghost-oil-pillar",name:"เสาตกน้ำมัน",tier:"สายปั่นทาง",archetype:"Movement Disruption",fear:5,position:6,need:{green:2,blue:3,pink:1},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},curseTrigger:{kind:"doubles",label:"ลูกเต๋าออกเลขเหมือนกัน"},curseText:"เต๋าออกเลขเหมือนกัน → ถูกผลักไปห้องติดกันแบบสุ่ม",counterText:{green:"พลาด: ถูกผลักไปห้องติดกัน",blue:"พลาด: HP -1 • ถูกผลักไปห้องติดกัน",pink:"พลาด: HP -2 • ถูกผลักไปห้องติดกัน",black:"พลาด: HP -2 • ถูกผลักออกจาก Boss Room"}},
+{id:"ghost-headless",name:"ผีหัวขาด",tier:"สายหลงทาง",archetype:"Position Shuffle",fear:6,position:1,need:{green:3,blue:1,pink:1,black:1},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},curseTrigger:{kind:"dieIncludes",values:[2],label:"มีลูกเต๋าหน้า 2"},curseText:"มีลูกเต๋าหน้า 2 → Curse +1",counterText:{green:"พลาด: ย้ายออกจาก Boss Room แบบสุ่ม",blue:"พลาด: HP -1 • ย้ายห้องแบบสุ่ม",pink:"พลาด: HP -2 • ย้ายห้องแบบสุ่ม",black:"พลาด: HP -2 • ถูกส่งไปอีกมุมของบ้าน"}},
+{id:"ghost-widow",name:"ผีแม่หม้าย",tier:"สายโดดเดี่ยว",archetype:"Isolation",fear:5,position:3,need:{green:2,blue:2,pink:1,black:1},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},curseTrigger:{kind:"totalEquals",value:9,label:"ผลรวมเต๋า = 9"},curseText:"ผลรวมเต๋า = 9 → ถ้ามีหลายคนในห้องเดียวกัน ทุกคนในห้อง HP -1",counterText:{green:"พลาด: HP -1",blue:"พลาด: ถ้ามีเพื่อนในห้อง ทุกคน HP -1",pink:"พลาด: HP -2 • เพื่อนในห้อง HP -1",black:"พลาด: ทุกคนในห้อง HP -2"}},
+{id:"ghost-kumarn",name:"กุมารทอง",tier:"สายขโมย",archetype:"Resource Thief",fear:5,position:5,need:{green:3,blue:2,pink:1},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},curseTrigger:{kind:"totalEquals",value:5,label:"ผลรวมเต๋า = 5"},curseText:"ผลรวมเต๋า = 5 → เงิน -1 • ถ้าไม่มีเงิน เสีย Amulet 1 ใบ",counterText:{green:"พลาด: เงิน -1",blue:"พลาด: เงิน -1 หรือเสีย Amulet 1 ใบ",pink:"พลาด: เงิน -2 หรือเสีย Amulet 1 ใบ",black:"พลาด: เงิน -2 • HP -1"}},
+{id:"ghost-wanderer",name:"ผีเร่ร่อน",tier:"สายหลอกทาง",archetype:"Misdirection",fear:5,position:7,need:{green:2,blue:2,pink:2},dice:{green:{op:"<=",value:9,label:"9-"},blue:{op:">=",value:6,label:"6+"},pink:{op:">=",value:7,label:"7+"},black:{op:">=",value:8,label:"8+"}},curseTrigger:{kind:"totalEquals",value:6,label:"ผลรวมเต๋า = 6"},curseText:"ผลรวมเต๋า = 6 → ผู้ทอยถูกพาไปห้องติดกันแบบสุ่ม",counterText:{green:"พลาด: ย้ายไปห้องติดกัน",blue:"พลาด: HP -1 • ย้ายไปห้องติดกัน",pink:"พลาด: HP -1 • ย้ายไปห้องแบบสุ่ม",black:"พลาด: HP -2 • ย้ายไปห้องแบบสุ่ม"}}
 ];
+const CURSE_EFFECTS={
+  "ghost-occult-master":"ผู้เล่นที่ยังมีชีวิตทุกคน HP -1",
+  "ghost-treasure-guard":"ผู้ทอยเสียเงิน 1 • ถ้าไม่มีเงิน HP -1",
+  "ghost-pob-jaothi":"ผู้ทอย HP -1",
+  "ghost-pregnant":"ผู้ทอยและเพื่อนในห้องเดียวกัน HP -1",
+  "ghost-oil-pillar":"ผู้ทอยถูกผลักไปห้องติดกันแบบสุ่ม",
+  "ghost-headless":"ผู้เล่นที่ยังมีชีวิตทุกคน HP -1",
+  "ghost-widow":"ถ้าผู้ทอยอยู่กับคนอื่น ทุกคนในห้องนั้น HP -1",
+  "ghost-kumarn":"ผู้ทอยเสียเงิน 1 • ถ้าไม่มีเงินเสีย Amulet 1 ใบ • ถ้าไม่มีทั้งสอง HP -1",
+  "ghost-wanderer":"ผู้ทอยถูกพาไปห้องติดกันแบบสุ่ม"
+};
+for(const ghost of GHOSTS){
+  ghost.curseEffectText=CURSE_EFFECTS[ghost.id];
+  ghost.curseText=`${ghost.curseTrigger.label} → Curse +1 • 3/6 เตือน • 6/6: ${ghost.curseEffectText}`;
+}
 
 // V1.8 artwork mapping from the authoritative Figma/PDF export.
 ROOMS.forEach((c,i)=>{ c.art=artUrl(CARD_ART.room?.[i]); });
@@ -443,7 +458,7 @@ function publicSnapshot(room){
     hostId:room.hostId,
     settings:{...room.settings},
     characters:CHARS.map(c=>({key:c.key,name:c.name,role:c.role,hp:c.hp,slots:c.slots,skill:c.skill,skillType:c.skillType,art:c.art||null})),
-    ghosts:GHOSTS.map(g=>({id:g.id,name:g.name,tier:g.tier,archetype:g.archetype,fear:g.fear,position:g.position,need:g.need,dice:g.dice,art:g.art||null,passiveText:g.passiveText,counterText:g.counterText})),
+    ghosts:GHOSTS.map(g=>({id:g.id,name:g.name,tier:g.tier,archetype:g.archetype,fear:g.fear,position:g.position,need:g.need,dice:g.dice,art:g.art||null,curseText:g.curseText,counterText:g.counterText})),
     ghostSelection:room.ghostSelection||null,
     players:room.players.map((p,i)=>({
       id:p.id,
@@ -493,6 +508,8 @@ function publicSnapshot(room){
       sanityBonus:g.sanityBonus||0,
       sanityDecision:!!g.sanityDecision,
       moveFear:g.moveFear??null,
+      movementRange:g.movementRange||0,
+      moveDistances:g.moveDistances||{},
       pendingRitual:g.pendingRitual||null,
       diceSeq:g.diceSeq||0,
       lastDiceEvent:g.lastDiceEvent||null,
@@ -562,7 +579,7 @@ function fail(socket,msg){ socket.emit("errorMessage", msg); }
 function moveByGhost(room,p,{anywhere=false,reason="พลังผี"}={}){if(!room?.game||!p||p.hp<=0)return false;let choices=anywhere?room.game.rooms.map((_,i)=>i).filter(i=>i!==p.pos&&i!==room.game.bossIndex&&canEnter(room,p,i)):neighbors(p.pos).filter(i=>i!==room.game.bossIndex&&canEnter(room,p,i));if(!choices.length)return false;const dest=choices[Math.floor(Math.random()*choices.length)];p.pos=dest;bumpRoomVisit(room,dest);addLog(room,`${p.name}: ${reason} → ถูกย้ายไป ${roomAt(room,dest).name}`);return true;}
 function ghostMoneyLoss(room,p,amount,reason){amount=Math.max(1,Number(amount)||1);if((p.score||0)>0){const before=p.score;p.score=Math.max(0,p.score-amount);addLog(room,`${p.name}: ${reason} → เงิน -${before-p.score}`);return true;}ghostDamage(room,p,1,`${reason} • ไม่มีเงิน`);return false;}
 function ghostStealAmulet(room,p,reason){if(!p.amu?.length){ghostDamage(room,p,1,`${reason} • ไม่มี Amulet`);return false;}const idx=Math.floor(Math.random()*p.amu.length),card=p.amu.splice(idx,1)[0];returnAmuletToBottom(room,card,reason);return true;}
-function passiveTriggered(rule,d){if(!rule)return false;if(rule.kind==="totalEquals")return d.total===rule.value;if(rule.kind==="dieIncludes")return (rule.values||[]).includes(d.a)||(rule.values||[]).includes(d.b);if(rule.kind==="doubles")return d.a===d.b;return false;}
+function curseTriggered(rule,d){if(!rule)return false;if(rule.kind==="totalEquals")return d.total===rule.value;if(rule.kind==="dieIncludes")return (rule.values||[]).includes(d.a)||(rule.values||[]).includes(d.b);if(rule.kind==="doubles")return d.a===d.b;return false;}
 function addCurseProgress(room,amount=1,source="พลังผี"){
   const g=room?.game;if(!g||g.curseResolving)return false;
   const before=Math.max(0,Number(g.curse)||0),add=Math.max(0,Number(amount)||0);
@@ -581,14 +598,18 @@ function addCurseProgress(room,amount=1,source="พลังผี"){
     io.to(room.code).emit("curseFx",{phase:"burst",curse:6,max:6,ghostName:currentGhost(room).name,duration:2700,resolveAt:g.curseResolveAt});
     addLog(room,`☠️ ${currentGhost(room).name} สะสม Curse ครบ 6/6 — กำลังปล่อยคำสาป`);
     emitRoom(room);
-    const roomCode=room.code;
+    const roomCode=room.code,curseGhost=currentGhost(room),targetId=active(room)?.id;
     setTimeout(()=>{
-      const latest=rooms.get(roomCode);if(!latest?.game||!latest.game.curseResolving)return;
+      const latest=rooms.get(roomCode);if(latest?.game!==g||!g.curseResolving)return;
       const activeId=active(latest)?.id||null;
       if(latest.game.stats?.curse)latest.game.stats.curse.bursts++;
-      latest.players.forEach(x=>{if(x.hp>0)changeHp(latest,x,-1,"Curse ครบ 6 → HP -1")});
+      const target=latest.players.find(x=>x.id===targetId),oldPos=target?.pos;
+      resolveGhostCurse(latest,curseGhost,target);
+      if(target&&target.pos!==oldPos&&active(latest)?.id===target.id){
+        g.mustMove=false;g.moveOptional=false;g.legal=[];g.moved=true;g.sanityDecision=false;
+      }
       latest.game.curse=0;latest.game.curseWarned=false;latest.game.curseResolving=false;latest.game.curseResolveAt=null;
-      addLog(latest,"Curse ทำงาน → ผู้เล่นทุกคน HP -1 • Curse รีเซ็ต 0");
+      addLog(latest,`${curseGhost.name} Curse ทำงาน → ${curseGhost.curseEffectText} • รีเซ็ต 0/6`);
       if(activeId)resolveDeathsAfterAction(latest,activeId);else markNewDeaths(latest);
       emitRoom(latest);
     },2700);
@@ -597,16 +618,27 @@ function addCurseProgress(room,amount=1,source="พลังผี"){
   return false;
 }
 function applyCurse(room,dice){
-  const ghost=currentGhost(room),rule=ghost.passive||{};
-  if(!passiveTriggered(rule,dice))return;
-  const p=active(room);if(!p)return;
-  if(ghost.id==="ghost-occult-master"||ghost.id==="ghost-headless")addCurseProgress(room,1,`${ghost.name} Passive`);
-  else if(ghost.id==="ghost-treasure-guard")ghostMoneyLoss(room,p,1,`${ghost.name} Passive`);
-  else if(ghost.id==="ghost-pob-jaothi")ghostDamage(room,p,1,`${ghost.name} Passive`);
-  else if(ghost.id==="ghost-pregnant"){ghostDamage(room,p,1,`${ghost.name} Passive`);damagePlayersInRoom(room,p.pos,p.id,1,`${ghost.name} Passive`,true);}
-  else if(ghost.id==="ghost-oil-pillar"||ghost.id==="ghost-wanderer")moveByGhost(room,p,{reason:`${ghost.name} Passive`});
-  else if(ghost.id==="ghost-widow"){const together=room.players.filter(x=>x.hp>0&&x.pos===p.pos);if(together.length>=2)together.forEach(x=>ghostDamage(room,x,1,`${ghost.name} Passive`));}
-  else if(ghost.id==="ghost-kumarn"){if((p.score||0)>0)ghostMoneyLoss(room,p,1,`${ghost.name} Passive`);else ghostStealAmulet(room,p,`${ghost.name} Passive`);}
+  const ghost=currentGhost(room);
+  if(!active(room)||!curseTriggered(ghost.curseTrigger,dice))return;
+  addCurseProgress(room,1,`${ghost.name} Curse`);
+}
+function resolveGhostCurse(room,ghost,p){
+  const reason=`${ghost.name} Curse 6/6`;
+  if(["ghost-occult-master","ghost-headless"].includes(ghost.id)){
+    room.players.filter(x=>x.hp>0).forEach(x=>changeHp(room,x,-1,reason));return;
+  }
+  if(!p||p.hp<=0)return;
+  if(ghost.id==="ghost-treasure-guard")ghostMoneyLoss(room,p,1,reason);
+  else if(ghost.id==="ghost-pob-jaothi")ghostDamage(room,p,1,reason);
+  else if(ghost.id==="ghost-pregnant"){
+    const pos=p.pos;ghostDamage(room,p,1,reason);damagePlayersInRoom(room,pos,p.id,1,reason,true);
+  }else if(["ghost-oil-pillar","ghost-wanderer"].includes(ghost.id))moveByGhost(room,p,{reason});
+  else if(ghost.id==="ghost-widow"){
+    const together=room.players.filter(x=>x.hp>0&&x.pos===p.pos);
+    if(together.length>=2)together.forEach(x=>ghostDamage(room,x,1,reason));
+  }else if(ghost.id==="ghost-kumarn"){
+    if(p.score>0)ghostMoneyLoss(room,p,1,reason);else ghostStealAmulet(room,p,reason);
+  }
 }
 
 function markNewDeaths(room){
@@ -724,7 +756,18 @@ function applySacrificeRoomEffect(room, player, card){
 function finalizeMovementOptions(room,p){
   const g=room.game;
   g.sanityDecision=false;
-  g.legal=neighbors(p.pos).filter(i=>roomAt(room,i).fear<=g.sanity && canEnter(room,p,i));
+  g.movementRange=Math.max(0,Math.floor(Number(g.movementRange??g.lastDice?.total)||0));
+  const seen=new Set([p.pos]),queue=[{index:p.pos,distance:0}];g.legal=[];g.moveDistances={};
+  for(let n=0;n<queue.length;n++){
+    const {index,distance}=queue[n];if(distance>=g.movementRange)continue;
+    // Special rooms may be destinations but cannot be crossed without escaping next turn.
+    if(index!==p.pos&&(index===g.bossIndex||["คำสาป","กับดัก"].includes(roomAt(room,index)?.type)))continue;
+    for(const next of neighbors(index)){
+      if(seen.has(next)||roomAt(room,next).fear>g.sanity||!canEnter(room,p,next))continue;
+      seen.add(next);g.legal.push(next);g.moveDistances[next]=distance+1;queue.push({index:next,distance:distance+1});
+    }
+  }
+  g.mustMove=false;g.moveOptional=false;
   if(g.legal.length){
     if(room.settings.forcedMovement) g.mustMove=true;
     else g.moveOptional=true;
@@ -896,6 +939,7 @@ function beginTurn(room){
   }
 
   if(g.stats) g.stats.turns++;
+  g.movementRange=0;g.moveDistances={};
   g.actions=3; g.sanity=null; g.sanityBase=null; g.sanityBonus=0; g.sanityDecision=false; g.moveFear=null; g.lastDice=null; g.rolled=false; g.moved=false;
   g.mustMove=false; g.moveOptional=false; g.legal=[]; g.sacDrawn=false; g.traded=false; g.pendingRitual=null;
   g.escapeRequired=false; g.escapeRule=null; g.escapeAttempts=0;
@@ -1198,7 +1242,7 @@ io.on("connection", socket=>{
     const seq=room.ghostSelection.seq;addLog(room,"Host เริ่มสุ่มผี...");io.to(room.code).emit("ghostRandomStarted",{seq});
     setTimeout(()=>{
       const latest=rooms.get(room.code);if(!latest||latest.phase!=="ghostSelect"||latest.ghostSelection?.seq!==seq)return;
-      emitRoom(latest);io.to(latest.code).emit("ghostReveal",{seq,ghost:{id:ghost.id,name:ghost.name,tier:ghost.tier,archetype:ghost.archetype,fear:ghost.fear,position:ghost.position,need:ghost.need,dice:ghost.dice,passiveText:ghost.passiveText,counterText:ghost.counterText}});
+      emitRoom(latest);io.to(latest.code).emit("ghostReveal",{seq,ghost:{id:ghost.id,name:ghost.name,tier:ghost.tier,archetype:ghost.archetype,fear:ghost.fear,position:ghost.position,need:ghost.need,dice:ghost.dice,curseText:ghost.curseText,counterText:ghost.counterText}});
       addLog(latest,`สุ่มได้ ${ghost.name} → ล็อกผีตัวนี้ทันที`);
     },2300);
     setTimeout(()=>{
@@ -1244,6 +1288,7 @@ io.on("connection", socket=>{
     if(g.escapeRequired) return fail(socket,"ต้องหนีออกจากห้องพิเศษก่อน");
     if(g.rolled || p.hp<=0) return fail(socket,"ทอยไม่ได้ตอนนี้");
     const d=roll2(); g.rolled=true; g.lastDice=d;
+    g.movementRange=d.total;
     if(g.stats) g.stats.moveRolls++;
     recordDice(room,p,d,"move");
     applyCurse(room,d);
@@ -1287,9 +1332,10 @@ io.on("connection", socket=>{
     const p=checkTurn(socket,room); if(!p) return;
     const g=room.game, i=Number(index);
     if(!(g.mustMove||g.moveOptional) || !g.legal.includes(i)) return fail(socket,"เดินไปห้องนี้ไม่ได้");
+    const distance=g.moveDistances?.[i]||1;
     p.pos=i; g.mustMove=false; g.moveOptional=false; g.moved=true; g.legal=[];
     bumpRoomVisit(room,i);
-    addLog(room,`${p.name} เดินเข้า ${roomAt(room,i).name}`);
+    addLog(room,`${p.name} เดิน ${distance} ห้อง เข้า ${roomAt(room,i).name}`);
     emitRoom(room);
   });
 
@@ -1327,7 +1373,7 @@ io.on("connection", socket=>{
         if(g.pendingRoomEffect){g.officePickAfterPending=p.id;addLog(room,`${currentRoom.name}: รอ Resolve Event ก่อน แล้วค่อยเลือกจากกองทิ้ง`);}
         else queueOfficeDiscardPick(room,p,{force:true});
       }
-    }else if(currentRoom?.effectId==="equip_free" && c.type==="equip" && p.equip.length<Math.min(2,p.char.slots)){
+    }else if(currentRoom?.effectId==="equip_free" && c.type==="equip" && p.equip.length<p.char.slots){
       p.equip.push(c);
       addLog(room,`${p.name} จั่ว ${c.name} ในห้องน้ำ → สวมใส่ทันทีฟรี`);
     }else{
@@ -1341,7 +1387,7 @@ io.on("connection", socket=>{
           reason:"Amulet Hand เต็ม — เลือกเก็บ 5 ใบ",
           count:Math.max(1,p.amu.length-5),
           newUid:c.uid,
-          options:p.amu.map(x=>({uid:x.uid,name:x.name,type:x.type,category:x.category,desc:x.desc||x.effect||""}))
+          options:p.amu.map(x=>({uid:x.uid,name:x.name,type:x.type,category:x.category,desc:x.desc||x.effect||"",art:x.art||null}))
         };
         addLog(room,`${p.name} มี Amulet 6 ใบชั่วคราว → ต้องเลือก 1 ใบกลับใต้กอง`);
       }
@@ -1387,7 +1433,7 @@ io.on("connection", socket=>{
     const g=room.game;
     const ref=cardFromPlayer(p,uid);
     if(!ref || ref.zone!=="amu" || ref.card.type!=="equip") return fail(socket,"การ์ดนี้สวมใส่ไม่ได้");
-    if(!g.moved||g.actions<1||p.equip.length>=Math.min(2,p.char.slots)) return fail(socket,"สวมใส่ไม่ได้");
+    if(!g.moved||g.actions<1||p.equip.length>=p.char.slots) return fail(socket,"สวมใส่ไม่ได้");
     g.actions--;
     const card=removeCard(p,ref); p.equip.push(card);
     addLog(room,`${p.name} สวม ${card.name}`);
@@ -1399,9 +1445,14 @@ io.on("connection", socket=>{
     const p=checkTurn(socket,room); if(!p) return;
     const g=room.game;
     const idx=p.equip.findIndex(c=>c.uid===uid);
-    if(idx<0||!g.moved||g.actions<1||p.amu.length>=5) return fail(socket,"ถอดอุปกรณ์ไม่ได้");
-    g.actions--; p.amu.push(p.equip.splice(idx,1)[0]);
-    addLog(room,`${p.name} ถอดอุปกรณ์`);
+    if(idx<0||!g.moved||g.actions<1) return fail(socket,"ถอดอุปกรณ์ไม่ได้");
+    g.actions--;const card=p.equip.splice(idx,1)[0];p.amu.push(card);
+    if(p.amu.length>5)g.pendingRoomEffect={
+      id:`unequip-overflow-${Date.now()}`,type:"discardAmuletOverflow",playerId:p.id,
+      reason:"ถอดอุปกรณ์เข้ามือ — เลือกทิ้งให้เหลือ 5 ใบ",count:p.amu.length-5,newUid:card.uid,newLabel:"ใบที่เพิ่งถอด",
+      options:p.amu.map(c=>({uid:c.uid,name:c.name,type:c.type,category:c.category,desc:c.desc||c.effect||"",art:c.art||null}))
+    };
+    addLog(room,`${p.name} ถอด ${card.name} กลับเข้ามือ • ใช้ธูป 1 ดอก`);
     emitRoom(room);
   });
 
@@ -1546,6 +1597,7 @@ io.on("connection", socket=>{
 
   socket.on("resolveRitual", ({modifier=0})=>{
     const room=rooms.get(socket.data.roomCode);if(!room||!room.game?.pendingRitual)return;
+    if(room.game.curseResolving)return fail(socket,"รอ Curse ทำงานเสร็จก่อน");
     const p=playerBySocket(room,socket.id),g=room.game,pending=g.pendingRitual;
     if(!p||pending.playerId!==p.id)return fail(socket,"พิธีนี้ไม่ใช่ของคุณ");
     modifier=Math.trunc(Number(modifier)||0);
@@ -1584,6 +1636,7 @@ io.on("connection", socket=>{
 
   socket.on("resolveRoomEffect", ({uids=[],uid=null})=>{
     const room=rooms.get(socket.data.roomCode); if(!room||!room.game?.pendingRoomEffect) return;
+    if(room.game.curseResolving)return fail(socket,"รอ Curse ทำงานเสร็จก่อน");
     const p=playerBySocket(room,socket.id), pending=room.game.pendingRoomEffect;
     if(!p||pending.playerId!==p.id) return fail(socket,"Effect นี้ไม่ใช่ของคุณ");
     if(pending.type==="negativeReaction"){
@@ -1782,4 +1835,4 @@ setInterval(()=>{
   }
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.8.3 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.8.5 listening on :${PORT}`));

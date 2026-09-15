@@ -1147,3 +1147,20 @@ body:before{
 @keyframes v184CursePop{0%{opacity:0;transform:scale(.76)}65%{opacity:1;transform:scale(1.035)}100%{transform:scale(1)}}
 @keyframes v184CurseShake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 @keyframes v184Vignette{50%{transform:scale(1.025);filter:brightness(1.18)}}
+
+/* V1.8.5 — Readable events, sound settings and character equipment slots */
+.settings-gear{position:fixed;right:16px;top:14px;z-index:150;width:44px;height:44px;border:1px solid #8c7753;border-radius:50%;background:#171b18;color:#e7d6b6;font-size:28px;line-height:1;box-shadow:0 4px 18px #0008;cursor:pointer}
+.hud{padding-right:70px}
+.sound-settings{width:min(420px,calc(100vw - 32px));margin:auto;padding:24px;border:1px solid #8c7753;border-radius:18px;background:#191d19;color:#e7e0d2;box-shadow:0 24px 80px #000a}
+.sound-settings::backdrop{background:#0009;backdrop-filter:blur(4px)}
+.sound-settings-header{display:flex;align-items:center;justify-content:space-between;gap:16px}.sound-settings-header h2{margin:0;font-size:22px}.sound-settings-header button{padding:8px 12px}
+.sound-settings p{font-size:12px;color:#b5b0a2;margin:12px 0 24px}.sound-settings label{display:flex;justify-content:space-between;gap:16px;margin-top:18px;font-size:15px}.sound-settings output{color:#e7c37f;font-variant-numeric:tabular-nums}
+.sound-settings input[type=range]{width:100%;height:28px;padding:0;accent-color:#c0a16a}.sound-settings-actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+.card-reveal-fx.event-reading{pointer-events:auto;z-index:135;padding:20px;overflow:auto;box-sizing:border-box;overscroll-behavior:contain}
+.event-reading .card-reveal-card{width:min(420px,90vw);box-sizing:border-box;max-height:calc(100dvh - 40px);overflow-y:auto}
+.event-reading .card-reveal-art{height:clamp(120px,30vh,250px)}.card-reveal-art img{width:100%;height:100%;object-fit:contain}
+.event-reading .card-reveal-card p{font-size:16px;line-height:1.7;white-space:pre-line}
+#cardRevealClose{width:100%;margin-top:18px;min-height:46px;font-size:16px}
+#equip{display:flex;flex-wrap:wrap;gap:5px}#equip .equip{flex:1 1 75px;min-height:38px}
+.overflow-choice:has(input:checked){border-color:#dfbf80;background:#343022}
+@media(max-width:600px){.settings-gear{top:8px;right:8px;width:40px;height:40px}.sound-settings{padding:18px}.event-reading .card-reveal-card h2{font-size:22px}}
