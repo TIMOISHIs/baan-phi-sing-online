@@ -1,0 +1,14 @@
+const fs=require('fs');
+const assert=(ok,msg)=>{if(!ok)throw new Error(msg)};
+const app=fs.readFileSync('public/app.js','utf8');
+const css=fs.readFileSync('public/styles.css','utf8');
+const server=fs.readFileSync('server.js','utf8');
+const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
+assert(pkg.version==='1.8.3','package version must be 1.8.3');
+assert(server.includes('socket.on("changeSeat"'),'server changeSeat missing');
+assert(app.includes('function renderLobbySeats()'),'renderLobbySeats missing');
+assert(app.includes('function myMandatoryDecision()'),'mandatory decision guard missing');
+assert(app.includes('function openPublicCharacterCard('),'public character inspect missing');
+assert(app.includes('Amulet ${p.amuCount}'),'public hand count UI missing');
+assert(css.includes('V1.8.3 — Lobby Seats + Player Inspect + Decision Lock'),'V1.8.3 css marker missing');
+console.log('V1.8.3 UI REGRESSION: PASS');

@@ -1018,3 +1018,56 @@ body:before{
   .turn-end-zone{margin:0!important;padding:0!important;border:0!important}
   .actions-row .action-bubble,.end-turn-bubble{min-height:48px!important}
 }
+
+
+/* บ้านผีสิง V1.8.3 — Lobby Seats + Player Inspect + Decision Lock */
+
+/* Lobby: always show six seats as 3 x 2. */
+.lobby-players.v183-seat-grid,
+#lobbyPlayers.v183-seat-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:22px 0;
+}
+.lobby-seat-slot{
+  position:relative;
+  min-height:92px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:14px;
+  background:rgba(15,18,17,.78);
+  padding:12px;
+  color:var(--text);
+  text-align:left;
+  overflow:hidden;
+}
+.lobby-seat-slot::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--pcolor,#555)}
+.lobby-seat-slot.occupied{border-color:color-mix(in srgb,var(--pcolor,#777) 45%,#383b37)}
+.lobby-seat-slot.mine{box-shadow:0 0 0 2px color-mix(in srgb,var(--pcolor,#c7a25f) 55%,transparent),0 12px 30px rgba(0,0,0,.22)}
+.lobby-seat-slot.empty{border-style:dashed;opacity:.78;cursor:pointer}
+.lobby-seat-slot.empty:hover:not(:disabled){opacity:1;border-color:#9d8155;background:rgba(47,39,27,.48);transform:translateY(-2px)}
+.lobby-seat-slot:disabled{cursor:default}
+.lobby-seat-top{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.lobby-seat-number{display:inline-grid;place-items:center;min-width:34px;height:24px;padding:0 8px;border-radius:999px;background:var(--pcolor,#555);color:#111;font-size:9px;font-weight:900}
+.lobby-seat-slot b{display:block;font-size:13px}.lobby-seat-slot small{display:block;color:#9f998e;font-size:9px;line-height:1.4;margin-top:3px}.lobby-seat-slot.empty b{color:#b8b0a3}.lobby-seat-slot.empty small{color:#706b62}
+
+/* In-game player list: clearer public hand counts + click to inspect character. */
+.player-row.player-inspectable{cursor:pointer;transition:transform .14s ease,border-color .14s ease,background .14s ease}
+.player-row.player-inspectable:hover{transform:translateX(2px);border-color:color-mix(in srgb,var(--pcolor,#777) 60%,#555);background:#171a18}
+.player-hand-counts{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.player-hand-counts span{font-size:8px;padding:3px 6px;border-radius:999px;border:1px solid #41453f;background:#101211;color:#cfc8bb}
+.player-inspect-hint{font-size:7px!important;color:#756f65!important;margin-top:5px!important}
+.public-character-detail .character-detail-card{max-width:760px;margin:auto}
+.public-equip-list{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.public-equip-list span{font-size:9px;border:1px solid #46473f;border-radius:8px;padding:5px 7px;background:#121412}
+
+/* Mandatory decision: make it visually obvious that the flow must be resolved first. */
+.modal.v183-mandatory{background:rgba(0,0,0,.78)}
+.modal.v183-mandatory .modal-card{border-color:#b08a4c;box-shadow:0 0 0 2px rgba(176,138,76,.16),0 30px 100px rgba(0,0,0,.72)}
+.modal.v183-mandatory .modal-head::after{content:"ต้อง Resolve ก่อน";margin-left:auto;margin-right:8px;padding:4px 8px;border-radius:999px;border:1px solid rgba(225,188,115,.32);background:rgba(122,90,40,.24);color:#e7c786;font-size:8px;font-weight:800;letter-spacing:.05em}
+
+@media(max-width:760px){
+  #lobbyPlayers.v183-seat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:480px){
+  #lobbyPlayers.v183-seat-grid{grid-template-columns:1fr}
+}

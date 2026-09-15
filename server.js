@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.8",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.8.3",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -1066,6 +1066,18 @@ io.on("connection", socket=>{
     io.to(room.code).emit("chatMessage",msg);
   });
 
+  socket.on("changeSeat", ({seat})=>{
+    const room=rooms.get(socket.data.roomCode);if(!room)return;
+    if(room.phase!=="lobby")return fail(socket,"ย้ายที่นั่งได้เฉพาะใน Lobby");
+    const p=playerBySocket(room,socket.id);if(!p)return;
+    if(p.ready)return fail(socket,"กด Unready ก่อนย้ายที่นั่ง");
+    seat=Math.floor(Number(seat));if(![1,2,3,4,5,6].includes(seat))return fail(socket,"ที่นั่งไม่ถูกต้อง");
+    if(room.players.some(x=>x.id!==p.id&&(x.seat||0)===seat))return fail(socket,"ที่นั่งนี้มีคนแล้ว");
+    const old=p.seat||1;if(old===seat)return;
+    p.seat=seat;room.players.sort((a,b)=>(a.seat||99)-(b.seat||99));
+    addLog(room,`${p.name} ย้ายที่นั่ง P${old} → P${seat}`);emitRoom(room);
+  });
+
   socket.on("selectCharacter", ({key=null})=>{
     const room=rooms.get(socket.data.roomCode); if(!room) return;
     if(room.phase!=="lobby") return fail(socket,"เลือกตัวละครได้เฉพาะก่อนเริ่มเกม");
@@ -1710,4 +1722,4 @@ setInterval(()=>{
   }
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.8.2 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.8.3 listening on :${PORT}`));

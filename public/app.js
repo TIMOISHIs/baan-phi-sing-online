@@ -30,8 +30,28 @@ function artMarkup(url,cls="card-art-img",alt="art"){return url?`<img class="${c
 function conditionLabel(c){return typeof c?.condition==="object"?(c.condition?.label||""):String(c?.condition||"")}
 
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.remove("hidden");setTimeout(()=>e.classList.add("hidden"),2600)}
-function closeModal(){$("#modal").classList.add("hidden");setTimeout(updateRollFocus,30)}
-function openModal(title,node){$("#rollFocus")?.classList.add("hidden");$("#modalTitle").textContent=title;$("#modalBody").innerHTML="";if(typeof node==="string")$("#modalBody").textContent=node;else $("#modalBody").appendChild(node);$("#modal").classList.remove("hidden")}
+function myMandatoryDecision(){
+  if(state?.phase!=="game")return null;
+  const pe=state.game?.pendingRoomEffect;if(pe?.playerId===myId())return {kind:"room",id:pe.id,pending:pe};
+  const pr=state.game?.pendingRitual;if(pr?.playerId===myId())return {kind:"ritual",id:pr.id,pending:pr};
+  const tr=state.trade;if(tr?.toId===myId())return {kind:"trade",id:tr.id,pending:tr};
+  return null;
+}
+function recoverMandatoryDecision(){
+  const d=myMandatoryDecision();if(!d)return false;
+  if(d.kind==="room"){lastRoomEffectId=null;renderPendingRoomEffect(d.pending);return true}
+  if(d.kind==="ritual"){lastPendingRitualId=null;renderPendingRitual(d.pending);return true}
+  if(d.kind==="trade"){renderTradeNotice();return true}
+  return false;
+}
+function closeModal(){const m=$("#modal");m.classList.add("hidden");m.classList.remove("v183-mandatory");delete m.dataset.mandatoryId;setTimeout(updateRollFocus,30)}
+function openModal(title,node,opts={}){
+  const mandatory=myMandatoryDecision();
+  if(mandatory&&!opts.mandatory){toast("ต้อง Resolve สิ่งที่ค้างอยู่ก่อน");setTimeout(()=>{if($("#modal").classList.contains("hidden"))recoverMandatoryDecision()},30);return false}
+  $("#rollFocus")?.classList.add("hidden");$("#modalTitle").textContent=title;$("#modalBody").innerHTML="";
+  if(typeof node==="string")$("#modalBody").textContent=node;else $("#modalBody").appendChild(node);
+  const m=$("#modal");m.classList.toggle("v183-mandatory",!!opts.mandatory);if(opts.mandatoryId)m.dataset.mandatoryId=String(opts.mandatoryId);else delete m.dataset.mandatoryId;m.classList.remove("hidden");return true
+}
 function activePlayer(){return state?.players?.[state.game?.turn||0]}
 function myId(){return mine?.id||null}
 function mePublic(){return state?.players?.find(p=>p.id===myId())}
@@ -370,7 +390,7 @@ $("#helpBtn").onclick=openHowToPlay;
 $("#roomRulesBtn").onclick=openRoomRules;
 $("#bossHelpBtn").onclick=openBossHelp;
 $("#endBtn").onclick=()=>socket.emit("endTurn");
-$("#closeModal").onclick=()=>{if(state?.game?.pendingRoomEffect?.playerId===myId()){toast("ต้องเลือก/Resolve ให้เสร็จก่อน");return;}if(state?.game?.pendingRitual?.playerId===myId()){toast("ต้องยืนยันผลพิธีก่อนค่ะ");return;}closeModal()};
+$("#closeModal").onclick=()=>{const d=myMandatoryDecision();if(d){toast(d.kind==="ritual"?"ต้องยืนยันผลพิธีก่อนค่ะ":d.kind==="trade"?"ต้องตอบ Trade ก่อน":"ต้องเลือก/Resolve ให้เสร็จก่อน");return;}closeModal()};
 
 socket.on("errorMessage",msg=>{rollRequestPending=false;toast(msg);setTimeout(updateRollFocus,40)});
 socket.on("connect",()=>{
@@ -461,9 +481,26 @@ function runCharacterRandom(){
   charRandomAnimating=true;renderLobby();const keys=eligible.map(c=>c.key),delays=[65,65,65,65,70,70,75,75,85,95,110,125,145,170,210,260];let step=0;
   const flash=()=>{document.querySelectorAll(".char-pick").forEach(el=>el.classList.remove("random-flash"));const key=keys[step%keys.length],t=document.querySelector(`.char-pick[data-char-key="${key}"]`);if(t)t.classList.add("random-flash");if(step<delays.length-1){const d=delays[step];step++;setTimeout(flash,d)}else setTimeout(()=>{document.querySelectorAll(".char-pick").forEach(el=>el.classList.remove("random-flash"));charRandomAnimating=false;socket.emit("selectCharacter",{key:"random"})},300)};flash();
 }
+function renderLobbySeats(){
+  const grid=$("#lobbyPlayers");grid.innerHTML="";grid.classList.add("v183-seat-grid");
+  const me=state.players.find(p=>p.id===myId());
+  for(let seat=1;seat<=6;seat++){
+    const p=state.players.find(x=>playerSeat(x)===seat),meta=PLAYER_META[seat]||PLAYER_META[1],slot=document.createElement("button");
+    slot.type="button";slot.className=`lobby-seat-slot pcolor-${seat} ${p?"occupied":"empty"} ${p?.id===myId()?"mine":""}`;
+    if(p){
+      const chosen=state.characters?.find(c=>c.key===p.characterKey);let status="กำลังเลือกตัวละคร";if(p.characterConfirmed&&chosen)status=`${chosen.name} · ${p.ready?"✓ Ready":"ยืนยันแล้ว"}`;
+      slot.innerHTML=`<div class="lobby-seat-top"><span class="lobby-seat-number">${meta.label}</span><small>${meta.name}</small></div><b>${p.id===state.hostId?"👑 ":""}${p.name}${p.connected?"":" · Offline"}</b><small>${p.id===myId()?"คุณ · ":""}${status}</small>`;
+      slot.disabled=true;
+    }else{
+      slot.innerHTML=`<div class="lobby-seat-top"><span class="lobby-seat-number">${meta.label}</span><small>${meta.name}</small></div><b>ที่นั่งว่าง</b><small>${me?.ready?"Unready ก่อนย้ายที่นั่ง":"คลิกเพื่อย้ายมานั่งช่องนี้"}</small>`;
+      slot.disabled=!!me?.ready;slot.onclick=()=>socket.emit("changeSeat",{seat});
+    }
+    grid.appendChild(slot);
+  }
+}
+
 function renderLobby(){
-  $("#roomCode").textContent=state.code;$("#lobbyPlayers").innerHTML="";
-  state.players.forEach(p=>{const chosen=state.characters?.find(c=>c.key===p.characterKey),seat=playerSeat(p),meta=playerMeta(p),d=document.createElement("div");d.className=`lobby-player pcolor-${seat} ${p.ready?"is-ready":""}`;let status="กำลังเลือกตัวละคร";if(p.characterConfirmed&&chosen)status=`${chosen.name} · ${p.ready?"✓ Ready":"ยืนยันแล้ว"}`;d.innerHTML=`<span><i class="lobby-seat">${meta.label}</i>${p.id===state.hostId?"👑 ":""}${p.name}${p.connected?"":" <em>Offline</em>"}</span><small>${p.id===myId()?`${meta.name} · คุณ · `:""}${status}</small>`;$("#lobbyPlayers").appendChild(d)});
+  $("#roomCode").textContent=state.code;renderLobbySeats();
   const me=state.players.find(p=>p.id===myId()),previewKey=mine?.characterPreviewKey||null,taken=new Set(state.players.filter(p=>p.id!==myId()&&p.characterConfirmed&&p.characterKey).map(p=>p.characterKey));$("#characterGrid").innerHTML="";
   (state.characters||[]).forEach(c=>{const isPreview=previewKey===c.key,isConfirmed=me?.characterConfirmed&&me?.characterKey===c.key,isTaken=taken.has(c.key),b=document.createElement("button");b.dataset.charKey=c.key;b.className="char-pick "+(isPreview?"selected preview ":"")+(isConfirmed?"confirmed ":"")+(isTaken?"taken ":"");b.disabled=isTaken||!!me?.ready||!!me?.characterConfirmed||charRandomAnimating;b.innerHTML=`${isTaken?'<span class="char-taken-label">ถูกเลือกแล้ว</span>':""}${isConfirmed?'<span class="char-confirmed-label">✓ ยืนยันแล้ว</span>':""}<div class="mini-character-card char-theme-${c.key}"><div class="mini-char-head"><span class="incense-badge">🕯3</span><div><b>${c.name}</b><small>${c.role}</small></div><span class="hp-badge">♥ ${c.hp}</span></div><div class="char-pick-art">${artMarkup(c.art,"character-art-img",c.name)||`<span>${c.name}</span><small>CHARACTER ART</small>`}</div><div class="mini-char-foot"><b>ใช้ธูป 3 ดอก</b><p>${c.skill.replace(/^ใช้ธูป 3 ดอก:\s*/,"")}</p><small>Equip ${c.slots} ช่อง</small></div></div>`;b.onclick=()=>{if(!charRandomAnimating)socket.emit("selectCharacter",{key:c.key})};$("#characterGrid").appendChild(b)});
   const preview=characterByKey(previewKey),confirmed=characterByKey(me?.characterKey);if(me?.ready&&confirmed)$("#charSelectionStatus").innerHTML=`🔒 <b>${confirmed.name}</b> พร้อมแล้ว`;else if(me?.characterConfirmed&&confirmed)$("#charSelectionStatus").innerHTML=`✓ ยืนยัน <b>${confirmed.name}</b> แล้ว · กด Ready เมื่อพร้อม`;else if(preview)$("#charSelectionStatus").innerHTML=`กำลังดู <b>${preview.name}</b> · สุ่มใหม่ได้จนกว่าจะยืนยัน`;else $("#charSelectionStatus").textContent="เลือกเองหรือกดสุ่มตัวละครได้";
@@ -527,7 +564,7 @@ function statsNode(){
 }
 function openStats(){openModal("📊 Playtest Stats",statsNode())}
 function reportPayload(){
-  return {project:"บ้านผีสิง",build:"V1.8.2",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
+  return {project:"บ้านผีสิง",build:"V1.8.3",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
     players:(state?.players||[]).map(p=>({name:p.name,character:p.char?.name||null,money:p.score,hp:p.hp,dead:p.dead})),
     settings:state?.settings||null,result:state?.result||null,stats:currentStats(),log:state?.log||[],exportedAt:new Date().toISOString()};
 }
@@ -633,7 +670,7 @@ function renderGame(){
   $("#curse").textContent=`${g.curse}/6`;
 
   $("#playerList").innerHTML="";
-  state.players.forEach(p=>{const seat=playerSeat(p),meta=playerMeta(p),d=document.createElement("div");d.className=`player-row pcolor-${seat} `+(p.isTurn?"turn ":"")+(p.dead?"dead ":"")+(p.connected?"":"offline");d.innerHTML=`<b><span class="player-color-dot"></span>${meta.label} · ${p.dead?"☠️ ":""}${p.name} · ${p.char?.name||"—"}${p.connected?"":" · Offline"}${p.isTurn?'<span class="turn-timer-ring"><i></i></span>':""}</b><small>❤️ ${p.hp}/${p.char?.hp} · 💰 ${p.score} · ${p.pos!==null?roomAt(p.pos).name:"—"} · มือ ${p.amuCount+p.sacCount} ใบ${p.dead?" · รอชุบชีวิต":""}</small>`;$("#playerList").appendChild(d)});
+  state.players.forEach(p=>{const seat=playerSeat(p),meta=playerMeta(p),d=document.createElement("div");d.className=`player-row player-inspectable pcolor-${seat} `+(p.isTurn?"turn ":"")+(p.dead?"dead ":"")+(p.connected?"":"offline");d.setAttribute("role","button");d.tabIndex=0;d.innerHTML=`<b><span class="player-color-dot"></span>${meta.label} · ${p.dead?"☠️ ":""}${p.name} · ${p.char?.name||"—"}${p.connected?"":" · Offline"}${p.isTurn?'<span class="turn-timer-ring"><i></i></span>':""}</b><small>❤️ ${p.hp}/${p.char?.hp} · 💰 ${p.score} · ${p.pos!==null?roomAt(p.pos).name:"—"}${p.dead?" · รอชุบชีวิต":""}</small><div class="player-hand-counts"><span>✦ Amulet ${p.amuCount}</span><span>◆ เครื่องเซ่น ${p.sacCount}</span><span>🎒 Equip ${(p.equip||[]).length}</span></div><small class="player-inspect-hint">คลิกเพื่ออ่านตัวละคร</small>`;d.onclick=()=>openPublicCharacterCard(p);d.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openPublicCharacterCard(p)}};$("#playerList").appendChild(d)});
   paintTurnTimer();
 
   $("#log").innerHTML="";
@@ -796,6 +833,13 @@ function openCharacterCard(){
   box.innerHTML=`<div class="character-detail-card"><small>CHARACTER · ${PLAYER_META[playerSeat(mePublic()||mine)]?.label||""}</small><h2>${c.name}</h2><p>${c.role||""}</p><div class="character-detail-art">${artMarkup(c.art,"character-art-img",c.name)||"CHARACTER ART"}</div><div class="amulet-rule"><b>ความสามารถ</b><p>${c.skill||"ยังไม่มีข้อมูลความสามารถ"}</p></div><div class="amulet-stats"><span>❤️ HP ${mine.hp}/${c.hp}</span><span>🎒 Equip ${mine.equip.length}/${c.slots}</span><span>⚔️ ±${eq.attack}</span><span>🛡️ ${eq.defense}</span><span>👁 Fear ${eq.fear>0?"+":""}${eq.fear}</span></div></div>`;
   openModal(`ตัวละคร — ${c.name}`,box);
 }
+function openPublicCharacterCard(p){
+  if(!p?.char)return;const c=p.char,eq=p.equipStats||{},box=document.createElement("div");box.className="character-detail public-character-detail";
+  const equips=(p.equip||[]).map(x=>`<span>🎒 ${x.name}</span>`).join("")||"<span>ยังไม่สวมอุปกรณ์</span>";
+  box.innerHTML=`<div class="character-detail-card"><small>PLAYER ${PLAYER_META[playerSeat(p)]?.label||""} · ${p.name}</small><h2>${c.name}</h2><p>${c.role||""}</p><div class="character-detail-art">${artMarkup(c.art,"character-art-img",c.name)||"CHARACTER ART"}</div><div class="amulet-rule"><b>ความสามารถ</b><p>${c.skill||"ยังไม่มีข้อมูลความสามารถ"}</p></div><div class="amulet-stats"><span>❤️ HP ${p.hp}/${c.hp}</span><span>✦ Amulet ${p.amuCount||0}</span><span>◆ เครื่องเซ่น ${p.sacCount||0}</span><span>🎒 Equip ${(p.equip||[]).length}/${c.slots}</span><span>⚔️ ±${eq.attack||0}</span><span>🛡️ ${eq.defense||0}</span></div><div class="public-equip-list">${equips}</div></div>`;
+  openModal(`ตัวละครของ ${p.name}`,box);
+}
+
 function roomTypeLabel(r){
   return r.boss?"Boss Room":r.type||"Room";
 }
@@ -918,7 +962,7 @@ function renderTradeNotice(){
     if(t.askCardCount>0){const label=document.createElement("p");label.textContent=`เลือกการ์ดตอบกลับ ${t.askCardCount} ใบ`;selected.appendChild(label);[...(mine?.amu||[]),...(mine?.sac||[])].forEach(c=>{const lab=document.createElement("label");lab.className="trade-card-check";lab.innerHTML=`<input type="checkbox" value="${c.uid}"><span>${c.name}</span>`;selected.appendChild(lab)});box.appendChild(selected)}
     const accept=document.createElement("button");accept.className="primary";accept.textContent="Accept";accept.onclick=()=>{const ids=[...selected.querySelectorAll('input:checked')].map(x=>x.value);socket.emit("tradeAccept",{returnUids:ids});closeModal()};box.appendChild(accept);
     const reject=document.createElement("button");reject.className="secondary";reject.style.marginLeft="7px";reject.textContent="Reject";reject.onclick=()=>{socket.emit("tradeReject");closeModal()};box.appendChild(reject);
-    if($("#modal").classList.contains("hidden"))openModal("มี Trade Offer ถึงคุณ",box);
+    if($("#modal").classList.contains("hidden"))openModal("มี Trade Offer ถึงคุณ",box,{mandatory:true,mandatoryId:t.id});
   }
 }
 let lastRoomEffectId=null;
@@ -993,7 +1037,7 @@ function renderPendingRoomEffect(pending){
     spellMoveAny:"คาถา — เลือกห้องปลายทาง",
     spellMoveDiagonal:"คาถา — เดินทะแยง"
   };
-  openModal(titles[pending.type]||"Resolve Effect",box);
+  openModal(titles[pending.type]||"Resolve Effect",box,{mandatory:true,mandatoryId:pending.id});
 }
 
 function renderPendingRitual(pending){
@@ -1008,7 +1052,7 @@ function renderPendingRitual(pending){
     row.addEventListener("change",()=>{const m=Number(row.querySelector('input:checked')?.value||0);preview.textContent=`ผลสุดท้าย ${pending.dice.total} ${m?`${m>0?"+":""}${m}`:"+ 0"} = ${pending.dice.total+m} • ต้อง ${rule.label||"?"}`});
     const ok=document.createElement("button");ok.className="primary";ok.textContent="ยืนยัน Modifier แล้วดูผล";ok.onclick=()=>{const m=Number(row.querySelector('input:checked')?.value||0);socket.emit("resolveRitual",{modifier:m});closeModal();};choose.appendChild(ok);box.appendChild(choose);
   }else{const wait=document.createElement("p");wait.className="muted";wait.textContent=`รอ ${pending.playerName} เลือก Modifier จากอุปกรณ์…`;box.appendChild(wait)}
-  openModal(`ทำพิธี — ${pending.playerName}`,box);
+  openModal(`ทำพิธี — ${pending.playerName}`,box,{mandatory:pending.playerId===myId(),mandatoryId:pending.id});
 }
 function renderResult(){
   $("#results").innerHTML="";
