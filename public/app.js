@@ -200,6 +200,29 @@ function playCardFlipSound(){
   const ctx=ensureAudio();if(!ctx||ctx.state!=="running"||!sfxMaster)return;
   tone(520,.12,.018,"triangle",0,sfxMaster);tone(780,.16,.012,"sine",.05,sfxMaster);
 }
+let curseFxTimer=null,curseFxActive=false;
+function ensureCurseFxOverlay(){
+  let box=$("#curseFxOverlay");if(box)return box;
+  box=document.createElement("div");box.id="curseFxOverlay";box.className="curse-fx-overlay hidden";
+  box.innerHTML=`<div class="curse-fx-vignette"></div><div class="curse-fx-card"><div id="curseFxKicker" class="curse-fx-kicker">CURSE WARNING</div><div id="curseFxTitle" class="curse-fx-title">ผีกำลังสะสมคำสาป...</div><div id="curseFxCount" class="curse-fx-count">3 / 6</div><div id="curseFxSub" class="curse-fx-sub">เตรียมรับมือ</div></div>`;
+  document.body.appendChild(box);return box;
+}
+function playCurseAlarm(phase="warning"){
+  const ctx=ensureAudio();if(!ctx||ctx.state!=="running"||!sfxMaster)return;
+  const seq=phase==="burst"?[92,78,65,55]:[240,210,180];
+  seq.forEach((f,i)=>tone(f,phase==="burst"?.28:.16,phase==="burst"?.06:.035,phase==="burst"?"sawtooth":"square",i*(phase==="burst"?.16:.22),sfxMaster));
+}
+function showCurseFx(e={}){
+  const box=ensureCurseFxOverlay(),phase=e.phase==="burst"?"burst":"warning",duration=Math.max(500,Number(e.duration)|| (phase==="burst"?2700:2500));
+  curseFxActive=true;clearTimeout(curseFxTimer);
+  box.className=`curse-fx-overlay ${phase}`;
+  $("#curseFxKicker").textContent=phase==="burst"?"CURSE ACTIVATED":"CURSE WARNING";
+  $("#curseFxTitle").textContent=phase==="burst"?`${e.ghostName||"ผี"} กำลังปล่อยคำสาป!`:`${e.ghostName||"ผี"} กำลังสะสมคำสาป...`;
+  $("#curseFxCount").textContent=`${e.curse??(phase==="burst"?6:3)} / ${e.max||6}`;
+  $("#curseFxSub").textContent=phase==="burst"?"ห้ามทำ Action • รอผลคำสาป":"คำสาปใกล้เต็มแล้ว • รีบวางแผนรับมือ";
+  void box.offsetWidth;box.classList.add("pulse-in");playCurseAlarm(phase);
+  curseFxTimer=setTimeout(()=>{box.classList.add("hidden");box.classList.remove("pulse-in");curseFxActive=false},duration);
+}
 function playHpSound(delta){
   const ctx=ensureAudio();if(!ctx||ctx.state!=="running"||!sfxMaster)return;
   if(delta<0){tone(115,.25,.065,"sawtooth",0,sfxMaster);tone(78,.32,.045,"triangle",.04,sfxMaster)}
@@ -564,7 +587,7 @@ function statsNode(){
 }
 function openStats(){openModal("📊 Playtest Stats",statsNode())}
 function reportPayload(){
-  return {project:"บ้านผีสิง",build:"V1.8.3",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
+  return {project:"บ้านผีสิง",build:"V1.8.4",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
     players:(state?.players||[]).map(p=>({name:p.name,character:p.char?.name||null,money:p.score,hp:p.hp,dead:p.dead})),
     settings:state?.settings||null,result:state?.result||null,stats:currentStats(),log:state?.log||[],exportedAt:new Date().toISOString()};
 }
@@ -595,10 +618,11 @@ function showNextCardReveal(){
   $("#cardRevealMeta").textContent=meta;
   $("#cardRevealPlayer").textContent=`${e.playerName||"ผู้เล่น"} จั่วได้`;
   box.classList.remove("hidden","card-pop");void box.offsetWidth;box.classList.add("card-pop");playCardFlipSound();
+  const revealHold=e.zone==="amulet"?(c.type==="event"?3200:2800):2200;
   setTimeout(()=>{
     box.classList.add("card-out");
     setTimeout(()=>{box.classList.add("hidden");box.classList.remove("card-out");cardRevealBusy=false;showNextCardReveal()},280);
-  },1750);
+  },revealHold);
 }
 function showDiceFx(e){
   rollRequestPending=false;ritualRollSelection=null;hideRollFocus();diceAnimating=true;queuedState=null;queuedPrivateState=null;queuedHpEvents=[];
@@ -705,6 +729,10 @@ function renderGame(){
   else $("#message").textContent=`ใช้ธูปได้ ${g.actions} ดอก — จั่ว / สวมใส่ / Trade / ทำพิธี / Skill`;
 
   const ghost=g.ghost||{};
+  const ghostCard=document.querySelector(".ghost-card");
+  if(ghostCard){ghostCard.classList.toggle("curse-warning",g.curse>=3&&!g.curseResolving);ghostCard.classList.toggle("curse-active",!!g.curseResolving);ghostCard.dataset.curse=String(g.curse||0)}
+  $("#curse")?.classList.toggle("curse-hud-warning",g.curse>=3);
+  if(g.curseResolving&&!curseFxActive){const remain=Math.max(600,(Number(g.curseResolveAt)||Date.now()+1500)-Date.now());showCurseFx({phase:"burst",curse:6,max:6,ghostName:ghost.name,duration:remain})}
   $("#ghostName").textContent=ghost.name||"—";
   $("#ghostFear").textContent=`Fear ${ghost.fear??6}`;
   $("#ghostPassive").textContent=ghost.passiveText||"";
@@ -1068,6 +1096,8 @@ function renderResult(){
 
 $("#characterCard").onclick=openCharacterCard;
 $("#characterCard").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCharacterCard()}};
+
+socket.on("curseFx",e=>showCurseFx(e));
 
 // Unlock Web Audio on the first real gesture. If music was enabled before, resume the selected track.
 document.addEventListener("pointerdown",()=>{

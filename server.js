@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.8.3",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.8.4",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -484,6 +484,8 @@ function publicSnapshot(room){
       escapeRule:g.escapeRule || null,
       escapeAttempts:g.escapeAttempts || 0,
       curse:g.curse,
+      curseResolving:!!g.curseResolving,
+      curseResolveAt:g.curseResolveAt||null,
       bossDone:g.bossDone,
       ghost:g.ghost,
       pendingRoomEffect:g.pendingRoomEffect || null,
@@ -537,7 +539,7 @@ function privateSnapshot(room, socketId){
 function shouldAutoEndTurn(room){
   if(room.phase!=="game"||!room.game)return false;
   const g=room.game;if(g.actions>0)return false;
-  if(g.pendingRitual||g.pendingRoomEffect||g.sanityDecision||g.mustMove||g.moveOptional||room.trade)return false;
+  if(g.curseResolving||g.pendingRitual||g.pendingRoomEffect||g.sanityDecision||g.mustMove||g.moveOptional||room.trade)return false;
   return !!active(room);
 }
 function maybeAutoEndTurn(room){
@@ -561,7 +563,51 @@ function moveByGhost(room,p,{anywhere=false,reason="พลังผี"}={}){if(
 function ghostMoneyLoss(room,p,amount,reason){amount=Math.max(1,Number(amount)||1);if((p.score||0)>0){const before=p.score;p.score=Math.max(0,p.score-amount);addLog(room,`${p.name}: ${reason} → เงิน -${before-p.score}`);return true;}ghostDamage(room,p,1,`${reason} • ไม่มีเงิน`);return false;}
 function ghostStealAmulet(room,p,reason){if(!p.amu?.length){ghostDamage(room,p,1,`${reason} • ไม่มี Amulet`);return false;}const idx=Math.floor(Math.random()*p.amu.length),card=p.amu.splice(idx,1)[0];returnAmuletToBottom(room,card,reason);return true;}
 function passiveTriggered(rule,d){if(!rule)return false;if(rule.kind==="totalEquals")return d.total===rule.value;if(rule.kind==="dieIncludes")return (rule.values||[]).includes(d.a)||(rule.values||[]).includes(d.b);if(rule.kind==="doubles")return d.a===d.b;return false;}
-function applyCurse(room,dice){const ghost=currentGhost(room),rule=ghost.passive||{};if(!passiveTriggered(rule,dice))return;const p=active(room);if(!p)return;if(ghost.id==="ghost-occult-master"||ghost.id==="ghost-headless")room.game.curse++;else if(ghost.id==="ghost-treasure-guard")ghostMoneyLoss(room,p,1,`${ghost.name} Passive`);else if(ghost.id==="ghost-pob-jaothi")ghostDamage(room,p,1,`${ghost.name} Passive`);else if(ghost.id==="ghost-pregnant"){ghostDamage(room,p,1,`${ghost.name} Passive`);damagePlayersInRoom(room,p.pos,p.id,1,`${ghost.name} Passive`,true);}else if(ghost.id==="ghost-oil-pillar"||ghost.id==="ghost-wanderer")moveByGhost(room,p,{reason:`${ghost.name} Passive`});else if(ghost.id==="ghost-widow"){const together=room.players.filter(x=>x.hp>0&&x.pos===p.pos);if(together.length>=2)together.forEach(x=>ghostDamage(room,x,1,`${ghost.name} Passive`));}else if(ghost.id==="ghost-kumarn"){if((p.score||0)>0)ghostMoneyLoss(room,p,1,`${ghost.name} Passive`);else ghostStealAmulet(room,p,`${ghost.name} Passive`);}if(room.game.curse>=6){if(room.game.stats)room.game.stats.curse.bursts++;room.players.forEach(x=>{if(x.hp>0)changeHp(room,x,-1,"Curse ครบ 6 → HP -1")});room.game.curse=0;addLog(room,"Curse ครบ 6 → ผู้เล่นทุกคน HP -1 • Curse รีเซ็ต 0");}}
+function addCurseProgress(room,amount=1,source="พลังผี"){
+  const g=room?.game;if(!g||g.curseResolving)return false;
+  const before=Math.max(0,Number(g.curse)||0),add=Math.max(0,Number(amount)||0);
+  g.curse=Math.min(6,before+add);
+  if(g.stats?.curse){
+    g.stats.curse.stacks=Math.max(Number(g.stats.curse.stacks)||0,g.curse);
+    g.stats.curse.maxSeen=Math.max(Number(g.stats.curse.maxSeen)||0,g.curse);
+  }
+  if(before<3 && g.curse>=3 && !g.curseWarned){
+    g.curseWarned=true;
+    io.to(room.code).emit("curseFx",{phase:"warning",curse:g.curse,max:6,ghostName:currentGhost(room).name,duration:2500});
+    addLog(room,`⚠️ ${currentGhost(room).name} สะสม Curse ถึง ${g.curse}/6 — คำสาปกำลังใกล้เต็ม`);
+  }
+  if(g.curse>=6){
+    g.curse=6;g.curseResolving=true;g.curseResolveAt=Date.now()+2700;
+    io.to(room.code).emit("curseFx",{phase:"burst",curse:6,max:6,ghostName:currentGhost(room).name,duration:2700,resolveAt:g.curseResolveAt});
+    addLog(room,`☠️ ${currentGhost(room).name} สะสม Curse ครบ 6/6 — กำลังปล่อยคำสาป`);
+    emitRoom(room);
+    const roomCode=room.code;
+    setTimeout(()=>{
+      const latest=rooms.get(roomCode);if(!latest?.game||!latest.game.curseResolving)return;
+      const activeId=active(latest)?.id||null;
+      if(latest.game.stats?.curse)latest.game.stats.curse.bursts++;
+      latest.players.forEach(x=>{if(x.hp>0)changeHp(latest,x,-1,"Curse ครบ 6 → HP -1")});
+      latest.game.curse=0;latest.game.curseWarned=false;latest.game.curseResolving=false;latest.game.curseResolveAt=null;
+      addLog(latest,"Curse ทำงาน → ผู้เล่นทุกคน HP -1 • Curse รีเซ็ต 0");
+      if(activeId)resolveDeathsAfterAction(latest,activeId);else markNewDeaths(latest);
+      emitRoom(latest);
+    },2700);
+    return true;
+  }
+  return false;
+}
+function applyCurse(room,dice){
+  const ghost=currentGhost(room),rule=ghost.passive||{};
+  if(!passiveTriggered(rule,dice))return;
+  const p=active(room);if(!p)return;
+  if(ghost.id==="ghost-occult-master"||ghost.id==="ghost-headless")addCurseProgress(room,1,`${ghost.name} Passive`);
+  else if(ghost.id==="ghost-treasure-guard")ghostMoneyLoss(room,p,1,`${ghost.name} Passive`);
+  else if(ghost.id==="ghost-pob-jaothi")ghostDamage(room,p,1,`${ghost.name} Passive`);
+  else if(ghost.id==="ghost-pregnant"){ghostDamage(room,p,1,`${ghost.name} Passive`);damagePlayersInRoom(room,p.pos,p.id,1,`${ghost.name} Passive`,true);}
+  else if(ghost.id==="ghost-oil-pillar"||ghost.id==="ghost-wanderer")moveByGhost(room,p,{reason:`${ghost.name} Passive`});
+  else if(ghost.id==="ghost-widow"){const together=room.players.filter(x=>x.hp>0&&x.pos===p.pos);if(together.length>=2)together.forEach(x=>ghostDamage(room,x,1,`${ghost.name} Passive`));}
+  else if(ghost.id==="ghost-kumarn"){if((p.score||0)>0)ghostMoneyLoss(room,p,1,`${ghost.name} Passive`);else ghostStealAmulet(room,p,`${ghost.name} Passive`);}
+}
 
 function markNewDeaths(room){
   room.players.forEach(p=>{
@@ -798,7 +844,20 @@ function damagePlayersInRoom(room,pos,exceptId,amount,reason="โดนผลก
     }
   });
 }
-function applyGhostCounter(room,p,color,skipProtection=false){const ghost=currentGhost(room);if(!skipProtection&&offerNegativeReaction(room,p,{source:"ghost",reason:`${ghost.name} สวนกลับ (${color})`,apply:()=>applyGhostCounter(room,p,color,true)}))return true;const pos=p.pos,hit=(n,r)=>ghostDamage(room,p,n,r),others=(n,r)=>damagePlayersInRoom(room,pos,p.id,n,r,true);if(ghost.id==="ghost-occult-master"){hit(color==="green"?1:2,`${ghost.name} สวนกลับ`);if(color!=="green")room.game.curse+=color==="black"?2:1;}else if(ghost.id==="ghost-treasure-guard")ghostMoneyLoss(room,p,(color==="pink"||color==="black")?2:1,`${ghost.name} สวนกลับ`);else if(ghost.id==="ghost-pob-jaothi")hit(color==="green"?1:color==="black"?3:2,`${ghost.name} สวนกลับ`);else if(ghost.id==="ghost-pregnant"){hit(color==="green"?1:2,`${ghost.name} สวนกลับ`);if(color!=="green")others(color==="black"?2:1,`${ghost.name} สวนกลับ`);}else if(ghost.id==="ghost-oil-pillar"){if(color!=="green")hit(color==="blue"?1:2,`${ghost.name} สวนกลับ`);moveByGhost(room,p,{reason:`${ghost.name} ผลักออกจากพิธี`});}else if(ghost.id==="ghost-headless"){if(color!=="green")hit(color==="blue"?1:2,`${ghost.name} สวนกลับ`);moveByGhost(room,p,{anywhere:true,reason:`${ghost.name} ทำให้หลงทาง`});}else if(ghost.id==="ghost-widow"){hit(color==="green"?1:2,`${ghost.name} สวนกลับ`);if(color!=="green")others(color==="black"?2:1,`${ghost.name} ลงโทษคนที่อยู่รวมกัน`);}else if(ghost.id==="ghost-kumarn"){if(color==="black"){ghostMoneyLoss(room,p,2,`${ghost.name} ขโมย`);hit(1,`${ghost.name} สวนกลับ`);}else if((p.score||0)>0)ghostMoneyLoss(room,p,color==="pink"?2:1,`${ghost.name} ขโมย`);else ghostStealAmulet(room,p,`${ghost.name} ขโมย`);}else if(ghost.id==="ghost-wanderer"){if(color!=="green")hit(color==="black"?2:1,`${ghost.name} สวนกลับ`);moveByGhost(room,p,{anywhere:color==="pink"||color==="black",reason:`${ghost.name} พาหลงทาง`});}if(room.game.curse>=6){room.players.forEach(x=>{if(x.hp>0)changeHp(room,x,-1,"Curse ครบ 6 → HP -1")});room.game.curse=0;}}
+function applyGhostCounter(room,p,color,skipProtection=false){
+  const ghost=currentGhost(room);
+  if(!skipProtection&&offerNegativeReaction(room,p,{source:"ghost",reason:`${ghost.name} สวนกลับ (${color})`,apply:()=>applyGhostCounter(room,p,color,true)}))return true;
+  const pos=p.pos,hit=(n,r)=>ghostDamage(room,p,n,r),others=(n,r)=>damagePlayersInRoom(room,pos,p.id,n,r,true);
+  if(ghost.id==="ghost-occult-master"){hit(color==="green"?1:2,`${ghost.name} สวนกลับ`);if(color!=="green")addCurseProgress(room,color==="black"?2:1,`${ghost.name} สวนกลับ`);}
+  else if(ghost.id==="ghost-treasure-guard")ghostMoneyLoss(room,p,(color==="pink"||color==="black")?2:1,`${ghost.name} สวนกลับ`);
+  else if(ghost.id==="ghost-pob-jaothi")hit(color==="green"?1:color==="black"?3:2,`${ghost.name} สวนกลับ`);
+  else if(ghost.id==="ghost-pregnant"){hit(color==="green"?1:2,`${ghost.name} สวนกลับ`);if(color!=="green")others(color==="black"?2:1,`${ghost.name} สวนกลับ`);}
+  else if(ghost.id==="ghost-oil-pillar"){if(color!=="green")hit(color==="blue"?1:2,`${ghost.name} สวนกลับ`);moveByGhost(room,p,{reason:`${ghost.name} ผลักออกจากพิธี`});}
+  else if(ghost.id==="ghost-headless"){if(color!=="green")hit(color==="blue"?1:2,`${ghost.name} สวนกลับ`);moveByGhost(room,p,{anywhere:true,reason:`${ghost.name} ทำให้หลงทาง`});}
+  else if(ghost.id==="ghost-widow"){hit(color==="green"?1:2,`${ghost.name} สวนกลับ`);if(color!=="green")others(color==="black"?2:1,`${ghost.name} ลงโทษคนที่อยู่รวมกัน`);}
+  else if(ghost.id==="ghost-kumarn"){if(color==="black"){ghostMoneyLoss(room,p,2,`${ghost.name} ขโมย`);hit(1,`${ghost.name} สวนกลับ`);}else if((p.score||0)>0)ghostMoneyLoss(room,p,color==="pink"?2:1,`${ghost.name} ขโมย`);else ghostStealAmulet(room,p,`${ghost.name} ขโมย`);}
+  else if(ghost.id==="ghost-wanderer"){if(color!=="green")hit(color==="black"?2:1,`${ghost.name} สวนกลับ`);moveByGhost(room,p,{anywhere:color==="pink"||color==="black",reason:`${ghost.name} พาหลงทาง`});}
+}
 
 function computeResults(room){
   finishStats(room);
@@ -906,7 +965,7 @@ function startRoom(room,chosenGhost=null){
   room.game={
     turn:starterIndex, rooms:map, bossIndex, actions:3, sanity:null,sanityBase:null,sanityBonus:0,sanityDecision:false,moveFear:null,lastDice:null,
     rolled:false,moved:false,mustMove:false,moveOptional:false,legal:[],sacDrawn:false,traded:false,
-    curse:0,bossDone:{green:0,blue:0,pink:0,black:0}, pendingRoomEffect:null,pendingRitual:null,
+    curse:0,curseWarned:false,curseResolving:false,curseResolveAt:null,bossDone:{green:0,blue:0,pink:0,black:0}, pendingRoomEffect:null,pendingRitual:null,
     ghost, escapeRequired:false, escapeRule:null, escapeAttempts:0,
     diceSeq:0,lastDiceEvent:null,cardSeq:0,stats:freshStats(room.settings),
     amuDeck:shuffle([...amuNonEvents,...amuEvents]), amuDiscard:[], officePickAfterPending:null,
@@ -929,6 +988,7 @@ function checkTurn(socket,room){
   if(room.phase!=="game"){ fail(socket,"เกมยังไม่เริ่ม"); return null; }
   const p=playerBySocket(room,socket.id);
   if(!p || active(room)?.id!==p.id){ fail(socket,"ยังไม่ถึงเทิร์นของคุณ"); return null; }
+  if(room.game?.curseResolving){ fail(socket,"ผีกำลังปล่อย Curse — รอให้คำสาปทำงานเสร็จก่อน"); return null; }
   if(room.game?.pendingRoomEffect){ fail(socket,"ต้อง Resolve Effect ของห้องก่อน"); return null; }
   if(room.game?.pendingRitual){ fail(socket,"กำลัง Resolve การทำพิธี"); return null; }
   return p;
