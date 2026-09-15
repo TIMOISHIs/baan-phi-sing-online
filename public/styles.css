@@ -770,3 +770,251 @@ body:before{
   .ghost-pick-copy b{font-size:12px!important}
   .amulet-dock .amulet-card{width:88px!important;min-width:88px!important;height:124px!important}
 }
+
+
+/* บ้านผีสิง V1.8.2 — Ghost Showcase + Vertical Action Rail
+   UI-only layer. Keeps all original V1.8 artwork and gameplay data. */
+
+/* ---------- Ghost select: art-first overlapping hand ---------- */
+.ghost-select-shell{justify-content:center!important;padding:24px 0 18px!important}
+.ghost-select-grid{
+  display:flex!important;
+  grid-template-columns:none!important;
+  justify-content:center!important;
+  align-items:flex-end!important;
+  gap:0!important;
+  width:min(1180px,96vw)!important;
+  padding:20px 34px 30px!important;
+  overflow:visible!important;
+  isolation:isolate;
+}
+.ghost-pick-card{
+  position:relative!important;
+  flex:0 0 clamp(118px,8.8vw,158px)!important;
+  width:clamp(118px,8.8vw,158px)!important;
+  min-width:0!important;
+  aspect-ratio:var(--v181-ghost-ratio)!important;
+  margin-left:clamp(-34px,-1.7vw,-22px)!important;
+  border-radius:17px!important;
+  overflow:hidden!important;
+  background:#070908!important;
+  box-shadow:0 15px 36px rgba(0,0,0,.48)!important;
+  transform-origin:50% 100%;
+  transition:transform .2s cubic-bezier(.2,.8,.2,1),filter .18s ease,box-shadow .18s ease!important;
+}
+.ghost-pick-card:first-child{margin-left:0!important}
+.ghost-pick-card:nth-child(1){transform:rotate(-5deg) translateY(12px);z-index:1}
+.ghost-pick-card:nth-child(2){transform:rotate(-4deg) translateY(7px);z-index:2}
+.ghost-pick-card:nth-child(3){transform:rotate(-3deg) translateY(3px);z-index:3}
+.ghost-pick-card:nth-child(4){transform:rotate(-1.5deg);z-index:4}
+.ghost-pick-card:nth-child(5){transform:rotate(0deg) translateY(-2px);z-index:5}
+.ghost-pick-card:nth-child(6){transform:rotate(1.5deg);z-index:6}
+.ghost-pick-card:nth-child(7){transform:rotate(3deg) translateY(3px);z-index:7}
+.ghost-pick-card:nth-child(8){transform:rotate(4deg) translateY(7px);z-index:8}
+.ghost-pick-card:nth-child(9){transform:rotate(5deg) translateY(12px);z-index:9}
+.ghost-pick-card:hover{
+  transform:translateY(-18px) rotate(0deg) scale(1.055)!important;
+  z-index:40!important;
+  filter:brightness(1.08)!important;
+  box-shadow:0 0 0 2px rgba(221,190,121,.52),0 24px 52px rgba(0,0,0,.68)!important;
+}
+.ghost-pick-art{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  max-height:none!important;
+  aspect-ratio:auto!important;
+  margin:0!important;
+  background:#070908!important;
+}
+.ghost-pick-art .ghost-art-img{
+  width:100%!important;
+  height:100%!important;
+  padding:0!important;
+  object-fit:cover!important;
+  object-position:center!important;
+}
+.ghost-pick-copy{
+  position:absolute!important;
+  z-index:3!important;
+  left:0;right:0;bottom:0;
+  padding:56px 11px 12px!important;
+  background:linear-gradient(180deg,transparent,rgba(4,6,5,.84) 48%,rgba(4,6,5,.98) 100%)!important;
+  pointer-events:none;
+}
+.ghost-pick-copy small,.ghost-pick-need{display:none!important}
+.ghost-pick-copy b{
+  min-height:0!important;
+  margin:0!important;
+  color:#f2eadb!important;
+  font-size:14px!important;
+  line-height:1.25!important;
+  text-shadow:0 2px 8px rgba(0,0,0,.85);
+}
+.ghost-pick-copy em{
+  min-height:0!important;
+  margin-top:4px!important;
+  color:#b8c3aa!important;
+  font-size:9px!important;
+  line-height:1.3!important;
+  text-shadow:0 2px 7px rgba(0,0,0,.9);
+}
+.ghost-pick-card.ghost-cycle-active{
+  transform:translateY(-23px) rotate(0deg) scale(1.07)!important;
+  z-index:60!important;
+  filter:brightness(1.28) saturate(1.08)!important;
+  box-shadow:0 0 0 3px rgba(211,239,165,.88),0 0 34px rgba(158,230,115,.38),0 28px 58px rgba(0,0,0,.72)!important;
+}
+.ghost-pick-card.ghost-selected{
+  transform:translateY(-24px) rotate(0deg) scale(1.08)!important;
+  z-index:70!important;
+  filter:brightness(1.13)!important;
+  box-shadow:0 0 0 3px rgba(255,219,125,.92),0 0 42px rgba(255,194,85,.34),0 30px 64px rgba(0,0,0,.76)!important;
+}
+
+/* ---------- Selected ghost showcase: 2–3 second poster moment ---------- */
+.ghost-final-reveal{background:rgba(3,5,4,.9)!important}
+.ghost-final-card.v182-ghost-showcase{
+  position:relative!important;
+  display:block!important;
+  width:min(330px,78vw)!important;
+  max-height:none!important;
+  aspect-ratio:var(--v181-ghost-ratio)!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border-radius:22px!important;
+  text-align:left!important;
+  background:#070908!important;
+  border:1px solid rgba(255,223,142,.4)!important;
+  box-shadow:0 38px 120px rgba(0,0,0,.82),0 0 88px rgba(187,223,130,.15)!important;
+}
+.v182-ghost-showcase .ghost-final-art{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  max-height:none!important;
+  margin:0!important;
+  aspect-ratio:auto!important;
+  border:0!important;
+  border-radius:0!important;
+}
+.v182-ghost-showcase .ghost-final-art .ghost-art-img{
+  width:100%!important;height:100%!important;object-fit:cover!important;padding:0!important;
+}
+.ghost-final-showcase-copy{
+  position:absolute;z-index:2;left:0;right:0;bottom:0;
+  padding:78px 18px 20px;
+  background:linear-gradient(180deg,transparent,rgba(5,7,6,.83) 46%,rgba(5,7,6,.98));
+}
+.ghost-final-showcase-copy .ghost-final-kicker{font-size:9px;letter-spacing:.18em;color:#b7c99f;font-weight:900}
+.ghost-final-showcase-copy h2{margin:3px 0 1px!important;font-size:29px!important;color:#f4eddf}
+.ghost-final-showcase-copy span{display:block;color:#aab39f;font-size:11px}
+
+/* ---------- Five-second game start countdown ---------- */
+.ghost-start-countdown{
+  position:fixed;inset:0;z-index:12;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 44%,rgba(137,103,50,.19),transparent 28%),rgba(3,5,4,.94);
+  backdrop-filter:blur(12px);
+}
+.ghost-start-countdown.hidden{display:none!important}
+.ghost-countdown-inner{text-align:center;min-width:min(520px,90vw)}
+.ghost-countdown-kicker{font-size:11px;letter-spacing:.24em;color:#b8c89c;font-weight:900}
+.ghost-countdown-number{
+  display:block;margin:2px 0 -8px;font-size:clamp(108px,18vw,210px);line-height:1;
+  font-weight:900;color:#ead5a0;text-shadow:0 0 35px rgba(219,173,87,.26);
+}
+.ghost-countdown-number.pulse{animation:v182CountPulse .42s cubic-bezier(.2,.85,.2,1)}
+.ghost-countdown-label{font-size:clamp(21px,3vw,34px);font-weight:900;color:#f2ece2}
+.ghost-countdown-sub{display:block;margin-top:8px;color:rgba(255,255,255,.52);font-size:11px}
+@keyframes v182CountPulse{0%{transform:scale(.68);opacity:.2}55%{transform:scale(1.08);opacity:1}100%{transform:scale(1);opacity:1}}
+
+/* ---------- Gameplay action rail: vertical on the right, END anchored below ---------- */
+.board-zone{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 126px!important;
+  grid-template-areas:
+    "boardtop actionrail"
+    "board actionrail"
+    "message actionrail"
+    "myzone myzone"!important;
+  column-gap:12px!important;
+  align-items:start!important;
+}
+.board-top{grid-area:boardtop!important}
+.board{grid-area:board!important}
+.message{grid-area:message!important}
+.board-zone>.my-zone{grid-area:myzone!important;width:100%;max-width:none!important;margin-top:12px!important}
+.actions-row{
+  grid-area:actionrail!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-self:stretch!important;
+  gap:8px!important;
+  margin:0!important;
+  padding:2px 0!important;
+  min-width:0!important;
+}
+.action-cluster{
+  display:flex!important;
+  flex-direction:column!important;
+  grid-template-columns:none!important;
+  gap:7px!important;
+}
+.actions-row .action-bubble{
+  width:100%!important;
+  min-width:0!important;
+  min-height:48px!important;
+  padding:8px 7px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:2px!important;
+  border-radius:11px!important;
+  border:1px solid #c8a361!important;
+  background:linear-gradient(180deg,#cba55f,#8a6832)!important;
+  color:#15130f!important;
+  box-shadow:0 8px 18px rgba(0,0,0,.22)!important;
+  font-weight:900!important;
+}
+.actions-row .action-bubble>span{font-size:10px!important;line-height:1.2!important;text-align:center}
+.actions-row .action-bubble>small{font-size:7px!important;color:rgba(20,17,12,.66)!important}
+.actions-row .action-bubble:hover:not(:disabled){filter:brightness(1.11);transform:translateY(-1px)}
+.actions-row .action-bubble:disabled{filter:grayscale(.72) brightness(.58);opacity:.48!important}
+.turn-end-zone{
+  margin-top:auto!important;
+  padding:10px 0 0!important;
+  border-top:1px solid rgba(205,171,103,.2)!important;
+}
+.end-turn-bubble{
+  width:100%!important;
+  min-width:0!important;
+  min-height:58px!important;
+  padding:8px!important;
+  border-radius:12px!important;
+  border:1px solid #78544b!important;
+  background:linear-gradient(180deg,#402723,#251817)!important;
+  color:#eadbd3!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.22)!important;
+}
+.end-turn-bubble small{font-size:7px!important;letter-spacing:.15em;color:#b99084!important}
+.end-turn-bubble b{font-size:18px!important}
+.end-turn-bubble span{font-size:17px!important}
+.end-turn-bubble:hover:not(:disabled){filter:brightness(1.15)}
+
+@media(max-width:980px){
+  .ghost-select-grid{justify-content:flex-start!important;overflow-x:auto!important;overflow-y:visible!important;padding:22px 26px 38px!important;scrollbar-width:thin}
+  .ghost-pick-card{flex-basis:142px!important;width:142px!important;margin-left:-28px!important}
+  .ghost-pick-card:first-child{margin-left:0!important}
+  .board-zone{grid-template-columns:minmax(0,1fr) 112px!important;column-gap:8px!important}
+}
+@media(max-width:720px){
+  .ghost-pick-card{flex-basis:130px!important;width:130px!important;margin-left:-22px!important}
+  .board-zone{display:block!important}
+  .actions-row{margin:10px 0!important;display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:6px!important}
+  .action-cluster{display:contents!important}
+  .turn-end-zone{margin:0!important;padding:0!important;border:0!important}
+  .actions-row .action-bubble,.end-turn-bubble{min-height:48px!important}
+}

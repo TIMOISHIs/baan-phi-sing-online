@@ -396,6 +396,7 @@ socket.on("privateState",p=>{if(diceAnimating&&state?.phase==="game"){queuedPriv
 socket.on("chatMessage",msg=>appendChatMessage(msg));
 socket.on("ghostRandomStarted",()=>{if(state?.phase==="ghostSelect")setTimeout(runGhostCycleAnimation,80)});
 socket.on("ghostReveal",e=>{if(e?.ghost)revealFinalGhost(e.ghost)});
+socket.on("gameStartCountdown",e=>runGameStartCountdown(e));
 socket.on("hpFx",e=>{if(diceAnimating){queuedHpEvents.push(e);return}const fire=()=>queueHpFx(e.delta,e.reason||"HP เปลี่ยน");if(/สวนกลับ|ดูดเลือด/.test(e.reason||""))setTimeout(fire,2600);else fire()});
 socket.on("cardReveal",enqueueCardReveal);
 socket.on("diceFx",e=>{rollRequestPending=false;showDiceFx(e)});
@@ -408,10 +409,36 @@ function clearGhostCycleTimers(){ghostCycleTimers.forEach(clearTimeout);ghostCyc
 function ghostSymbol(c){return({green:"◆",blue:"■",pink:"⬟",black:"⬢"})[c]||"•"}
 function ghostNeedText(g){return Object.entries(g?.need||{}).filter(([,n])=>n>0).map(([c,n])=>`${ghostSymbol(c)} ${n}`).join("  ")}
 function ensureGhostSelectionOverlay(){let box=$("#ghostSelectOverlay");if(box)return box;box=document.createElement("div");box.id="ghostSelectOverlay";box.className="ghost-select-overlay hidden";box.innerHTML=`<div class="ghost-select-shell"><div class="ghost-select-eyebrow">THE HAUNTING BEGINS</div><h1>คืนนี้จะเจอผีตัวไหน?</h1><p class="ghost-select-note">ผีมีทั้งหมด 9 ใบ • สุ่มครั้งเดียวและล็อกทันที</p><div id="ghostSelectGrid" class="ghost-select-grid"></div><div class="ghost-select-footer"><p id="ghostSelectStatus">รอ Host กดสุ่มผี</p><button id="ghostRandomBtn" class="primary ghost-random-button">👻 สุ่มผี</button></div><div id="ghostFinalReveal" class="ghost-final-reveal hidden"></div></div>`;document.body.appendChild(box);box.querySelector("#ghostRandomBtn").onclick=()=>{if(!ghostRandomAnimating){ensureAudio();socket.emit("randomGhost")}};return box}
-function hideGhostSelectionOverlay(){const b=$("#ghostSelectOverlay");if(b)b.classList.add("hidden");clearGhostCycleTimers();ghostRandomAnimating=false}
+function hideGhostSelectionOverlay(){const b=$("#ghostSelectOverlay");if(b)b.classList.add("hidden");clearGhostCycleTimers();clearGhostStartCountdown();ghostRandomAnimating=false}
 function renderGhostSelection(){if(state?.phase!=="ghostSelect")return;const o=ensureGhostSelectionOverlay();o.classList.remove("hidden");const grid=o.querySelector("#ghostSelectGrid"),btn=o.querySelector("#ghostRandomBtn"),status=o.querySelector("#ghostSelectStatus"),selected=state.ghostSelection?.selectedId,locked=state.ghostSelection?.locked;grid.innerHTML="";(state.ghosts||[]).forEach(g=>{const c=document.createElement("div");c.className=`ghost-pick-card ${selected===g.id?"ghost-selected":""}`;c.dataset.ghostId=g.id;c.innerHTML=`<div class="ghost-pick-art">${artMarkup(g.art,"ghost-art-img",g.name)||"<span>GHOST ART</span>"}</div><div class="ghost-pick-copy"><small>${g.tier||"GHOST"}</small><b>${g.name}</b><em>${g.archetype||""}</em><div class="ghost-pick-need">${ghostNeedText(g)}</div></div>`;grid.appendChild(c)});btn.style.display=isHost()?"inline-flex":"none";btn.disabled=!!locked||ghostRandomAnimating;btn.textContent=locked?"👻 สุ่มแล้ว":ghostRandomAnimating?"👻 กำลังสุ่ม...":"👻 สุ่มผี";status.textContent=locked?`ล็อกแล้ว: ${(state.ghosts||[]).find(g=>g.id===selected)?.name||"ผี"}`:isHost()?"กดสุ่มได้ครั้งเดียว • ไม่มี Reroll":"รอ Host กดสุ่มผี"}
 function runGhostCycleAnimation(){const o=ensureGhostSelectionOverlay(),cards=[...o.querySelectorAll(".ghost-pick-card")];if(!cards.length)return;clearGhostCycleTimers();ghostRandomAnimating=true;const delays=[65,65,70,75,80,90,105,120,145,175,215,270],status=o.querySelector("#ghostSelectStatus");if(status)status.textContent="กำลังเรียกวิญญาณ...";let t=0;delays.forEach((d,i)=>{t+=d;ghostCycleTimers.push(setTimeout(()=>{cards.forEach(x=>x.classList.remove("ghost-cycle-active"));cards[i%cards.length].classList.add("ghost-cycle-active");try{tone(150+(i%9)*20,.055,.014,"triangle",0,sfxMaster)}catch{}},t))})}
-function revealFinalGhost(g){clearGhostCycleTimers();ghostRandomAnimating=false;const o=ensureGhostSelectionOverlay(),r=o.querySelector("#ghostFinalReveal");o.querySelectorAll(".ghost-pick-card").forEach(c=>{c.classList.remove("ghost-cycle-active");c.classList.toggle("ghost-selected",c.dataset.ghostId===g.id)});const rules=Object.entries(g.need||{}).filter(([,n])=>n>0).map(([c,n])=>`<div class="ghost-final-rule ${c}"><b>${ghostSymbol(c)} × ${n}</b><span>ทอย ${g.dice?.[c]?.label||"?"}</span></div>`).join("");r.innerHTML=`<div class="ghost-final-card"><div class="ghost-final-kicker">คืนนี้เจอ</div><div class="ghost-final-art">${artMarkup(g.art,"ghost-art-img",g.name)||"GHOST ART"}</div><h2>${g.name}</h2><span>${g.tier||""} · ${g.archetype||""}</span><p>${g.passiveText||""}</p><div class="ghost-final-rules">${rules}</div><small>ผีถูกล็อกแล้ว • ไม่มีการสุ่มใหม่</small></div>`;r.classList.remove("hidden");void r.offsetWidth;r.classList.add("ghost-reveal-pop");try{tone(82,.55,.035,"sawtooth",0,sfxMaster);tone(196,.5,.024,"sine",.25,sfxMaster)}catch{}}
+function revealFinalGhost(g){clearGhostCycleTimers();ghostRandomAnimating=false;const o=ensureGhostSelectionOverlay(),r=o.querySelector("#ghostFinalReveal");o.querySelectorAll(".ghost-pick-card").forEach(c=>{c.classList.remove("ghost-cycle-active");c.classList.toggle("ghost-selected",c.dataset.ghostId===g.id)});r.innerHTML=`<div class="ghost-final-card v182-ghost-showcase"><div class="ghost-final-art">${artMarkup(g.art,"ghost-art-img",g.name)||"GHOST ART"}</div><div class="ghost-final-showcase-copy"><div class="ghost-final-kicker">คืนนี้เจอ</div><h2>${g.name}</h2><span>${g.tier||""} · ${g.archetype||""}</span></div></div>`;r.classList.remove("hidden");void r.offsetWidth;r.classList.add("ghost-reveal-pop");try{tone(82,.55,.035,"sawtooth",0,sfxMaster);tone(196,.5,.024,"sine",.25,sfxMaster)}catch{}}
+let ghostStartCountdownTimer=null,ghostStartCountdownLast=null;
+function clearGhostStartCountdown(){
+  if(ghostStartCountdownTimer){clearInterval(ghostStartCountdownTimer);ghostStartCountdownTimer=null}
+  ghostStartCountdownLast=null;
+  const c=$("#ghostStartCountdown");if(c)c.remove();
+}
+function runGameStartCountdown(e={}){
+  clearGhostStartCountdown();
+  const o=ensureGhostSelectionOverlay();o.classList.remove("hidden");
+  const reveal=o.querySelector("#ghostFinalReveal");if(reveal)reveal.classList.add("hidden");
+  const c=document.createElement("div");c.id="ghostStartCountdown";c.className="ghost-start-countdown";
+  c.innerHTML=`<div class="ghost-countdown-inner"><div class="ghost-countdown-kicker">GET READY</div><b id="ghostCountdownNumber" class="ghost-countdown-number">5</b><div id="ghostCountdownLabel" class="ghost-countdown-label">เกมจะเริ่มใน</div><span class="ghost-countdown-sub">ทุกคนเตรียมตัว • เทิร์นจะเริ่มหลังนับถอยหลัง</span></div>`;
+  o.appendChild(c);
+  const startAt=Number(e.startAt)||Date.now()+5000,num=c.querySelector("#ghostCountdownNumber"),label=c.querySelector("#ghostCountdownLabel");
+  const tick=()=>{
+    const ms=startAt-Date.now(),left=Math.max(0,Math.ceil(ms/1000));
+    const shown=left>0?String(left):"เกมเริ่ม!";
+    if(shown!==ghostStartCountdownLast){
+      ghostStartCountdownLast=shown;num.textContent=shown;num.classList.remove("pulse");void num.offsetWidth;num.classList.add("pulse");
+      if(left>0){label.textContent="เกมจะเริ่มใน";try{tone(240+left*28,.11,.026,"triangle",0,sfxMaster)}catch{}}
+      else{label.textContent="ลุย!";try{tone(392,.18,.034,"triangle",0,sfxMaster);tone(523.25,.24,.028,"sine",.08,sfxMaster)}catch{}}
+    }
+  };
+  tick();ghostStartCountdownTimer=setInterval(tick,120);
+}
+
 function render(){
   if(!state)return;
   if(state.phase==="lobby"){hideGhostSelectionOverlay();show("lobby");renderLobby();return}
@@ -500,7 +527,7 @@ function statsNode(){
 }
 function openStats(){openModal("📊 Playtest Stats",statsNode())}
 function reportPayload(){
-  return {project:"บ้านผีสิง",build:"V1.8",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
+  return {project:"บ้านผีสิง",build:"V1.8.2",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
     players:(state?.players||[]).map(p=>({name:p.name,character:p.char?.name||null,money:p.score,hp:p.hp,dead:p.dead})),
     settings:state?.settings||null,result:state?.result||null,stats:currentStats(),log:state?.log||[],exportedAt:new Date().toISOString()};
 }

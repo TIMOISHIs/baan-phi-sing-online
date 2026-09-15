@@ -1117,7 +1117,29 @@ io.on("connection", socket=>{
     room.phase="ghostSelect";room.ghostSelection={locked:false,selectedId:null,seq:0};addLog(room,"ทุกคนพร้อมแล้ว → เข้าสู่การสุ่มผี");emitRoom(room);
   });
 
-  socket.on("randomGhost", ()=>{const room=rooms.get(socket.data.roomCode);if(!room||!checkHost(socket,room))return;if(room.phase!=="ghostSelect")return fail(socket,"ตอนนี้ไม่ใช่ช่วงสุ่มผี");if(room.ghostSelection?.locked)return fail(socket,"ผีถูกสุ่มไปแล้ว — ไม่มีการสุ่มใหม่");const ghost=GHOSTS[Math.floor(Math.random()*GHOSTS.length)];room.ghostSelection={locked:true,selectedId:ghost.id,seq:(room.ghostSelection?.seq||0)+1};const seq=room.ghostSelection.seq;addLog(room,"Host เริ่มสุ่มผี...");io.to(room.code).emit("ghostRandomStarted",{seq});setTimeout(()=>{const latest=rooms.get(room.code);if(!latest||latest.phase!=="ghostSelect"||latest.ghostSelection?.seq!==seq)return;emitRoom(latest);io.to(latest.code).emit("ghostReveal",{seq,ghost:{id:ghost.id,name:ghost.name,tier:ghost.tier,archetype:ghost.archetype,fear:ghost.fear,position:ghost.position,need:ghost.need,dice:ghost.dice,passiveText:ghost.passiveText,counterText:ghost.counterText}});addLog(latest,`สุ่มได้ ${ghost.name} → ล็อกผีตัวนี้ทันที`)},2300);setTimeout(()=>{const latest=rooms.get(room.code);if(!latest||latest.phase!=="ghostSelect"||latest.ghostSelection?.seq!==seq)return;startRoom(latest,ghost);emitRoom(latest)},4300);});
+  socket.on("randomGhost", ()=>{
+    const room=rooms.get(socket.data.roomCode);if(!room||!checkHost(socket,room))return;
+    if(room.phase!=="ghostSelect")return fail(socket,"ตอนนี้ไม่ใช่ช่วงสุ่มผี");
+    if(room.ghostSelection?.locked)return fail(socket,"ผีถูกสุ่มไปแล้ว — ไม่มีการสุ่มใหม่");
+    const ghost=GHOSTS[Math.floor(Math.random()*GHOSTS.length)];
+    room.ghostSelection={locked:true,selectedId:ghost.id,seq:(room.ghostSelection?.seq||0)+1};
+    const seq=room.ghostSelection.seq;addLog(room,"Host เริ่มสุ่มผี...");io.to(room.code).emit("ghostRandomStarted",{seq});
+    setTimeout(()=>{
+      const latest=rooms.get(room.code);if(!latest||latest.phase!=="ghostSelect"||latest.ghostSelection?.seq!==seq)return;
+      emitRoom(latest);io.to(latest.code).emit("ghostReveal",{seq,ghost:{id:ghost.id,name:ghost.name,tier:ghost.tier,archetype:ghost.archetype,fear:ghost.fear,position:ghost.position,need:ghost.need,dice:ghost.dice,passiveText:ghost.passiveText,counterText:ghost.counterText}});
+      addLog(latest,`สุ่มได้ ${ghost.name} → ล็อกผีตัวนี้ทันที`);
+    },2300);
+    setTimeout(()=>{
+      const latest=rooms.get(room.code);if(!latest||latest.phase!=="ghostSelect"||latest.ghostSelection?.seq!==seq)return;
+      const startAt=Date.now()+5000;latest.ghostSelection.startAt=startAt;
+      io.to(latest.code).emit("gameStartCountdown",{seq,startAt,seconds:5});
+      addLog(latest,"เตรียมเริ่มเกม — นับถอยหลัง 5 วินาที");
+    },4800);
+    setTimeout(()=>{
+      const latest=rooms.get(room.code);if(!latest||latest.phase!=="ghostSelect"||latest.ghostSelection?.seq!==seq)return;
+      startRoom(latest,ghost);emitRoom(latest);
+    },10200);
+  });
 
   socket.on("escapeRoom", ()=>{
     const room=rooms.get(socket.data.roomCode); if(!room) return;
@@ -1688,4 +1710,4 @@ setInterval(()=>{
   }
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.8.1 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.8.2 listening on :${PORT}`));
