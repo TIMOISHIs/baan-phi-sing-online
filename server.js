@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.8.5",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.8.6",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -43,11 +43,11 @@ function normalizeSetting(key,value){
 
 const CHARS = [
   { key:"por-krai", name:"พ่อไกร", role:"สายแทงค์", hp:10, slots:3, skillType:"self_revive", skill:"ใช้ธูป 3 ดอก: ฟื้น HP +3 • ใช้ได้เมื่อ HP 0 ตอนถึงเทิร์นตัวเอง" },
-  { key:"mae-mali", name:"แม่มะลิ", role:"สายต้น", hp:7, slots:3, skillType:"draw_five_stop_event", skill:"ใช้ธูป 3 ดอก: จั่ว Amulet สูงสุด 5 ใบ • ถ้าเจอ Event ให้ Resolve แล้วหยุดทันที" },
-  { key:"doctor", name:"หมอสาว", role:"สายฮีล", hp:9, slots:3, skillType:"heal_all_living", skill:"ใช้ธูป 3 ดอก: เพื่อนที่ยังมีชีวิตทุกคน HP +1 ไม่จำกัดระยะ • ตัวเอง HP -3" },
-  { key:"nerd", name:"เด็กเนิร์ด", role:"สายติม", hp:7, slots:3, skillType:"move_to_friend_hp2", skill:"ใช้ธูป 3 ดอก: เลือกวาร์ปไปหาเพื่อน 1 คน • ตัวเอง HP -2" },
-  { key:"black-shaman", name:"หมอผีดำ", role:"สายตี", hp:8, slots:3, skillType:"remote_ritual_hp3", skill:"ใช้ธูป 3 ดอก: ท้าดวลผีจากห้องไหนก็ได้ • เลือกเครื่องเซ่นและทอยตามปกติ • HP -3" },
-  { key:"mor-tham", name:"หมอธรรม", role:"สายซัพ", hp:7, slots:3, skillType:"free_any_trap_curse", skill:"ใช้ธูป 3 ดอก: ปลดตัวเองหรือเพื่อนจากห้องคำสาป/กับดักได้ทั่วกระดาน" },
+  { key:"mae-mali", name:"แม่มะลิ", role:"สายต้น", hp:7, slots:2, skillType:"draw_five_stop_event", skill:"ใช้ธูป 3 ดอก: จั่ว Amulet สูงสุด 5 ใบ • ถ้าเจอ Event ให้ Resolve แล้วหยุดทันที" },
+  { key:"doctor", name:"หมอสาว", role:"สายฮีล", hp:9, slots:2, skillType:"heal_all_living", skill:"ใช้ธูป 3 ดอก: เพื่อนที่ยังมีชีวิตทุกคน HP +1 ไม่จำกัดระยะ • ตัวเอง HP -3" },
+  { key:"nerd", name:"เด็กเนิร์ด", role:"สายติม", hp:7, slots:2, skillType:"move_to_friend_hp2", skill:"ใช้ธูป 3 ดอก: เลือกวาร์ปไปหาเพื่อน 1 คน • ตัวเอง HP -2" },
+  { key:"black-shaman", name:"หมอผีดำ", role:"สายตี", hp:8, slots:2, skillType:"remote_ritual_hp3", skill:"ใช้ธูป 3 ดอก: ท้าดวลผีจากห้องไหนก็ได้ • เลือกเครื่องเซ่นและทอยตามปกติ • HP -3" },
+  { key:"mor-tham", name:"หมอธรรม", role:"สายซัพ", hp:7, slots:2, skillType:"free_any_trap_curse", skill:"ใช้ธูป 3 ดอก: ปลดตัวเองหรือเพื่อนจากห้องคำสาป/กับดักได้ทั่วกระดาน" },
   { key:"temple-dog", name:"หมาวัด", role:"สายคุ้ย", hp:7, slots:2, skillType:"peek_four_choose_two", skill:"ใช้ธูป 3 ดอก: เลือกดูบนสุดหรือล่างสุด 4 ใบ แล้วเลือกเก็บ 2 ใบ • อีก 2 ใบคืนด้านเดิมตามลำดับ" },
   { key:"stray-cat", name:"แมวจร", role:"สายส่ง", hp:1, slots:2, skillType:"remote_help", skill:"ใช้ธูป 3 ดอก: ใช้การ์ดหมวดช่วยเหลือ 1 ใบให้เพื่อนคนใดก็ได้ ไม่จำกัดห้อง" }
 ];
@@ -316,12 +316,13 @@ function drawAmuletFromDeck(room){
   }
   return g.amuDeck.shift()||null;
 }
+function canRecoverToHand(card){return !!card && card.type!=="event";}
 function queueOfficeDiscardPick(room,p,{force=false}={}){
   const g=room?.game;if(!g||!p)return false;
   if(!force && roomAt(room,p.pos)?.effectId!=="event_pick_discard")return false;
-  const options=(g.amuDiscard||[]).map(c=>({uid:c.uid,name:c.name,type:c.type,category:c.category,desc:c.desc||c.effect||"",art:c.art||null}));
+  const options=(g.amuDiscard||[]).filter(canRecoverToHand).map(c=>({uid:c.uid,name:c.name,type:c.type,category:c.category,desc:c.desc||c.effect||"",art:c.art||null}));
   g.officePickAfterPending=null;
-  if(!options.length){addLog(room,`ห้องทำงาน: กองทิ้ง Amulet ว่าง จึงไม่มีการ์ดให้เลือก`);return false;}
+  if(!options.length){addLog(room,`ห้องทำงาน: ไม่มี Amulet ที่หยิบเข้ามือได้ (ไม่รวม Event)`);return false;}
   g.pendingRoomEffect={id:`office-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,type:"officePickDiscard",playerId:p.id,reason:"ห้องทำงาน: เลือก 1 ใบจากกองทิ้ง Amulet",options};
   addLog(room,`ห้องทำงาน → ${p.name} เลือก 1 ใบจากกองทิ้ง Amulet`);
   return true;
@@ -359,9 +360,21 @@ function ghostDamage(room,player,amount,reason){
   changeHp(room,player,-amount,reason);
   return amount;
 }
-function addLog(room, text){
-  room.log.push({at:Date.now(), text});
-  if(room.log.length>120) room.log.shift();
+function addLog(room,text,extra={}){
+  const g=room.game,actor=g?active(room):null;
+  const players=(room.players||[]).map(p=>({id:p.id,name:p.name,hp:p.hp??null,score:p.score||0,pos:p.pos??null}));
+  const changes=[];
+  for(const p of players){const before=room._logPlayers?.find(x=>x.id===p.id);if(!before)continue;
+    for(const [key,label] of [["hp","HP"],["score","เงิน"],["pos","ตำแหน่งห้อง"]]){
+      if(before[key]!==p[key]&&before[key]!=null&&p[key]!=null)changes.push({player:p.name,field:label,before:key==="pos"?before[key]+1:before[key],after:key==="pos"?p[key]+1:p[key]});
+    }
+  }
+  const cards=[...AMULETS,...SACRIFICES].filter(c=>c.name&&String(text).includes(c.name));
+  const unique=[...new Map(cards.map(c=>[c.name,c])).values()].map(c=>({name:c.name,type:c.type||c.color,desc:c.desc||c.effect||"",condition:typeof c.condition==="object"?c.condition.label:c.condition||"",art:c.art||null}));
+  room.log.push({id:`log-${room.logSeq=(room.logSeq||0)+1}`,at:Date.now(),text,
+    details:{actor:actor?.name||null,room:actor?.pos!=null?roomAt(room,actor.pos)?.name:null,curse:g?.curse??null,changes,cards:unique,...extra}});
+  room._logPlayers=players;
+  if(room.log.length>120)room.log.shift();
 }
 function setHp(room,player,value,reason="HP เปลี่ยน"){
   if(!player||player.hp==null)return 0;
@@ -369,6 +382,7 @@ function setHp(room,player,value,reason="HP เปลี่ยน"){
   const after=Math.max(0,Math.min(max,Number(value)||0));
   player.hp=after;
   const delta=after-before;
+  if(delta)addLog(room,`${player.name}: ${reason} → HP ${before} → ${after}`,{reason,affected:player.name});
   if(delta&&player.socketId)io.to(player.socketId).emit("hpFx",{delta,hp:after,maxHp:Number.isFinite(max)?max:null,reason});
   return delta;
 }
@@ -492,6 +506,7 @@ function publicSnapshot(room){
       moved:g.moved,
       mustMove:g.mustMove,
       legal:g.legal,
+      movementPreview:g.sanityDecision&&active(room)?movementOptions(room,active(room)):{legal:[],distances:{},range:0},
       sacDrawn:g.sacDrawn,
       traded:g.traded,
       escapeRequired:g.escapeRequired,
@@ -520,7 +535,7 @@ function publicSnapshot(room){
       sacDiscardCount:g.sacDiscard?.length||0,
       stats:g.stats||null
     } : null,
-    log:room.log.slice(-50),
+    log:room.log.slice(-120),
     chat:(room.chat||[]).slice(-50),
     result:room.result || null,
     trade:room.trade ? {
@@ -753,27 +768,25 @@ function applySacrificeRoomEffect(room, player, card){
     if(card.group==="อาหารเซ่นผี"){changeHp(room,player,-1,"ห้องนอน: อาหารเซ่นผี");addLog(room,`${player.name}: ห้องนอน + อาหารเซ่นผี → HP -1`);}
   }
 }
-function finalizeMovementOptions(room,p){
-  const g=room.game;
-  g.sanityDecision=false;
-  g.movementRange=Math.max(0,Math.floor(Number(g.movementRange??g.lastDice?.total)||0));
-  const seen=new Set([p.pos]),queue=[{index:p.pos,distance:0}];g.legal=[];g.moveDistances={};
+function movementOptions(room,p){
+  const g=room.game,range=Math.max(0,Math.floor(Number(g.movementRange??g.lastDice?.total)||0));
+  const seen=new Set([p.pos]),queue=[{index:p.pos,distance:0}],legal=[],distances={};
   for(let n=0;n<queue.length;n++){
-    const {index,distance}=queue[n];if(distance>=g.movementRange)continue;
-    // Special rooms may be destinations but cannot be crossed without escaping next turn.
+    const {index,distance}=queue[n];if(distance>=range)continue;
     if(index!==p.pos&&(index===g.bossIndex||["คำสาป","กับดัก"].includes(roomAt(room,index)?.type)))continue;
     for(const next of neighbors(index)){
       if(seen.has(next)||roomAt(room,next).fear>g.sanity||!canEnter(room,p,next))continue;
-      seen.add(next);g.legal.push(next);g.moveDistances[next]=distance+1;queue.push({index:next,distance:distance+1});
+      seen.add(next);legal.push(next);distances[next]=distance+1;queue.push({index:next,distance:distance+1});
     }
   }
+  return {legal,distances,range};
+}
+function finalizeMovementOptions(room,p){
+  const g=room.game,options=movementOptions(room,p);
+  g.sanityDecision=false;g.legal=options.legal;g.moveDistances=options.distances;g.movementRange=options.range;
   g.mustMove=false;g.moveOptional=false;
-  if(g.legal.length){
-    if(room.settings.forcedMovement) g.mustMove=true;
-    else g.moveOptional=true;
-  }else{
-    g.moved=true;
-  }
+  if(g.legal.length){if(room.settings.forcedMovement)g.mustMove=true;else g.moveOptional=true;}
+  else g.moved=true;
 }
 function seatNeighbor(room,p,direction){
   const sorted=[...room.players].sort((a,b)=>(a.seat||0)-(b.seat||0));
@@ -1331,7 +1344,7 @@ io.on("connection", socket=>{
     const room=rooms.get(socket.data.roomCode); if(!room) return;
     const p=checkTurn(socket,room); if(!p) return;
     const g=room.game, i=Number(index);
-    if(!(g.mustMove||g.moveOptional) || !g.legal.includes(i)) return fail(socket,"เดินไปห้องนี้ไม่ได้");
+    if(g.sanityDecision || !(g.mustMove||g.moveOptional) || !g.legal.includes(i)) return fail(socket,"เดินไปห้องนี้ไม่ได้");
     const distance=g.moveDistances?.[i]||1;
     p.pos=i; g.mustMove=false; g.moveOptional=false; g.moved=true; g.legal=[];
     bumpRoomVisit(room,i);
@@ -1673,11 +1686,15 @@ io.on("connection", socket=>{
       addLog(room,`${p.name} ทิ้ง Amulet ${need} ใบ → เหลือ ${p.amu.length}/5`);
       room.game.pendingRoomEffect=null;
     }else if(pending.type==="officePickDiscard"){
-      const idx=(room.game.amuDiscard||[]).findIndex(c=>c.uid===uid);if(idx<0)return fail(socket,"การ์ดนี้ไม่อยู่ในกองทิ้งแล้ว");
-      const [card]=room.game.amuDiscard.splice(idx,1);room.game.pendingRoomEffect=null;
-      if(card.type==="event"){revealCard(room,p,card,"amulet","office-retrieve");applyEventCard(room,p,card);returnAmuletToBottom(room,card,"ห้องทำงานหยิบ Event แล้ว Resolve");}
-      else if(p.amu.length<5){p.amu.push(card);addLog(room,`${p.name} หยิบ ${card.name} จากกองทิ้งเข้ามือ`);}
-      else {room.game.amuDiscard.push(card);return fail(socket,"มือ Amulet เต็ม 5 ใบ");}
+      const pile=room.game.amuDiscard||[],idx=pile.findIndex(c=>c.uid===uid);
+      if(idx<0||!pending.options?.some(c=>c.uid===uid)||!canRecoverToHand(pile[idx]))return fail(socket,"เลือกได้เฉพาะ Amulet ที่ไม่ใช่ Event ในตัวเลือก");
+      const [card]=pile.splice(idx,1);room.game.pendingRoomEffect=null;p.amu.push(card);
+      addLog(room,`${p.name} หยิบ ${card.name} จากกองทิ้งเข้ามือ`);
+      if(p.amu.length>5)room.game.pendingRoomEffect={
+        id:`recover-overflow-${Date.now()}`,type:"discardAmuletOverflow",playerId:p.id,count:p.amu.length-5,
+        reason:"หยิบจากกองทิ้ง — เลือกทิ้งให้เหลือ 5 ใบ",newUid:card.uid,newLabel:"ใบที่เพิ่งหยิบ",
+        options:p.amu.map(c=>({uid:c.uid,name:c.name,type:c.type,category:c.category,desc:c.desc||c.effect||"",art:c.art||null}))
+      };
     }else if(pending.type==="eventRollMoney"){
       const beneficiary=room.players.find(x=>x.id===pending.beneficiaryId);const d=roll2();recordDice(room,p,d,"event");if(beneficiary){beneficiary.score=(beneficiary.score||0)+d.total;addLog(room,`${p.name} ทอย Event ${d.a}+${d.b}=${d.total} → ${beneficiary.name} ได้เงิน ${d.total}`);}room.game.pendingRoomEffect=null;
     }else if(pending.type==="eventReviveAny"){
@@ -1835,4 +1852,4 @@ setInterval(()=>{
   }
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.8.5 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.8.6 listening on :${PORT}`));

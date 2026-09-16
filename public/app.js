@@ -13,7 +13,7 @@ let ambientVolume=Math.max(0,Math.min(3,Number(localStorage.getItem("bpsAmbientV
 const storedVolume=(key,fallback,max=3)=>{const value=Number(localStorage.getItem(key)??fallback);return Number.isFinite(value)?Math.max(0,Math.min(max,value)):fallback};
 let masterVolume=storedVolume("bpsMasterVolV185",1.5),sfxVolume=storedVolume("bpsSfxVolV185",0.8);
 let ambientTrack=localStorage.getItem("bpsAmbientTrackV14")||"haunted";
-const TRACK_NAMES={haunted:"บ้านร้าง",candle:"พิธีเทียนดับ",redrain:"คืนฝนแดง"};
+const TRACK_NAMES={haunted:"บ้านร้าง",candle:"พิธีเทียนดับ",redrain:"คืนฝนแดง",lofi_midnight:"Lo-Fi · เที่ยงคืน",lofi_lantern:"Lo-Fi · โคมผี",lofi_rain:"Lo-Fi · ฝนหลอน"};
 const PLAYER_META={
   1:{label:"P1",name:"แดงอิฐ"},2:{label:"P2",name:"ฟ้าน้ำมนต์"},3:{label:"P3",name:"ทองธูป"},4:{label:"P4",name:"ม่วงคุณไสย"},
   5:{label:"P5",name:"เขียวตะเคียน"},6:{label:"P6",name:"ชมพูเครื่องเซ่น"}
@@ -147,10 +147,47 @@ function scheduleHaunt(){
   tone(freq,5+Math.random()*2,.018+Math.random()*.014,Math.random()<.5?"sine":"triangle");
   trackTimers.push(setTimeout(scheduleHaunt,6000+Math.random()*8000));
 }
+// Original synthesized loops: one cancellable beat timer and a private audio bus per track.
+const LOFI_TRACKS={
+  lofi_midnight:{bpm:74,roots:[110,87.31,98,82.41],melody:[0,null,7,3,null,10,7,null,0,null,3,7,null,2,null,7],swing:.14},
+  lofi_lantern:{bpm:86,roots:[146.83,130.81,116.54,110],melody:[0,7,null,10,3,null,2,null,7,null,3,0,null,10,7,null],swing:.10},
+  lofi_rain:{bpm:66,roots:[98,82.41,73.42,87.31],melody:[0,null,null,7,10,null,3,null,2,null,7,null,3,null,0,null],swing:.18}
+};
+function startLofiTrack(key){
+  const cfg=LOFI_TRACKS[key],ctx=ensureAudio();if(!cfg||!ctx)return;
+  const bus=ctx.createGain(),filter=ctx.createBiquadFilter();bus.gain.value=.85;
+  filter.type="lowpass";filter.frequency.value=1800;bus.connect(filter).connect(ambientMaster);trackNodes.push(bus,filter);
+  const noise=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*.18),ctx.sampleRate),data=noise.getChannelData(0);
+  for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+  const stepSeconds=60/cfg.bpm/4;let step=0,timer=null;
+  function drum(kind){
+    const now=ctx.currentTime,gain=ctx.createGain();gain.connect(bus);
+    if(kind==="kick"){
+      const osc=ctx.createOscillator();osc.frequency.setValueAtTime(120,now);osc.frequency.exponentialRampToValueAtTime(42,now+.13);
+      gain.gain.setValueAtTime(.32,now);gain.gain.exponentialRampToValueAtTime(.0001,now+.24);osc.connect(gain);osc.start();osc.stop(now+.25);osc.onended=()=>{osc.disconnect();gain.disconnect()};
+    }else{
+      const src=ctx.createBufferSource(),f=ctx.createBiquadFilter();src.buffer=noise;f.type="highpass";f.frequency.value=kind==="hat"?6000:1400;
+      const length=kind==="hat"?.045:.15;gain.gain.setValueAtTime(kind==="hat"?.035:.075,now);gain.gain.exponentialRampToValueAtTime(.0001,now+length);
+      src.connect(f).connect(gain);src.start();src.stop(now+length);src.onended=()=>{src.disconnect();f.disconnect();gain.disconnect()};
+    }
+  }
+  function beat(){
+    if(timer!==null){const i=trackTimers.indexOf(timer);if(i>=0)trackTimers.splice(i,1)}
+    if(!ambientEnabled||ambientTrack!==key)return;
+    const n=step%16,root=cfg.roots[Math.floor(step/16)%cfg.roots.length];
+    if(n===0||n===8||n===11)drum("kick");if(n===4||n===12)drum("snare");if(n%2===0)drum("hat");
+    if(n===0){[0,3,7,10].forEach(v=>tone(root*2**(v/12),1.45,.022,"triangle",0,bus));tone(root/2,.6,.085,"sine",0,bus)}
+    if(n===8)tone(root/2,.5,.065,"sine",0,bus);
+    const note=cfg.melody[n];if(note!==null)tone(root*2*2**(note/12),.32,.025,"sine",0,bus);
+    step++;timer=setTimeout(beat,stepSeconds*1000*(n%2===0?1+cfg.swing:1-cfg.swing));trackTimers.push(timer);
+  }
+  beat();
+}
 function startSelectedTrack(){
   clearTrack();
   if(!ambientEnabled)return;
   ensureAudio();
+  if(LOFI_TRACKS[ambientTrack]){startLofiTrack(ambientTrack);return;}
   if(ambientTrack==="haunted"){
     addDrone([43.65,65.41],.05);addWind(430,.11);scheduleHaunt();
   }else if(ambientTrack==="candle"){
@@ -614,7 +651,7 @@ function statsNode(){
 }
 function openStats(){openModal("📊 Playtest Stats",statsNode())}
 function reportPayload(){
-  return {project:"บ้านผีสิง",build:"V1.8.5",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
+  return {project:"บ้านผีสิง",build:"V1.8.6",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
     players:(state?.players||[]).map(p=>({name:p.name,character:p.char?.name||null,money:p.score,hp:p.hp,dead:p.dead})),
     settings:state?.settings||null,result:state?.result||null,stats:currentStats(),log:state?.log||[],exportedAt:new Date().toISOString()};
 }
@@ -670,6 +707,16 @@ function showNextCardReveal(){
     cardRevealPreviousFocus=document.activeElement;$("#cardRevealClose").focus();hideRollFocus();
   }else cardRevealTimer=setTimeout(closeCardReveal,e.zone==="amulet"?2800:2200);
 }
+const DIE_ROTATIONS={1:[0,0],2:[0,-90],3:[-90,0],4:[90,0],5:[0,90],6:[0,180]};
+function buildDie(el){
+  const dots={1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]};
+  el.innerHTML=Object.entries(dots).map(([face,cells])=>`<div class="die-face face-${face}">${Array.from({length:9},(_,i)=>`<i class="die-pip ${cells.includes(i+1)?"on":""}"></i>`).join("")}</div>`).join("");
+}
+function settleDie(el,value){
+  const rotation=DIE_ROTATIONS[value];if(!rotation)return;
+  el.style.transform=`rotateX(${rotation[0]}deg) rotateY(${rotation[1]}deg)`;el.setAttribute("aria-label",`ลูกเต๋า ${value}`);el.dataset.value=String(value);
+}
+let diceSettleTimer=null;
 function showDiceFx(e){
   rollRequestPending=false;ritualRollSelection=null;hideRollFocus();diceAnimating=true;queuedState=null;queuedPrivateState=null;queuedHpEvents=[];
   const box=$("#diceFx"),aEl=$("#dieA"),bEl=$("#dieB"),total=$("#diceFxTotal");
@@ -677,16 +724,13 @@ function showDiceFx(e){
   $("#diceFxKind").textContent=e.kind==="ritual"?"ทอยทำพิธี":e.kind==="escape"?"ทอยหนีห้อง":"ทอยเดิน";
   box.classList.remove("hidden","pop","dice-result");box.classList.add("dice-rolling");
   clearTimeout(diceTimer);clearInterval(diceAnimTimer);
-  const start=performance.now(),rollMs=2100;
+  clearTimeout(diceSettleTimer);buildDie(aEl);buildDie(bEl);
+  const rollMs=2100;
   playDiceRollSound(rollMs);
-  diceAnimTimer=setInterval(()=>{
-    aEl.textContent=1+Math.floor(Math.random()*6);
-    bEl.textContent=1+Math.floor(Math.random()*6);
-    total.textContent="กำลังทอย…";
-  },85);
-  setTimeout(()=>{
-    clearInterval(diceAnimTimer);
-    aEl.textContent=e.a;bEl.textContent=e.b;total.textContent=`รวม ${e.total}`;
+  total.textContent="กำลังทอย…";
+  aEl.setAttribute("aria-label","ลูกเต๋ากำลังทอย");bEl.setAttribute("aria-label","ลูกเต๋ากำลังทอย");
+  diceSettleTimer=setTimeout(()=>{
+    settleDie(aEl,e.a);settleDie(bEl,e.b);total.textContent=`รวม ${e.total}`;
     box.classList.remove("dice-rolling");box.classList.add("dice-result");
     playDiceTick(.075);setTimeout(()=>playDiceTick(.055),100);
     flushDiceQueues(e.kind);
@@ -730,6 +774,28 @@ function updateRollFocus(){
   box.dataset.mode=mode;btn.disabled=false;box.classList.remove("hidden");
 }
 let lastPendingRitualId=null;
+function openLogDetail(entry){
+  const box=document.createElement("div");box.className="log-detail";
+  const line=(text,tag="p")=>{const el=document.createElement(tag);el.textContent=text;box.appendChild(el);return el};
+  line(new Date(entry.at).toLocaleTimeString("th-TH"),"small");line(entry.text,"h3");
+  const d=entry.details||{};
+  if(d.reason)line(`สาเหตุ: ${d.reason}`);
+  if(d.affected)line(`ผู้รับผล: ${d.affected}`);
+  if(d.actor)line(`เทิร์นของ: ${d.actor}${d.room?` • ${d.room}`:""}`);
+  for(const c of d.changes||[])line(`${c.player} • ${c.field}: ${c.before} → ${c.after}`,"strong");
+  for(const c of d.cards||[]){
+    line(c.name,"h4");if(c.condition)line(`เงื่อนไข: ${c.condition}`);line(c.desc||"ดูผลที่บันทึกในเหตุการณ์ด้านบน");
+    if(c.art){const img=document.createElement("img");img.src=c.art;img.alt=c.name;img.className="log-card-art";box.appendChild(img)}
+  }
+  if(d.curse!=null)line(`Curse ขณะบันทึก: ${d.curse}/6`,"small");
+  $("#logDetailBody").replaceChildren(box);
+  if(!$("#logDetailDialog").open)$("#logDetailDialog").showModal();
+}
+$("#logDetailClose").onclick=()=>$("#logDetailDialog").close();
+function pawnMarkup(p){
+  const seat=playerSeat(p),label=`${PLAYER_META[seat]?.label||""} · ${PLAYER_META[seat]?.name||""}`;
+  return `<span class="pawn pawn-person pcolor-${seat} ${p.dead?"pawn-dead":""}" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 32 40" aria-hidden="true"><circle cx="16" cy="8" r="6"/><path d="M10 16 Q16 13 22 16 L28 28 Q29 31 25 31 H23 L25 37 H7 L9 31 H7 Q3 31 4 28Z"/></svg></span>`;
+}
 function renderGame(){
   const ap=activePlayer(), mp=mePublic(), g=state.game;
   $("#turnPlayer").textContent=ap?`${ap.name} · ${ap.char?.name||""}`:"—";
@@ -744,7 +810,7 @@ function renderGame(){
   paintTurnTimer();
 
   $("#log").innerHTML="";
-  state.log.forEach(x=>{const d=document.createElement("div");d.textContent="• "+x.text;$("#log").appendChild(d)});
+  state.log.forEach(x=>{const d=document.createElement("button");d.className="log-entry";d.type="button";d.textContent="• "+x.text;d.title="กดดูรายละเอียด";d.onclick=()=>openLogDetail(x);$("#log").appendChild(d)});
   $("#log").scrollTop=$("#log").scrollHeight;
 
   $("#board").innerHTML="";
@@ -753,11 +819,13 @@ function renderGame(){
     const style=r.boss?"boss":(r.type==="คำสาป"?"curse":(r.type==="กับดัก"?"trap":(r.type==="ปลอดภัย"||r.type==="ธรรมดา"?"safe":"mystery")));
     b.className=`room room-${style} ${r.boss?"boss":""}`;
     b.dataset.roomIndex=String(i);
-    if(!g.sanityDecision&&(g.mustMove||g.moveOptional))b.classList.add(g.legal.includes(i)?"legal":"illegal");
-    const pawns=state.players.map(p=>p.pos===i?`<span class="pawn pcolor-${playerSeat(p)} ${p.dead?"pawn-dead":""}">P${playerSeat(p)}</span>`:"").join("");
+    if(g.sanityDecision){
+      const allowed=(g.movementPreview?.legal||[]).includes(i);b.classList.add(allowed?"legal":"illegal");if(allowed)b.classList.add("move-preview");
+    }else if(g.mustMove||g.moveOptional)b.classList.add(g.legal.includes(i)?"legal":"illegal");
+    const pawns=state.players.map(p=>p.pos===i?pawnMarkup(p):"").join("");
     b.innerHTML=`<div class="room-top"><div><b>${r.boss?"👻 ":""}${r.name}</b><small>${r.type}</small></div><span class="fear-badge">${r.fear}</span></div><div class="room-art">${artMarkup(r.art,"room-art-img",r.name)|| (r.boss?"BOSS":"ROOM")}</div><div class="room-bottom">${r.effectText?`<span>${r.effectText.split("•")[0]}</span>`:"<span>คลิกเพื่อดู Effect</span>"}<div class="pawns">${pawns}</div></div>`;
     b.onclick=()=>{
-      if(isMyTurn()&&(g.mustMove||g.moveOptional)&&g.legal.includes(i)&&!g.curseResolving&&!eventRevealOpen) socket.emit("move",{index:i});
+      if(isMyTurn()&&!g.sanityDecision&&(g.mustMove||g.moveOptional)&&g.legal.includes(i)&&!g.curseResolving&&!eventRevealOpen) socket.emit("move",{index:i});
       else openRoomInfo(r,i);
     };
     $("#board").appendChild(b);
@@ -769,7 +837,7 @@ function renderGame(){
   else if(g.pendingRitual)$("#message").textContent=g.pendingRitual.playerId===myId()?"กำลังทำพิธี — เลือก Modifier แล้วค่อยดูผล":"กำลังรอผู้เล่น Resolve พิธี";
   else if(g.escapeRequired)$("#message").textContent=`ติดอยู่ในห้องพิเศษ — ใช้ 1 ธูปทอยหนี (${g.escapeRule?.label||"ตามเงื่อนไขห้อง"})`;
   else if(!g.rolled)$("#message").textContent="ถึงเทิร์นคุณ — ทอยเต๋า 2 ลูก หรือเลือกใช้สกิลที่ใช้แทนการเดิน";
-  else if(g.sanityDecision)$("#message").textContent=`เต๋า ${g.lastDice?.total??"?"} • Fear ${g.moveFear??"?"} → สติ ${g.sanity} • การ์ดค่าสติบนมือกำลัง Highlight — ใช้เพิ่มหรือกดเดินต่อ`;
+  else if(g.sanityDecision)$("#message").textContent=`เต๋า ${g.lastDice?.total??"?"} • Fear ${g.moveFear??"?"} → สติ ${g.sanity} • ห้องกรอบเขียว ${(g.movementPreview?.legal||[]).length} ห้องเข้าได้ตอนนี้ — ปรับสติหรือยืนยันก่อนเดิน`;
   else if(g.mustMove)$("#message").textContent=`สติ ${g.sanity} • เดินได้ไม่เกิน ${g.movementRange} ห้อง — เลือกปลายทางกรอบเขียว`;
   else if(g.moveOptional)$("#message").textContent=`สติ ${g.sanity} • เดินได้ไม่เกิน ${g.movementRange} ห้อง — เลือกปลายทาง หรืออยู่ห้องเดิม`;
   else $("#message").textContent=`ใช้ธูปได้ ${g.actions} ดอก — จั่ว / สวมใส่ / Trade / ทำพิธี / Skill`;
@@ -850,9 +918,10 @@ function renderPrivate(){
   const cards=mine.amu||[],n=cards.length;
   cards.forEach((c,i)=>{
     const b=document.createElement("button"),offset=i-(n-1)/2;
+    const fanStep=Math.max(38,Math.min(76,(window.innerWidth-148)/Math.max(1,n-1)));
     const react=state?.game?.pendingRoomEffect?.type==="negativeReaction"&&state.game.pendingRoomEffect.playerId===myId()&&state.game.pendingRoomEffect.options?.some(o=>o.uid===c.uid);
     b.className=`game-card amulet-card amu-type-${c.type} ${state?.game?.sanityDecision&&c.type==="sanity"&&isMyTurn()?"sanity-ready":""} ${react?"negative-ready":""}`;
-    b.style.setProperty("--fan-x",`${offset*62}px`);b.style.setProperty("--fan-rot",`${offset*6.5}deg`);b.style.setProperty("--fan-y",`${Math.abs(offset)*5}px`);b.style.zIndex=String(20+i);
+    b.style.setProperty("--fan-x",`${offset*fanStep}px`);b.style.setProperty("--fan-rot",`${offset*6.5}deg`);b.style.setProperty("--fan-y",`${Math.abs(offset)*5}px`);b.style.zIndex=String(20+i);
     const sanityTxt=c.type==="sanity"?(c.sanityChoices||[]).map(v=>`${v>0?"+":""}${v}`).join(" / "):"";b.innerHTML=`<b>${c.name||c.category||"Amulet"}</b><small>${c.category||amuletTypeLabel(c)}</small><div class="art amulet-art">${artMarkup(c.art,"amulet-art-img",c.name)||(sanityTxt||"✦")}</div><small>${c.desc||c.effect||"แตะเพื่ออ่าน"}</small>`;
     b.onclick=()=>openAmuletCard(c);$("#amuHand").appendChild(b)
   });

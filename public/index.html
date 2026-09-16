@@ -3,13 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Online Friends Build V1.8.5</title>
+<title>บ้านผีสิง — Online Friends Build V1.8.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+<dialog id="logDetailDialog" class="log-detail-dialog" aria-labelledby="logDetailTitle">
+  <div class="sound-settings-header"><h2 id="logDetailTitle">รายละเอียด Game Log</h2><button id="logDetailClose" aria-label="ปิดรายละเอียด Game Log">✕</button></div>
+  <div id="logDetailBody"></div>
+</dialog>
 <button id="settingsBtn" class="settings-gear" aria-label="ตั้งค่าเสียง" title="ตั้งค่าเสียง">⚙</button>
 <dialog id="soundSettings" class="sound-settings" aria-labelledby="soundSettingsTitle">
   <div class="sound-settings-header"><h2 id="soundSettingsTitle">⚙ ตั้งค่าเสียง</h2><button id="settingsClose" aria-label="ปิดตั้งค่า">✕</button></div>
@@ -26,7 +30,7 @@
 
 <section id="home" class="screen active">
   <div class="hero">
-    <div class="eyebrow">ONLINE FRIENDS BUILD V1.8.5</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.8.6</div>
     <h1>บ้านผีสิง</h1>
     <p>สร้างโต๊ะ ส่ง Room Code ให้เพื่อน แล้วช่วยกันฟาร์มของก่อนเข้าห้องผี</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
@@ -50,7 +54,7 @@
   <div class="lobby-wrap">
     <div class="eyebrow">WAITING ROOM</div>
     <h1>Room <span id="roomCode">—</span></h1>
-    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 6 คนใน V1.8.5</p>
+    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 6 คนใน V1.8.6</p>
     <div class="room-code-tools">
       <button id="copyCodeBtn" class="secondary">📋 Copy Room Code</button>
       <button id="lobbyHelpBtn" class="secondary">? วิธีเล่น</button>
@@ -144,7 +148,7 @@
 
     <main class="board-zone">
       <div class="board-top">
-        <div><h3>บ้าน 3×3</h3><small>โต๊ะกลาง · Online Friends Build</small></div>
+        <div><h3>บ้านผีสิง</h3><small>โต๊ะกลาง · Online Friends Build</small></div>
         <div class="board-controls">
           <button id="stayBtn" class="stay-button" style="display:none">อยู่ห้องเดิม</button>
           <button id="escapeBtn" class="escape-button roll-legacy" style="display:none">🚪 ทอยหนีห้อง · 1🕯</button>
@@ -241,6 +245,9 @@
       <option value="haunted">บ้านร้าง</option>
       <option value="candle">พิธีเทียนดับ</option>
       <option value="redrain">คืนฝนแดง</option>
+      <option value="lofi_midnight">Lo-Fi · เที่ยงคืน</option>
+      <option value="lofi_lantern">Lo-Fi · โคมผี</option>
+      <option value="lofi_rain">Lo-Fi · ฝนหลอน</option>
     </select>
   </label>
   <label class="ambient-volume"><span>VOL</span><input id="ambientVolume" type="range" min="0" max="300" value="24"></label>
@@ -284,7 +291,7 @@
 <div id="diceFx" class="dice-fx hidden">
   <div class="dice-fx-card">
     <small id="diceFxKind">ROLL</small>
-    <div class="dice-pair"><span id="dieA">1</span><span id="dieB">1</span></div>
+    <div class="dice-pair"><div class="dice-scene"><div id="dieA" class="dice-cube" role="img" aria-label="ลูกเต๋า"></div></div><div class="dice-scene"><div id="dieB" class="dice-cube" role="img" aria-label="ลูกเต๋า"></div></div></div>
     <b id="diceFxTotal">รวม 2</b><span id="diceFxPlayer"></span>
   </div>
 </div>

@@ -1164,3 +1164,28 @@ body:before{
 #equip{display:flex;flex-wrap:wrap;gap:5px}#equip .equip{flex:1 1 75px;min-height:38px}
 .overflow-choice:has(input:checked){border-color:#dfbf80;background:#343022}
 @media(max-width:600px){.settings-gear{top:8px;right:8px;width:40px;height:40px}.sound-settings{padding:18px}.event-reading .card-reveal-card h2{font-size:22px}}
+
+/* V1.8.6 — log details, preview movement, 3D dice and larger pieces/cards */
+.log-entry{display:block;width:100%;padding:7px 4px;text-align:left;font:inherit;color:inherit;background:transparent;border:0;border-bottom:1px solid #ffffff0d;cursor:pointer}
+.log-entry:hover,.log-entry:focus-visible{background:#302c23;color:#f3dec0;outline:1px solid #a08757;border-radius:5px}
+.log-detail h3,.log-detail p{line-height:1.7;overflow-wrap:anywhere}.log-detail strong{display:block;padding:8px 12px;margin:6px 0;background:#272d24;border-radius:8px;color:#dbe9c4}.log-detail small{color:#aaa08b}.log-card-art{display:block;max-width:180px;max-height:240px;object-fit:contain;margin:12px auto}
+.room.move-preview{outline:3px dashed #ace18a;outline-offset:2px}.room.move-preview::before{content:"เข้าได้";position:absolute;right:7px;top:47px;z-index:5;background:#1d3525ed;color:#d2f5b8;font-size:10px;padding:3px 6px;border-radius:6px;pointer-events:none}
+.room .pawns{gap:4px;flex-wrap:wrap;align-items:flex-end;flex-shrink:0}
+.room .pawn-person{width:32px;height:40px;flex:0 0 32px;border:0;border-radius:0;background:none;box-shadow:none;filter:drop-shadow(0 3px 3px #000b)}
+.pawn-person svg{display:block;width:100%;height:100%;fill:var(--pcolor);stroke:#ffefcd;stroke-width:1.3;stroke-linejoin:round}
+.room .pawn-person.pawn-dead{opacity:.45;filter:grayscale(1) drop-shadow(0 3px 3px #000b)}
+.room-bottom{flex-wrap:wrap!important;gap:3px!important}.room-bottom .pawns{max-width:100%}
+.amulet-dock{height:215px!important}.amulet-screen-hand{height:184px!important}
+.amulet-dock .amulet-card{width:124px!important;min-width:124px!important;height:174px!important}
+.amulet-dock .amulet-card .art{height:70px!important}.amulet-dock .amulet-card b{font-size:12px}.amulet-dock .amulet-card small{font-size:10px}
+.dice-scene{width:80px;height:80px;perspective:650px;margin:12px 7px}
+.dice-cube{position:relative;width:80px;height:80px;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.die-face{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:6px;padding:12px;box-sizing:border-box;border:1px solid #c2b397;border-radius:12px;background:linear-gradient(135deg,#fff9e9,#d9cfbb);backface-visibility:hidden;box-shadow:inset 0 0 8px #85725150}
+.die-pip{width:11px;height:11px;align-self:center;justify-self:center;border-radius:50%;background:transparent}.die-pip.on{background:#282923;box-shadow:inset 1px 2px 2px #0009}
+.face-1{transform:translateZ(40px)}.face-6{transform:rotateY(180deg) translateZ(40px)}.face-2{transform:rotateY(90deg) translateZ(40px)}.face-5{transform:rotateY(-90deg) translateZ(40px)}.face-3{transform:rotateX(90deg) translateZ(40px)}.face-4{transform:rotateX(-90deg) translateZ(40px)}
+.dice-rolling .dice-cube{animation:rollCube186 .72s linear infinite}.dice-rolling #dieB{animation-direction:reverse;animation-duration:.61s}
+@keyframes rollCube186{0%{transform:rotateX(12deg) rotateY(0deg) rotateZ(8deg)}100%{transform:rotateX(372deg) rotateY(720deg) rotateZ(8deg)}}
+@media(max-width:860px){.amulet-dock{height:190px!important;min-width:0!important}.amulet-screen-hand{height:164px!important}.amulet-dock .amulet-card{width:110px!important;min-width:110px!important;height:155px!important}.amulet-dock .amulet-card .art{height:60px!important}.room .pawn-person{width:25px;height:32px;flex-basis:25px}}
+@media(prefers-reduced-motion:reduce){.dice-rolling .dice-cube{animation:none;transform:rotateX(-18deg) rotateY(25deg)}.dice-cube{transition:none}}
+
+.log-detail-dialog{width:min(600px,calc(100vw - 32px));max-height:82vh;overflow:auto;margin:auto;padding:22px;box-sizing:border-box;border:1px solid #8c7753;border-radius:18px;background:#191d19;color:#e7e0d2}.log-detail-dialog::backdrop{background:#0009;backdrop-filter:blur(3px)}

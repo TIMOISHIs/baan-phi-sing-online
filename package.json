@@ -1,6 +1,6 @@
 {
-  "name": "baan-phi-sing-v1-8-5-playtest",
-  "version": "1.8.5",
+  "name": "baan-phi-sing-v1-8-6-playtest",
+  "version": "1.8.6",
   "private": true,
   "type": "commonjs",
   "scripts": {
@@ -9,7 +9,7 @@
     "smoke": "npm test",
     "smoke:legacy": "node smoke-test.js",
     "test:static": "node v18-static-integration-test.cjs",
-    "test": "node v18-regression-test.cjs && node v185-regression-test.cjs && node v185-client-test.cjs"
+    "test": "node v18-regression-test.cjs && node v185-regression-test.cjs && node v185-client-test.cjs && node v186-regression-test.cjs && node v186-client-test.cjs"
   },
   "dependencies": {
     "express": "^4.21.2",
