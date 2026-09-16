@@ -4,6 +4,8 @@ const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
 const { randomUUID } = require("crypto");
+const {createAccounts}=require("./lib/accounts.cjs");
+const {awards}=require("./lib/progression.cjs");
 
 const CARD_ART = require("./public/assets/cards/manifest.json");
 const artUrl = entry => entry?.file ? `/assets/cards/${entry.file}` : null;
@@ -13,7 +15,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.9.0",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.10.0",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -682,6 +684,7 @@ function checkDefeat(room){
         winner:false
       }))
     };
+    saveAccountResult(room);
     addLog(room,"ผู้เล่นทุกคนเสียชีวิต → จบเกมแบบพ่ายแพ้");
     return true;
   }
@@ -929,6 +932,7 @@ function computeResults(room){
     stats:room.game?.stats||null,
     rows:rows.map(x=>({...x,winner:x.total===best}))
   };
+  saveAccountResult(room);
 }
 
 function beginTurn(room){
@@ -998,6 +1002,7 @@ function beginTurn(room){
 }
 
 function startRoom(room,chosenGhost=null){
+  room.accountMatchId=randomUUID();room.accountResultQueued=false;
   const map=shuffle(ROOMS).slice(0,9);
   const ghost=chosenGhost||shuffle(GHOSTS)[0];
   const bossIndex=ghost.position;
@@ -1102,8 +1107,21 @@ function addCardToZone(p, zone, card){
   return true;
 }
 
+const accounts=createAccounts({avatars:CHARS.map(c=>({key:c.key,name:c.name,art:c.art}))});
+accounts.install(app,express);
+accounts.installSockets(io);
+if(accounts.enabled)app.get('/api/account/current-room',async(req,res)=>{res.set('Cache-Control','no-store');try{const user=await accounts.identity(req,res);if(!user)return res.status(401).json({error:'กรุณาเข้าสู่ระบบ'});const room=[...rooms.values()].find(r=>r.players.some(p=>p.accountId===user.id));res.json({code:room?.code||null})}catch{res.status(503).json({error:'เชื่อมต่อไม่ได้'})}});
+
+function accountRoom(socket){return accounts.enabled?[...rooms.values()].find(r=>r.players.some(p=>p.accountId===socket.data.account?.id)):null}
+function attachAccount(p,socket){if(accounts.enabled){p.accountId=socket.data.account.id;p.name=socket.data.account.display_name;p.token=randomUUID();}}
+function saveAccountResult(room){
+ if(!accounts.enabled||!room.result)return;
+ room.result.rows=awards(room.result.rows,!!room.result.defeat);
+ try{accounts.record(room)}catch{console.error("XP queue could not be saved; retrying while room remains available");room.accountSaveFailed=true}
+}
 io.on("connection", socket=>{
   socket.on("createRoom", ({name,sessionToken})=>{
+    if(accountRoom(socket))return fail(socket,"คุณมีห้องอยู่แล้ว กลับเข้าห้องเดิมหรือออกจากห้องก่อน");
     const code=makeCode();
     const token=safeToken(sessionToken);
     const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),seat:1,characterKey:null,characterPreviewKey:null,characterConfirmed:false,ready:false};
@@ -1111,6 +1129,7 @@ io.on("connection", socket=>{
       code,hostId:p.id,phase:"lobby",players:[],log:[],chat:[],trade:null,updatedAt:Date.now(),
       settings:{...DEFAULT_SETTINGS},ghostSelection:null
     };
+    attachAccount(p,socket);
     room.players.push(p);
     rooms.set(code,room);
     socket.join(code);
@@ -1125,10 +1144,11 @@ io.on("connection", socket=>{
     if(!room) return fail(socket,"ไม่พบ Room Code นี้");
     const token=safeToken(sessionToken);
 
-    const existing=room.players.find(p=>p.token===token);
+    const occupied=accountRoom(socket);if(occupied&&occupied.code!==code)return fail(socket,"คุณมีห้องอยู่แล้ว กรุณาออกจากห้องเดิมก่อน");
+    const existing=room.players.find(p=>accounts.enabled?p.accountId===socket.data.account.id:p.token===token);
     if(existing){
       existing.socketId=socket.id;
-      if(name) existing.name=safeName(name);
+      if(accounts.enabled)existing.name=socket.data.account.display_name;else if(name) existing.name=safeName(name);
       socket.join(code);socket.data.roomCode=code;
       addLog(room,`${existing.name} กลับเข้าห้อง`);
       emitRoom(room);return;
@@ -1139,6 +1159,7 @@ io.on("connection", socket=>{
     if(room.players.some(p=>p.socketId===socket.id)) return;
     const seat=[1,2,3,4,5,6].find(n=>!room.players.some(x=>(x.seat||0)===n)) || Math.min(6,room.players.length+1);
     const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),seat,characterKey:null,characterPreviewKey:null,characterConfirmed:false,ready:false};
+    attachAccount(p,socket);
     room.players.push(p);
     socket.join(code);
     socket.data.roomCode=code;
@@ -1151,7 +1172,7 @@ io.on("connection", socket=>{
     const room=rooms.get(code);
     if(!room){ socket.emit("resumeFailed",{reason:"room_not_found"}); return; }
     const token=String(sessionToken||"").trim();
-    const p=room.players.find(x=>x.token===token);
+    const p=room.players.find(x=>accounts.enabled?x.accountId===socket.data.account.id:x.token===token);
     if(!p){ socket.emit("resumeFailed",{reason:"session_not_found"}); return; }
     const wasOffline=!p.socketId;
     p.socketId=socket.id;
@@ -1854,6 +1875,7 @@ setInterval(()=>{
     const live=room.players.some(p=>p.socketId);
     if(!live && now-(room.updatedAt||now)>ROOM_IDLE_TTL) rooms.delete(code);
   }
+  for(const room of rooms.values())if(room.accountSaveFailed&&!room.accountResultQueued)saveAccountResult(room);
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.9.0 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.10.0 listening on :${PORT}`));

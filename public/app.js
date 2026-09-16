@@ -1,4 +1,4 @@
-const socket=io();
+const socket=io({autoConnect:false});
 const $=s=>document.querySelector(s);
 const show=id=>["home","lobby","game","result"].forEach(x=>$("#"+x).classList.toggle("active",x===id));
 const tokenKey="bpsSessionTokenV09",roomKey="bpsRoomCodeV13",legacyRoomKey="bpsRoomCodeV09";
@@ -381,7 +381,7 @@ function updateChatUnread(){const e=$("#chatUnread");if(!e)return;e.textContent=
 function resetChat(roomCode=null){chatRoomCode=roomCode;chatSeenIds=new Set();chatUnread=0;if($("#chatMessages"))$("#chatMessages").innerHTML="";updateChatUnread()}
 function appendChatMessage(msg,{fromSnapshot=false}={}){
   if(!msg?.id||chatSeenIds.has(msg.id))return;chatSeenIds.add(msg.id);
-  const wrap=$("#chatMessages");if(!wrap)return;const row=document.createElement("div"),meta=PLAYER_META[Math.max(1,Math.min(4,Number(msg.seat)||1))];row.className=`chat-message pcolor-${Number(msg.seat)||1}`;
+  const wrap=$("#chatMessages");if(!wrap)return;const row=document.createElement("div"),meta=PLAYER_META[Math.max(1,Math.min(6,Number(msg.seat)||1))];row.className=`chat-message pcolor-${Number(msg.seat)||1}`;
   const head=document.createElement("div"),badge=document.createElement("span"),name=document.createElement("b"),time=document.createElement("small"),body=document.createElement("p");badge.className="chat-seat";badge.textContent=meta?.label||`P${msg.seat||1}`;name.textContent=msg.name||"ผู้เล่น";time.textContent=new Date(msg.at||Date.now()).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});head.append(badge,name,time);body.textContent=msg.text||"";row.append(head,body);wrap.appendChild(row);while(wrap.children.length>60)wrap.firstChild.remove();wrap.scrollTop=wrap.scrollHeight;
   const collapsed=$("#chatDock")?.classList.contains("collapsed");if(!fromSnapshot&&collapsed&&msg.playerId!==myId()){chatUnread++;updateChatUnread()}
 }
@@ -652,7 +652,7 @@ function statsNode(){
 }
 function openStats(){openModal("📊 Playtest Stats",statsNode())}
 function reportPayload(){
-  return {project:"บ้านผีสิง",build:"V1.9.0",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
+  return {project:"บ้านผีสิง",build:"V1.10.0",room:state?.code||null,ghost:state?.game?.ghost?.name||state?.result?.ghost||null,
     players:(state?.players||[]).map(p=>({name:p.name,character:p.char?.name||null,money:p.score,hp:p.hp,dead:p.dead})),
     settings:state?.settings||null,result:state?.result||null,stats:currentStats(),log:state?.log||[],exportedAt:new Date().toISOString()};
 }
@@ -662,7 +662,7 @@ function downloadReport(){
   link.href=url;link.download=`baan-phi-sing-playtest-${state?.code||"room"}.json`;
   document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
 }
-// V1.9.0 presentation motion: server state remains authoritative.
+// V1.10.0 presentation motion: server state remains authoritative.
 const movingSeats=new Set(),motionObjects=new Set(),seenRevealCards=new Set(),pendingHandCards=new Set();
 let currentRevealEvent=null,motionEpoch=0;
 function reducedMotion(){return !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches}
@@ -1270,7 +1270,7 @@ function renderResult(){
   $("#resultTitle").textContent=defeated?"บ้านนี้กลืนทุกคนไปแล้ว":"ปราบผีสำเร็จ";
   $("#resultText").textContent=defeated?"ผู้เล่นทุกคน HP เหลือ 0 — เกมจบทันที":"คะแนนจากเงิน + คะแนนเครื่องเซ่นบนมือ";
   const rows=state.result?.rows||[];
-  rows.forEach(p=>{const d=document.createElement("div");d.className="result-player "+(p.winner?"winner":"");d.innerHTML=`<span>${p.winner?"🏆 ":""}${p.name} · ${p.char}</span><b>${p.total} คะแนน <small style="display:block;color:#9c978c">เงิน ${p.ritual} + เครื่องเซ่น ${p.hand}</small></b>`;$("#results").appendChild(d)});
+  rows.forEach(p=>{const d=document.createElement("div");d.className="result-player "+(p.winner?"winner":"");d.innerHTML=`<span>${p.winner?"🏆 ":""}${p.name} · ${p.char}</span><b>${p.total} คะแนน ${p.xp!=null?`· +${p.xp} EXP`:""} <small style="display:block;color:#9c978c">เงิน ${p.ritual} + เครื่องเซ่น ${p.hand}</small></b>`;$("#results").appendChild(d)});
   $("#resultStats").innerHTML="";
   $("#resultStats").appendChild(statsNode());
 }

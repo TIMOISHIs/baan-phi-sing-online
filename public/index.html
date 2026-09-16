@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Online Friends Build V1.9.0</title>
+<title>บ้านผีสิง — Online Friends Build V1.10.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -28,33 +28,47 @@
 </dialog>
 <div id="toast" class="toast hidden"></div>
 
-<section id="home" class="screen active">
+<button id="accountChip" class="account-chip hidden" aria-label="ดูโปรไฟล์และสถิติ"><img data-account-avatar alt=""><span data-account-name></span><b data-account-level></b></button>
+<dialog id="profileEditor" class="profile-editor" aria-labelledby="profileEditorTitle">
+ <form id="profileForm"><small>YOUR FIRST NIGHT</small><h2 id="profileEditorTitle">สร้างตัวตนของคุณ</h2><p>เลือกชื่อและใบหน้าที่จะพาเข้าไปในบ้าน</p>
+ <label for="profileName">ชื่อในเกม</label><input id="profileName" minlength="2" maxlength="18" required autocomplete="nickname" placeholder="ชื่อที่เพื่อนจะเห็น">
+ <fieldset><legend>เลือกรูปโปรไฟล์</legend><div id="avatarOptions" class="avatar-options"></div></fieldset>
+ <p id="profileError" role="alert"></p><button id="profileSave" class="primary">บันทึกโปรไฟล์</button><button id="profileCancel" type="button" class="secondary">ยกเลิก</button></form>
+</dialog>
+<section id="home" class="screen active account-home">
+ <div class="lobby-atmosphere" aria-hidden="true"></div>
+ <div class="lobby-topbar"><span class="lobby-brand">บ้านผีสิง <small>THE HAUNTED HOUSE</small></span><nav aria-label="เมนูหลัก"><button id="lobbyStatsBtn">♧ สถิติ</button><button id="lobbyRulesBtn">▤ กติกา</button><button id="lobbySoundBtn">⚙ ตั้งค่า</button></nav></div>
+ <div id="accountProfile" class="account-profile hidden"><img data-account-avatar alt=""><div class="account-identity"><small>ผู้มาเยือน</small><h2 data-account-name></h2><b data-account-level></b><progress id="accountXP" value="0" max="100" aria-label="EXP ไปเลเวลถัดไป"></progress><small id="accountXPText"></small><details><summary>ข้อมูลโปรไฟล์</summary><small id="accountID"></small><p>เล่นจบ <b id="accountGames"></b> · อันดับ 1 <b id="accountWins"></b></p><button id="accountStats">ดูสถิติ</button><button id="accountEdit">แก้ไขโปรไฟล์</button><button id="accountLogout">ออกจากระบบ</button></details></div></div>
+
   <div class="hero">
-    <div class="eyebrow">ONLINE FRIENDS BUILD V1.9.0</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.10.0</div>
     <h1>บ้านผีสิง</h1>
-    <p>สร้างโต๊ะ ส่ง Room Code ให้เพื่อน แล้วช่วยกันฟาร์มของก่อนเข้าห้องผี</p>
+    <p>แสงเทียนยังไม่ดับ… คืนนี้ใครจะกลับออกมา</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
   </div>
-  <div class="join-grid">
+  <div id="accountSignIn" class="account-signin hidden"><p>เข้าบ้านด้วย Google แล้วเก็บทุกค่ำคืนเป็นประสบการณ์</p><button id="googleSignIn" class="google-signin" disabled><b>G</b> เข้าสู่ระบบด้วย Google</button><small>ครั้งแรกเลือกชื่อในเกมและรูปโปรไฟล์ได้เลย</small></div>
+  <p id="accountStatus" class="account-status" role="status">กำลังเชื่อมต่อ…</p>
+  <div class="join-grid hidden">
     <form id="createForm" class="card-panel">
-      <h2>สร้างโต๊ะ</h2>
+      <small>HOST A NIGHT</small><h2>สร้างห้อง</h2>
       <label>ชื่อ<input id="createName" value="ติม" maxlength="18"></label>
-      <button class="primary">Create Room</button>
+      <button class="primary">เริ่มคืนใหม่ · สร้างห้อง</button>
     </form>
     <form id="joinForm" class="card-panel">
       <h2>เข้าห้องเพื่อน</h2>
       <label>ชื่อ<input id="joinName" placeholder="ชื่อผู้เล่น" maxlength="18"></label>
       <label>Room Code<input id="joinCode" placeholder="ABCDE" maxlength="5"></label>
-      <button class="secondary">Join Room</button>
+      <button class="secondary">เข้าห้องเพื่อน</button>
     </form>
   </div>
+<div class="lobby-footer"><button id="shopBtn" class="shop-button"><span aria-hidden="true">♜</span> ร้านค้า <small>เร็ว ๆ นี้</small></button><span>เล่นกับเพื่อน 2–6 คน · V1.10.0</span></div>
 </section>
 
 <section id="lobby" class="screen">
   <div class="lobby-wrap">
     <div class="eyebrow">WAITING ROOM</div>
     <h1>Room <span id="roomCode">—</span></h1>
-    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 6 คนใน V1.9.0</p>
+    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 6 คนใน V1.10.0</p>
     <div class="room-code-tools">
       <button id="copyCodeBtn" class="secondary">📋 Copy Room Code</button>
       <button id="lobbyHelpBtn" class="secondary">? วิธีเล่น</button>
@@ -310,5 +324,6 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/app.js"></script>
+<script src="/accounts.js"></script>
 </body>
 </html>

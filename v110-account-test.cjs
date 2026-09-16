@@ -1,0 +1,13 @@
+'use strict';
+const assert=require('assert');
+const {levelProgress,awards,validName}=require('./lib/progression.cjs');
+assert.deepEqual(levelProgress(0),{level:1,current:0,required:100,remaining:100,total:0});
+assert.equal(levelProgress(100).level,2);assert.equal(levelProgress(249).level,2);assert.deepEqual(levelProgress(350),{level:3,current:0,required:300,remaining:300,total:350});
+const rows=awards([{id:'a',total:100},{id:'b',total:80},{id:'c',total:80},{id:'d',total:20}],false);
+assert.deepEqual(rows.map(x=>[x.id,x.rank,x.xp]),[['a',1,110],['b',2,90],['c',2,90],['d',4,50]]);
+assert.equal(awards([{id:'a',total:10},{id:'b',total:0}],true)[0].xp,50);
+for(const name of ['ติม','ผีบ้านเก่า_01','ab'])assert.equal(validName(name),true);
+for(const name of ['', 'x', 'ชื่อที่ยาวเกินกว่าสิบแปดตัวอักษรจริงๆ','<script>'])assert.equal(validName(name),false);
+const {createAccounts}=require('./lib/accounts.cjs');const account=createAccounts({env:{ACCOUNTS_ENABLED:'false'},avatars:[]});assert.equal(account.enabled,false);account.close();
+assert.throws(()=>createAccounts({env:{ACCOUNTS_ENABLED:'true',APP_URL:'http://localhost',SUPABASE_URL:'https://x.supabase.co',SUPABASE_PUBLISHABLE_KEY:'k',SUPABASE_SECRET_KEY:'s',DATA_DIR:'/tmp/bps-test'},avatars:[]}),/Account configuration|HTTPS/);
+console.log('V1.10.0 ACCOUNT: PASS (level curve, ranked XP, ties, defeat, name validation, disabled-safe config)');
