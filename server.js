@@ -13,7 +13,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.8.6",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.9.0",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -506,6 +506,7 @@ function publicSnapshot(room){
       moved:g.moved,
       mustMove:g.mustMove,
       legal:g.legal,
+      lastMove:g.lastMove||null,
       movementPreview:g.sanityDecision&&active(room)?movementOptions(room,active(room)):{legal:[],distances:{},range:0},
       sacDrawn:g.sacDrawn,
       traded:g.traded,
@@ -770,16 +771,16 @@ function applySacrificeRoomEffect(room, player, card){
 }
 function movementOptions(room,p){
   const g=room.game,range=Math.max(0,Math.floor(Number(g.movementRange??g.lastDice?.total)||0));
-  const seen=new Set([p.pos]),queue=[{index:p.pos,distance:0}],legal=[],distances={};
+  const seen=new Set([p.pos]),queue=[{index:p.pos,distance:0}],legal=[],distances={},paths={[p.pos]:[p.pos]};
   for(let n=0;n<queue.length;n++){
     const {index,distance}=queue[n];if(distance>=range)continue;
     if(index!==p.pos&&(index===g.bossIndex||["คำสาป","กับดัก"].includes(roomAt(room,index)?.type)))continue;
     for(const next of neighbors(index)){
       if(seen.has(next)||roomAt(room,next).fear>g.sanity||!canEnter(room,p,next))continue;
-      seen.add(next);legal.push(next);distances[next]=distance+1;queue.push({index:next,distance:distance+1});
+      seen.add(next);legal.push(next);distances[next]=distance+1;paths[next]=[...paths[index],next];queue.push({index:next,distance:distance+1});
     }
   }
-  return {legal,distances,range};
+  return {legal,distances,range,paths};
 }
 function finalizeMovementOptions(room,p){
   const g=room.game,options=movementOptions(room,p);
@@ -1255,7 +1256,7 @@ io.on("connection", socket=>{
     const seq=room.ghostSelection.seq;addLog(room,"Host เริ่มสุ่มผี...");io.to(room.code).emit("ghostRandomStarted",{seq});
     setTimeout(()=>{
       const latest=rooms.get(room.code);if(!latest||latest.phase!=="ghostSelect"||latest.ghostSelection?.seq!==seq)return;
-      emitRoom(latest);io.to(latest.code).emit("ghostReveal",{seq,ghost:{id:ghost.id,name:ghost.name,tier:ghost.tier,archetype:ghost.archetype,fear:ghost.fear,position:ghost.position,need:ghost.need,dice:ghost.dice,curseText:ghost.curseText,counterText:ghost.counterText}});
+      emitRoom(latest);io.to(latest.code).emit("ghostReveal",{seq,ghost:{art:ghost.art||null,id:ghost.id,name:ghost.name,tier:ghost.tier,archetype:ghost.archetype,fear:ghost.fear,position:ghost.position,need:ghost.need,dice:ghost.dice,curseText:ghost.curseText,counterText:ghost.counterText}});
       addLog(latest,`สุ่มได้ ${ghost.name} → ล็อกผีตัวนี้ทันที`);
     },2300);
     setTimeout(()=>{
@@ -1345,7 +1346,10 @@ io.on("connection", socket=>{
     const p=checkTurn(socket,room); if(!p) return;
     const g=room.game, i=Number(index);
     if(g.sanityDecision || !(g.mustMove||g.moveOptional) || !g.legal.includes(i)) return fail(socket,"เดินไปห้องนี้ไม่ได้");
-    const distance=g.moveDistances?.[i]||1;
+    const route=movementOptions(room,p).paths[i];
+    if(!route)return fail(socket,"เส้นทางนี้เดินไม่ได้แล้ว");
+    g.lastMove={seq:(g.lastMove?.seq||0)+1,playerId:p.id,path:route};
+    const distance=route.length-1;
     p.pos=i; g.mustMove=false; g.moveOptional=false; g.moved=true; g.legal=[];
     bumpRoomVisit(room,i);
     addLog(room,`${p.name} เดิน ${distance} ห้อง เข้า ${roomAt(room,i).name}`);
@@ -1852,4 +1856,4 @@ setInterval(()=>{
   }
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.8.6 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.9.0 listening on :${PORT}`));

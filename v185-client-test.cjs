@@ -13,7 +13,7 @@ const elements=new Map(),element=s=>{if(!elements.has(s))elements.set(s,new Elem
 let clock=0,next=1;const timers=new Map(),storage=new Map();
 const ctx={console,Math,Number,String,Set,JSON,document:{querySelector:element,createElement:()=>new Element(),activeElement:null},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},
  setTimeout:(fn,ms)=>{const id=next++;timers.set(id,{fn,at:clock+ms});return id},clearTimeout:id=>timers.delete(id),
- render(){},recoverMandatoryDecision(){},updateRollFocus(){},hideRollFocus(){},playCardFlipSound(){},artMarkup:()=>'',socket:{emit(){}},closeModal(){},toast(){},openModal:(title,box)=>ctx.modal=box,
+ rememberReveal(){},startCardFlight(){},finishCardFlight(){},resetPresentationMotion(){},render(){},recoverMandatoryDecision(){},updateRollFocus(){},hideRollFocus(){},playCardFlipSound(){},artMarkup:()=>'',socket:{emit(){}},closeModal(){},toast(){},openModal:(title,box)=>ctx.modal=box,
  mine:{amu:Array.from({length:5},(_,i)=>({uid:`old-${i}`,name:`old-${i}`}))},myId:()=> 'p1'};
 ctx.$=element;vm.createContext(ctx);
 const run=s=>vm.runInContext(s,ctx);
@@ -22,7 +22,7 @@ run(source.slice(source.indexOf('let diceTimer='),source.indexOf('function showD
 run(`enqueueCardReveal({zone:'amulet',card:{type:'event',name:'Event test',desc:'Read at your own pace'}})`);
 advance(60000);assert.equal(element('#cardRevealFx').classList.contains('hidden'),false);assert.equal(element('#cardRevealClose').classList.contains('hidden'),false);
 run(`enqueueCardReveal({zone:'amulet',card:{type:'equip',name:'Next card'}})`);assert.equal(element('#cardRevealName').textContent,'Event test');
-element('#cardRevealClose').onclick();advance(280);assert.equal(element('#cardRevealName').textContent,'Next card');advance(2800);advance(280);assert.equal(element('#cardRevealFx').classList.contains('hidden'),true);
+element('#cardRevealClose').onclick();advance(720);assert.equal(element('#cardRevealName').textContent,'Next card');advance(2800);advance(720);assert.equal(element('#cardRevealFx').classList.contains('hidden'),true);
 run(`enqueueCardReveal({zone:'amulet',card:{type:'event',name:'Reset test'}});resetCardReveals()`);assert.equal(element('#cardRevealFx').classList.contains('hidden'),true);
 // Public state may arrive before private hand. The new incoming card must still be selectable.
 run(source.slice(source.indexOf('let lastRoomEffectId='),source.indexOf('function renderPendingRitual(')));
