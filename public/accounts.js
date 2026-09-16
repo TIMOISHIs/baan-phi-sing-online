@@ -27,7 +27,16 @@
   q('#profileCancel').hidden=!profile;q('#profileError').textContent='';if(!d.open)d.showModal();
  }
  async function load(){const data=await api('/api/account/me');profile=data.profile;paint();if(!profile)editor();return profile}
- async function connect(){if(stopped)return;const r=await api('/api/account/current-room');if(r.code)localStorage.setItem(roomKey,r.code);else localStorage.removeItem(roomKey);if(!socket.connected)socket.connect()}
+ async function connect(){
+  if(stopped)return;
+  // A transient failure while checking the previous room must not prevent the
+  // authenticated Socket.IO connection used by create/join room actions.
+  try{
+   const r=await api('/api/account/current-room');
+   if(r.code)localStorage.setItem(roomKey,r.code);else localStorage.removeItem(roomKey);
+  }catch{ /* Socket auth is the source of truth; retry room lookup later. */ }
+  if(!socket.connected)socket.connect();
+ }
  async function stats(){
   if(!profile){toast('เข้าสู่ระบบก่อนดูสถิติ');return}
   const box=document.createElement('div'),summary=document.createElement('p');summary.textContent=`เล่นจบ ${profile.games_played} เกม · อันดับ 1 ${profile.wins} ครั้ง · อัตราอันดับ 1 ${profile.games_played?Math.round(100*profile.wins/profile.games_played):0}%`;box.append(summary);
