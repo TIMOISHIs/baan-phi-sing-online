@@ -1,0 +1,20 @@
+'use strict';
+(()=>{
+ const shopButton=document.querySelector('#shopBtn'),bag=document.createElement('button'),wallet=document.createElement('p');
+ bag.className='shop-button';bag.textContent='🎒 คลังของ';bag.setAttribute('aria-label','เปิดคลังของ');shopButton.after(bag);
+ wallet.className='account-wallet';wallet.setAttribute('role','status');document.querySelector('#accountProfile').append(wallet);
+ let data=null,mode='shop',category='characters',buying=false;
+ async function api(path,body){const r=await fetch(path,{method:body?'POST':'GET',credentials:'same-origin',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw Error(d.error||'โหลดข้อมูลไม่ได้');return d}
+ async function refresh(){data=await api('/api/account/shop');window.shopOwnership=data.enabled?data.owned:null;shopButton.textContent=data.enabled?'ร้านค้า':'ร้านค้า · เร็ว ๆ นี้';wallet.textContent=data.enabled?'เงินบาท '+data.baht.toLocaleString('th-TH')+' บาท':'ร้านค้าและคลังของ · เร็ว ๆ นี้';return data}
+ function paint(){
+  const box=document.createElement('div'),tabs=document.createElement('div'),grid=document.createElement('div');tabs.className='shop-tabs';grid.className='shop-grid';
+  const balance=document.createElement('p');balance.textContent='เงินบาท '+data.baht.toLocaleString('th-TH')+' บาท';box.append(balance,tabs,grid);
+  for(const [key,label]of [['characters','ตัวละคร'],['frames','กรอบรูปโปรไฟล์'],['boards','สกินกระดานเกม']]){const b=document.createElement('button');b.textContent=label;b.className=category===key?'primary':'secondary';b.onclick=()=>{category=key;paint()};tabs.append(b)}
+  if(category!=='characters'){const p=document.createElement('p');p.textContent='เร็ว ๆ นี้';grid.append(p)}else for(const c of data.catalog){const owned=data.owned.includes(c.key);if(mode==='bag'&&!owned)continue;const card=document.createElement('article'),img=document.createElement('img'),name=document.createElement('h3'),price=document.createElement('p'),button=document.createElement('button');card.className='shop-item';img.src=c.art;img.alt=c.name;name.textContent=c.name;price.textContent=owned?(c.price?'ปลดล็อกแล้ว':'ตัวละครฟรี'):c.price+' บาท';button.textContent=owned?'ดูการ์ด':'ดูการ์ด / ซื้อ';button.onclick=()=>detail(c,owned);card.append(img,name,price,button);grid.append(card)}
+  openModal(mode==='bag'?'คลังของ':'ร้านค้า',box);
+ }
+ function detail(c,owned){const box=document.createElement('div'),img=document.createElement('img'),text=document.createElement('p'),back=document.createElement('button');img.src=c.art;img.alt=c.name;img.className='shop-detail-art';text.textContent=c.skill||'ใช้ตัวละครนี้ได้เมื่อเข้าห้องเล่นเกม';back.textContent='กลับ';back.onclick=paint;box.append(img,text,back);if(!owned){const buy=document.createElement('button');buy.className='primary';buy.textContent='ยืนยันซื้อ '+c.price+' บาท';buy.disabled=buying||data.baht<c.price;const note=document.createElement('p');note.textContent=data.baht<c.price?'เงินบาทไม่เพียงพอ':'ซื้อแล้วเหลือ '+(data.baht-c.price)+' บาท';buy.onclick=async()=>{if(buying)return;buying=true;buy.disabled=true;try{data=await api('/api/account/buy',{characterKey:c.key});window.shopOwnership=data.owned;wallet.textContent='เงินบาท '+data.baht.toLocaleString('th-TH')+' บาท';paint();toast('ซื้อสำเร็จ ตัวละครอยู่ในคลังแล้ว')}catch(e){note.textContent=e.message}finally{buying=false;buy.disabled=data.baht<c.price}};box.append(note,buy)}openModal(c.name,box)}
+ async function open(which){mode=which;try{await refresh();if(!data.enabled){openModal(which==='bag'?'คลังของ':'ร้านค้า','เร็ว ๆ นี้ · ระบบร้านค้ายังไม่เปิดใช้งาน');return}paint()}catch(e){toast(e.message)}}
+ shopButton.onclick=()=>open('shop');bag.onclick=()=>open('bag');
+ socket.on('profileUpdated',()=>refresh().catch(()=>{}));socket.on('connect',()=>refresh().catch(()=>{}));refresh().catch(()=>{});
+})();

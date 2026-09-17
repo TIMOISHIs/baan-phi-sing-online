@@ -66,7 +66,7 @@ function takeSac(room,color='green'){
 
 // Lobby + uniqueness + ghost one-shot + game setup.
 const host=fakeIO.connect('host');
-host.trigger('createRoom',{name:'ติม',sessionToken:'token_host_123456'});
+host.trigger('createRoom',{name:'ติม',allowDuplicateCharacters:false,sessionToken:'token_host_123456'});
 const code=state(host).code;
 const guest=fakeIO.connect('guest');
 guest.trigger('joinRoom',{code,name:'เพื่อน',sessionToken:'token_guest_12345'});
@@ -85,7 +85,7 @@ assert.equal(T.AMULETS.length,63);assert.equal(T.SACRIFICES.length,54);assert.eq
 const deferred=[];global.setTimeout=(fn,ms)=>{if(ms===2700){deferred.push(fn);return 1}fn();return 1};
 function reset(){
   cleanTurn(room,hp);room.trade=null;room.settings.forcedMovement=true;
-  hp.char=T.CHARS.find(c=>c.key==='por-krai');hp.hp=10;hp.amu=[];hp.equip=[];hp.pos=0;hp.score=5;
+  hp.char={...T.CHARS.find(c=>c.key==='por-krai'),hp:10};hp.hp=10;hp.amu=[];hp.equip=[];hp.pos=0;hp.score=5;
   gp.hp=7;gp.equip=[];gp.pos=0;gp.score=5;
   g.rooms=Array.from({length:9},()=>({...T.ROOMS.find(r=>r.type==='ปลอดภัย'),fear:0,capacity:null,effectId:null}));g.bossIndex=8;
   Object.assign(g,{curse:0,curseWarned:false,curseResolving:false,curseResolveAt:null,amuDeck:[],amuDiscard:[],movementRange:0,moveDistances:{},sanity:20});
@@ -123,7 +123,7 @@ reset();g.moved=false;g.rooms[0].fear=2;const oldRandom=Math.random;Math.random=
 for(const ghost of T.GHOSTS){
   reset();g.ghost=ghost;
   const rule=ghost.curseTrigger;let d;
-  if(rule.kind==='totalEquals')d={a:Math.min(6,rule.value-1),b:rule.value-Math.min(6,rule.value-1),total:rule.value};
+  if(['totalEquals','sumGE','sumLE'].includes(rule.kind))d={a:Math.min(6,rule.value-1),b:rule.value-Math.min(6,rule.value-1),total:rule.value};
   else if(rule.kind==='dieIncludes')d={a:rule.values[0],b:3,total:rule.values[0]+3};
   else d={a:3,b:3,total:6};
   const eventsBefore=host.received.filter(e=>e.ev==='curseFx').length;
@@ -132,9 +132,9 @@ for(const ghost of T.GHOSTS){
   T.applyCurse(room,d);assert.equal(g.curse,6);assert.equal(g.curseResolving,true);assert.equal(deferred.length,1);assert.equal(T.publicSnapshot(room).game.curseResolving,true);
   const handBefore=hp.amu.length;host.trigger('drawAmulet');assert.equal(hp.amu.length,handBefore);const turn=g.turn;host.trigger('endTurn');assert.equal(g.turn,turn);
   T.applyCurse(room,d);assert.equal(deferred.length,1);deferred.shift()();assert.equal(g.curse,0);assert.equal(g.curseResolving,false);
-  if(['ghost-occult-master','ghost-headless','ghost-pob-jaothi','ghost-pregnant','ghost-widow'].includes(ghost.id))assert.equal(hp.hp,9,ghost.id);
-  if(['ghost-treasure-guard','ghost-kumarn'].includes(ghost.id))assert.equal(hp.score,4,ghost.id);
-  if(['ghost-oil-pillar','ghost-wanderer'].includes(ghost.id))assert.notEqual(hp.pos,0,ghost.id);
+  assert.equal(hp.hp,ghost.id==='ghost-pregnant'?7:8,ghost.id);
+  if(ghost.id==='ghost-treasure-guard')assert.equal(hp.score,4,ghost.id);if(ghost.id==='ghost-kumarn')assert.equal(hp.score,8,ghost.id);
+  if(ghost.id==='ghost-oil-pillar')assert.notEqual(hp.pos,0,ghost.id);
   for(let i=0;i<3;i++)T.applyCurse(room,d);
   assert.equal(host.received.filter(e=>e.ev==='curseFx').slice(eventsBefore).filter(e=>e.payload.phase==='warning').length,2);
 }

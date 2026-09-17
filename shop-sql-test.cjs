@@ -1,0 +1,13 @@
+'use strict';
+const {PGlite}=require('@electric-sql/pglite'),fs=require('node:fs'),assert=require('node:assert/strict');
+(async()=>{const db=new PGlite();try{
+await db.exec(`create role anon;create role authenticated;create role service_role;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql as 'select null::uuid';create function auth.role() returns text language sql as 'select current_setting(''request.jwt.claim.role'',true)';set request.jwt.claim.role='service_role';`);
+await db.exec(fs.readFileSync(__dirname+'/supabase/v1.10.0.sql','utf8'));const migration=fs.readFileSync(__dirname+'/supabase/v1.11.0-shop.sql','utf8');await db.exec(migration);
+const ids=Array.from({length:6},(_,i)=>'00000000-0000-0000-0000-00000000000'+(i+1));for(const id of ids){await db.query('insert into auth.users values($1)',[id]);await db.query("insert into public.profiles(id,display_name,avatar_key) values($1,'Tester','doctor')",[id])}
+const results=ids.map((user_id,i)=>({user_id,score:60-i*10})),match='10000000-0000-0000-0000-000000000001';
+const award=()=>db.query('select public.award_match($1,$2::jsonb,false)',[match,JSON.stringify(results)]);await award();await award();let wallets=(await db.query('select baht from public.wallets order by user_id')).rows;assert.deepEqual(wallets.map(x=>Number(x.baht)),[100,90,80,70,60,50]);
+const buy=key=>db.query('select public.buy_character($1,$2) result',[ids[0],key]);assert.equal((await buy('por-krai')).rows[0].result.ok,false);await db.query('update public.wallets set baht=650 where user_id=$1',[ids[0]]);await Promise.all([buy('por-krai'),buy('por-krai')]);assert.equal(Number((await db.query('select baht from public.wallets where user_id=$1',[ids[0]])).rows[0].baht),400);assert.equal((await db.query('select * from public.character_ownership')).rows.length,1);assert.equal((await buy('stray-cat')).rows[0].result.ok,false);assert.equal((await buy('__proto__')).rows[0].result.ok,false);
+await db.exec(migration);assert.equal(Number((await db.query('select baht from public.wallets where user_id=$1',[ids[0]])).rows[0].baht),400);
+await db.exec("set role authenticated;set request.jwt.claim.role='authenticated'");await assert.rejects(db.query('update public.wallets set baht=99999'));await assert.rejects(buy('black-shaman'));await db.exec('reset role');
+console.log('SQL passed: migration/reapply, six ranked rewards, reward replay, repeated purchase, insufficient balance, invalid item and denied client writes');
+}finally{await db.close()}})().catch(e=>{console.error(e);process.exitCode=1});

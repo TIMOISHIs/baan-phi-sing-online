@@ -66,7 +66,7 @@ function takeSac(room,color='green'){
 
 // Lobby + uniqueness + ghost one-shot + game setup.
 const host=fakeIO.connect('host');
-host.trigger('createRoom',{name:'ติม',sessionToken:'token_host_123456'});
+host.trigger('createRoom',{name:'ติม',allowDuplicateCharacters:false,sessionToken:'token_host_123456'});
 const code=state(host).code;
 const guest=fakeIO.connect('guest');
 guest.trigger('joinRoom',{code,name:'เพื่อน',sessionToken:'token_guest_12345'});
@@ -85,7 +85,7 @@ const recycled=hp.amu.pop();g.amuDeck=[];g.amuDiscard=[recycled];const redrawn=T
 
 // Sanity choose-minus works and card goes to discard.
 cleanTurn(room,hp);g.rolled=true;g.moved=false;g.sanityDecision=true;g.sanityBase=3;g.sanity=3;g.actions=2;
-const sanity=takeCard(room,'M06');hp.amu.push(sanity);const disc0=g.amuDiscard.length;host.trigger('useSanity',{uid:sanity.uid,delta:-1});assert.equal(g.sanity,2);assert.ok(g.amuDiscard.length>=disc0+1);
+const sanity=takeCard(room,'M06');hp.amu.push(sanity);const disc0=g.amuDiscard.length;host.trigger('useSanity',{uid:sanity.uid,delta:2});assert.equal(g.sanity,5);assert.ok(g.amuDiscard.length>=disc0+1);
 
 // Event เหยยย: next seat rolls only for event; beneficiary gains result.
 cleanTurn(room,hp);hp.score=0;const evMoney=takeCard(room,'V07');g.amuDeck.unshift(evMoney);host.trigger('drawAmulet');assert.equal(g.pendingRoomEffect?.type,'eventRollMoney');assert.equal(g.pendingRoomEffect?.playerId,gp.id);const beforeMoney=hp.score;guest.trigger('resolveRoomEffect',{});assert.ok(hp.score>=beforeMoney+2&&hp.score<=beforeMoney+12);assert.equal(g.pendingRoomEffect,null);
@@ -125,7 +125,7 @@ const seventh=fakeIO.connect('seventh');seventh.trigger('joinRoom',{code:code2,n
 
 // พ่อไกร: HP 0 can spend all 3 incense to revive self to HP 3.
 setActive(room,hp);hp.char=T.CHARS.find(c=>c.key==='por-krai');hp.hp=0;Object.assign(g,{actions:3,rolled:true,moved:true,mustMove:false,moveOptional:false,pendingRoomEffect:null,pendingRitual:null,sanityDecision:false,escapeRequired:false});
-host.trigger('skill',{});assert.equal(hp.hp,3);
+host.trigger('skill',{});assert.equal(hp.hp,2);
 
 // แม่มะลิ: draw up to 5, stop on first Event and resolve it.
 cleanTurn(room,hp);hp.char=T.CHARS.find(c=>c.key==='mae-mali');hp.amu=[];
@@ -133,7 +133,7 @@ const mali1=takeCard(room,'H01'),mali2=takeCard(room,'M01'),maliEvent=takeCard(r
 host.trigger('skill',{});assert.ok(hp.amu.some(c=>c.uid===mali1.uid));assert.ok(hp.amu.some(c=>c.uid===mali2.uid));assert.ok(!hp.amu.some(c=>c.uid===maliEvent.uid));assert.ok(g.amuDiscard.some(c=>c.uid===maliEvent.uid));
 
 // หมอสาว: all living friends +1 anywhere, self -3.
-cleanTurn(room,hp);hp.char=T.CHARS.find(c=>c.key==='doctor');hp.hp=8;gp.hp=3;gp.pos=(hp.pos+1)%9;const dh=hp.hp,dg=gp.hp;room.trade={id:'hold',fromId:'x',toId:'y',giveScore:0,askScore:0,askCardCount:0,giveCards:[]};host.trigger('skill',{});room.trade=null;assert.equal(hp.hp,dh-3);assert.equal(gp.hp,Math.min(gp.char.hp,dg+1));
+cleanTurn(room,hp);hp.char=T.CHARS.find(c=>c.key==='doctor');hp.hp=8;gp.hp=3;gp.pos=(hp.pos+1)%9;const dh=hp.hp,dg=gp.hp;room.trade={id:'hold',fromId:'x',toId:'y',giveScore:0,askScore:0,askCardCount:0,giveCards:[]};host.trigger('skill',{});room.trade=null;assert.equal(hp.hp,dh-2);assert.equal(gp.hp,Math.min(gp.char.hp,dg+1));
 
 // เด็กเนิร์ด: warp to a living friend and pay HP 2.
 cleanTurn(room,hp);hp.char=T.CHARS.find(c=>c.key==='nerd');hp.hp=7;gp.hp=Math.max(1,gp.hp);gp.pos=(hp.pos+4)%9;const nerdHp=hp.hp;host.trigger('skill',{targetId:gp.id});assert.equal(hp.pos,gp.pos);assert.equal(hp.hp,nerdHp-2);

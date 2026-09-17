@@ -15,19 +15,21 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.10.0",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.11.0",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
 const ROOM_IDLE_TTL = 30 * 60 * 1000;
 
 const DEFAULT_SETTINGS = Object.freeze({
+  allowDuplicateCharacters:true,
   forcedMovement:true,
   sacrificeDraw:"onePerTurn",
   failedSacrifice:"bottom",
   equipmentBreak:"one"
 });
 const SETTING_OPTIONS = {
+  allowDuplicateCharacters:[true,false],
   forcedMovement:[true,false],
   sacrificeDraw:["onePerTurn","perIncense"],
   failedSacrifice:["bottom","remove"],
@@ -36,7 +38,7 @@ const SETTING_OPTIONS = {
 function normalizeSetting(key,value){
   const allowed=SETTING_OPTIONS[key];
   if(!allowed) return undefined;
-  if(key==="forcedMovement"){
+  if(key==="forcedMovement"||key==="allowDuplicateCharacters"){
     const v=value===true||value==="true" ? true : value===false||value==="false" ? false : undefined;
     return allowed.includes(v)?v:undefined;
   }
@@ -212,6 +214,7 @@ for(const ghost of GHOSTS){
   ghost.curseText=`${ghost.curseTrigger.label} → Curse +1 • 3/6 เตือน • 6/6: ${ghost.curseEffectText}`;
 }
 
+require('./lib/balance.cjs')(CHARS,GHOSTS,AMULETS);
 // V1.8 artwork mapping from the authoritative Figma/PDF export.
 ROOMS.forEach((c,i)=>{ c.art=artUrl(CARD_ART.room?.[i]); });
 CHARS.forEach((c,i)=>{ c.art=artUrl(CARD_ART.character?.[i]); });
@@ -388,6 +391,26 @@ function setHp(room,player,value,reason="HP เปลี่ยน"){
   if(delta&&player.socketId)io.to(player.socketId).emit("hpFx",{delta,hp:after,maxHp:Number.isFinite(max)?max:null,reason});
   return delta;
 }
+function addSupport(room,actor,target,amount,reason){
+  amount=Math.max(0,Math.floor(amount));
+  if(!actor||!target||actor.id===target.id||!amount)return 0;
+  actor.supportScore=(actor.supportScore||0)+amount;
+  addLog(room,`${actor.name}: ช่วย ${target.name} → ซัพพอร์ต +${amount} • ${reason}`,{support:{actorId:actor.id,targetId:target.id,amount,reason}});
+  return amount;
+}
+function healFriend(room,actor,target,amount,reason){
+  if(target.hp<=0)return 0;
+  const healed=changeHp(room,target,amount,reason);
+  addSupport(room,actor,target,Math.max(0,healed),reason);return healed;
+}
+function reviveFriend(room,actor,target,hp,reason){
+  if(target.hp>0)return;
+  revivePlayer(room,target,hp,reason);
+  const round=Math.floor((room.game.stats?.turns||1)-1)/Math.max(1,room.players.length)|0;
+  const key=target.id+':'+round;
+  room.game.supportRevives=room.game.supportRevives||{};
+  if(!room.game.supportRevives[key]){room.game.supportRevives[key]=true;addSupport(room,actor,target,3,reason);}
+}
 function changeHp(room,player,delta,reason){
   delta=Number(delta)||0;
   if(delta<0 && (player?.guardAll||0)>0 && !/ค่าพลังสกิล|ค่าใช้สกิล/.test(String(reason||""))){
@@ -486,6 +509,7 @@ function publicSnapshot(room){
       connected:!!p.socketId,
       char:p.char || null,
       hp:p.hp ?? null,
+      supportScore:p.supportScore||0,
       score:p.score || 0,
       pos:p.pos ?? null,
       dead:(p.hp??1)<=0,
@@ -559,6 +583,7 @@ function privateSnapshot(room, socketId){
     id:p.id,
     name:p.name,
     seat:p.seat || 1,
+    catHelp:room.game?.catHelp?.playerId===p.id?room.game.catHelp:null,
     sessionToken:p.token,
     amu:p.amu || [],
     sac:p.sac || [],
@@ -574,7 +599,7 @@ function privateSnapshot(room, socketId){
 function shouldAutoEndTurn(room){
   if(room.phase!=="game"||!room.game)return false;
   const g=room.game;if(g.actions>0)return false;
-  if(g.curseResolving||g.pendingRitual||g.pendingRoomEffect||g.sanityDecision||g.mustMove||g.moveOptional||room.trade)return false;
+  if(g.catHelp||g.curseDiscardQueue?.length||g.curseResolving||g.pendingRitual||g.pendingRoomEffect||g.sanityDecision||g.mustMove||g.moveOptional||room.trade)return false;
   return !!active(room);
 }
 function maybeAutoEndTurn(room){
@@ -585,6 +610,7 @@ function maybeAutoEndTurn(room){
   return true;
 }
 function emitRoom(room){
+  nextCurseDiscard(room);
   maybeAutoEndTurn(room);
   room.updatedAt=Date.now();
   io.to(room.code).emit("state", publicSnapshot(room));
@@ -597,7 +623,7 @@ function fail(socket,msg){ socket.emit("errorMessage", msg); }
 function moveByGhost(room,p,{anywhere=false,reason="พลังผี"}={}){if(!room?.game||!p||p.hp<=0)return false;let choices=anywhere?room.game.rooms.map((_,i)=>i).filter(i=>i!==p.pos&&i!==room.game.bossIndex&&canEnter(room,p,i)):neighbors(p.pos).filter(i=>i!==room.game.bossIndex&&canEnter(room,p,i));if(!choices.length)return false;const dest=choices[Math.floor(Math.random()*choices.length)];p.pos=dest;bumpRoomVisit(room,dest);addLog(room,`${p.name}: ${reason} → ถูกย้ายไป ${roomAt(room,dest).name}`);return true;}
 function ghostMoneyLoss(room,p,amount,reason){amount=Math.max(1,Number(amount)||1);if((p.score||0)>0){const before=p.score;p.score=Math.max(0,p.score-amount);addLog(room,`${p.name}: ${reason} → เงิน -${before-p.score}`);return true;}ghostDamage(room,p,1,`${reason} • ไม่มีเงิน`);return false;}
 function ghostStealAmulet(room,p,reason){if(!p.amu?.length){ghostDamage(room,p,1,`${reason} • ไม่มี Amulet`);return false;}const idx=Math.floor(Math.random()*p.amu.length),card=p.amu.splice(idx,1)[0];returnAmuletToBottom(room,card,reason);return true;}
-function curseTriggered(rule,d){if(!rule)return false;if(rule.kind==="totalEquals")return d.total===rule.value;if(rule.kind==="dieIncludes")return (rule.values||[]).includes(d.a)||(rule.values||[]).includes(d.b);if(rule.kind==="doubles")return d.a===d.b;return false;}
+function curseTriggered(rule,d){if(!rule)return false;if(rule.kind==="sumGE")return d.total>=rule.value;if(rule.kind==="sumLE")return d.total<=rule.value;if(rule.kind==="totalEquals")return d.total===rule.value;if(rule.kind==="dieIncludes")return (rule.values||[]).includes(d.a)||(rule.values||[]).includes(d.b);if(rule.kind==="doubles")return d.a===d.b;return false;}
 function addCurseProgress(room,amount=1,source="พลังผี"){
   const g=room?.game;if(!g||g.curseResolving)return false;
   const before=Math.max(0,Number(g.curse)||0),add=Math.max(0,Number(amount)||0);
@@ -640,22 +666,33 @@ function applyCurse(room,dice){
   if(!active(room)||!curseTriggered(ghost.curseTrigger,dice))return;
   addCurseProgress(room,1,`${ghost.name} Curse`);
 }
-function resolveGhostCurse(room,ghost,p){
-  const reason=`${ghost.name} Curse 6/6`;
-  if(["ghost-occult-master","ghost-headless"].includes(ghost.id)){
-    room.players.filter(x=>x.hp>0).forEach(x=>changeHp(room,x,-1,reason));return;
+function queueCurseDiscard(room,p,count,reason){
+  count=Math.min(p.amu.length,Math.max(0,count));if(!count)return;
+  (room.game.curseDiscardQueue||=[]).push({playerId:p.id,count,reason});
+}
+function nextCurseDiscard(room){
+  const g=room.game;if(!g||g.pendingRoomEffect||g.curseResolving)return;
+  while(g.curseDiscardQueue?.length){
+    const next=g.curseDiscardQueue.shift(),p=room.players.find(x=>x.id===next.playerId);
+    if(!p||!p.amu.length)continue;
+    g.pendingRoomEffect={...next,id:'curse-discard-'+randomUUID(),type:'discardAmuletOverflow',count:Math.min(next.count,p.amu.length),options:p.amu.map(c=>({...c}))};break;
   }
-  if(!p||p.hp<=0)return;
-  if(ghost.id==="ghost-treasure-guard")ghostMoneyLoss(room,p,1,reason);
-  else if(ghost.id==="ghost-pob-jaothi")ghostDamage(room,p,1,reason);
-  else if(ghost.id==="ghost-pregnant"){
-    const pos=p.pos;ghostDamage(room,p,1,reason);damagePlayersInRoom(room,pos,p.id,1,reason,true);
-  }else if(["ghost-oil-pillar","ghost-wanderer"].includes(ghost.id))moveByGhost(room,p,{reason});
-  else if(ghost.id==="ghost-widow"){
-    const together=room.players.filter(x=>x.hp>0&&x.pos===p.pos);
-    if(together.length>=2)together.forEach(x=>ghostDamage(room,x,1,reason));
-  }else if(ghost.id==="ghost-kumarn"){
-    if(p.score>0)ghostMoneyLoss(room,p,1,reason);else ghostStealAmulet(room,p,reason);
+}
+function resolveGhostCurse(room,ghost,p){
+  const reason=ghost.name+' Curse 6/6',targets=room.players.filter(x=>x.hp>0);
+  for(const x of targets){
+    ghostDamage(room,x,ghost.id==='ghost-pregnant'?3:2,reason);
+    if(ghost.id==='ghost-treasure-guard')ghostMoneyLoss(room,x,1,reason);
+    if(ghost.id==='ghost-pob-jaothi'&&x.sac.length){const c=x.sac.splice(Math.floor(Math.random()*x.sac.length),1)[0];room.game.sacDiscard.push(c);}
+    if(ghost.id==='ghost-headless'&&x.equip.length){const c=x.equip.splice(Math.floor(Math.random()*x.equip.length),1)[0];returnAmuletToBottom(room,c,reason);}
+    if(['ghost-occult-master','ghost-widow'].includes(ghost.id))queueCurseDiscard(room,x,2,reason);
+    if(ghost.id==='ghost-wanderer')queueCurseDiscard(room,x,Math.max(0,x.amu.length-2),reason);
+    if(ghost.id==='ghost-kumarn'){queueCurseDiscard(room,x,1,reason);x.score=(x.score||0)+3;}
+    if(ghost.id==='ghost-oil-pillar')moveByGhost(room,x,{reason});
+  }
+  if(ghost.id==='ghost-pregnant'){
+    const living=targets.filter(x=>x.hp>0),chosen=living[Math.floor(Math.random()*living.length)];
+    if(chosen){for(const x of living){x.pos=chosen.pos;bumpRoomVisit(room,x.pos)}addLog(room,reason+' → รวมตัวที่ '+chosen.name);}
   }
 }
 
@@ -669,7 +706,7 @@ function markNewDeaths(room){
     }
   });
 }
-function canTakeTurn(p){return !!p && (p.hp>0 || (p.hp<=0 && p.char?.skillType==="self_revive"));}
+function canTakeTurn(p){return !!p && (p.hp>0 || (p.hp<=0 && p.char?.skillType==="self_revive"&&!p.selfReviveUsed));}
 function checkDefeat(room){
   if(room.phase!=="game") return false;
   if(room.players.length && room.players.every(p=>!canTakeTurn(p))){
@@ -680,7 +717,7 @@ function checkDefeat(room){
       rows:room.players.map(p=>({
         id:p.id,name:p.name,char:p.char?.name||"",ritual:p.score||0,
         hand:(p.sac||[]).reduce((n,c)=>n+(Number(c.end)||0),0),
-        total:(p.score||0)+(p.sac||[]).reduce((n,c)=>n+(Number(c.end)||0),0),
+        support:p.supportScore||0,total:(p.supportScore||0)+(p.score||0)+(p.sac||[]).reduce((n,c)=>n+(Number(c.end)||0),0),
         winner:false
       }))
     };
@@ -807,11 +844,11 @@ function reactionSpellOptions(room,p,source="all"){
   if(!room?.game||!p||active(room)?.id!==p.id||room.game.actions<1)return [];
   return (p.amu||[]).filter(c=>c.type==="spell" && (c.spellEffect==="protect_all" || (source==="ghost"&&c.spellEffect==="protect_ghost")));
 }
-function offerNegativeReaction(room,p,{source="all",reason="ผลลบ",apply=null}={}){
+function offerNegativeReaction(room,p,{source="all",reason="ผลลบ",apply=null,supportTargets=[]}={}){
   const g=room?.game;if(!g||!p||g.pendingRoomEffect)return false;
   const options=reactionSpellOptions(room,p,source);if(!options.length)return false;
   const id=`react-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
-  room._negativeReaction={id,playerId:p.id,apply:typeof apply==="function"?apply:null};
+  room._negativeReaction={id,playerId:p.id,apply:typeof apply==="function"?apply:null,supportTargets};
   g.pendingRoomEffect={
     id,type:"negativeReaction",playerId:p.id,source,reason,
     options:options.map(c=>({uid:c.uid,name:c.name,condition:c.condition,effect:c.effect||c.desc||"",spellEffect:c.spellEffect,art:c.art||null}))
@@ -826,6 +863,10 @@ function finishNegativeReaction(room,p,{blocked=false}={}){
   room._negativeReaction=null;
   room.game.pendingRoomEffect=null;
   if(!blocked && apply)apply();
+  if(blocked)for(const item of stored.supportTargets||[]){
+    const target=room.players.find(x=>x.id===item.id);
+    if(target&&target.hp>0)addSupport(room,p,target,Math.min(target.hp,item.amount),'ป้องกัน '+pending.reason);
+  }
   if(!blocked)resolveDeathsAfterAction(room,p.id);
   return true;
 }
@@ -833,7 +874,9 @@ function applyEventCard(room,p,c,{skipProtection=false}={}){
   const g=room.game,id=c.eventId;
   const negativeIds=new Set(["to_trap","left_hp2","break_equip","skip_turn","to_curse","right_and_self_hp2"]);
   if(!skipProtection && negativeIds.has(id)){
-    const queued=offerNegativeReaction(room,p,{source:"all",reason:`Event ${c.name}`,apply:()=>applyEventCard(room,p,c,{skipProtection:true})});
+    const friend=id==='left_hp2'?seatNeighbor(room,p,'left'):id==='right_and_self_hp2'?seatNeighbor(room,p,'right'):null;
+    const supportTargets=friend&&friend.id!==p.id&&friend.hp>0&&!friend.guardAll?[{id:friend.id,amount:2}]:[];
+    const queued=offerNegativeReaction(room,p,{source:"all",reason:`Event ${c.name}`,supportTargets,apply:()=>applyEventCard(room,p,c,{skipProtection:true})});
     if(queued)return true;
   }
   if(id==="to_trap"){
@@ -844,7 +887,7 @@ function applyEventCard(room,p,c,{skipProtection=false}={}){
     if(p.equip.length===1){const broken=p.equip.shift();returnAmuletToBottom(room,broken,`Event ${c.name}`);addLog(room,`${p.name} อุปกรณ์หลุด/แตก: ${broken.name}`);}
     else if(p.equip.length>1){g.pendingRoomEffect={id:`event-equip-${Date.now()}`,type:"chooseBrokenEquip",playerId:p.id,reason:`Event: ${c.name}`,options:p.equip.map(x=>({uid:x.uid,name:x.name,desc:x.desc,art:x.art||null}))};}
   }else if(id==="skip_turn"){
-    p.skipTurns=(p.skipTurns||0)+1;addLog(room,`${p.name}: ${c.name} → หยุดพันแผล ข้ามเทิร์นถัดไป 1 เทิร์น`);
+    g.actions=0;g.mustMove=false;g.moveOptional=false;g.sanityDecision=false;g.catHelp=null;addLog(room,`${p.name}: ${c.name} → จบเทิร์นปัจจุบัน`);
   }else if(id==="to_curse"){
     const dest=randomRoomByType(room,"คำสาป",p);if(dest!==null){p.pos=dest;bumpRoomVisit(room,dest);addLog(room,`${p.name}: ${c.name} → ไป ${roomAt(room,dest).name}`);}
   }else if(id==="right_and_self_hp2"){
@@ -854,7 +897,7 @@ function applyEventCard(room,p,c,{skipProtection=false}={}){
   }else if(id==="room_money5"){
     const targets=room.players.filter(x=>x.hp>0&&x.pos===p.pos);targets.forEach(x=>x.score=(x.score||0)+5);addLog(room,`${c.name} → คนในห้อง ${targets.map(x=>x.name).join(", ")} ได้เงินคนละ 5`);
   }else if(id==="ritual_heal_all"){
-    g.ritualHealAllCharges=(g.ritualHealAllCharges||0)+1;addLog(room,`${c.name} → พิธีครั้งถัดไปจะฟื้น HP +2 ให้ผู้เล่นที่ยังมีชีวิตทุกคน`);
+    room.players.filter(x=>x.hp>0).forEach(x=>changeHp(room,x,2,c.name));addLog(room,`${c.name} → ผู้เล่นที่ยังมีชีวิตทุกคน HP +2 ทันที`);
   }else if(id==="free_curse_move"){
     const rr=roomAt(room,p.pos);
     if(rr?.type!=="คำสาป"){
@@ -906,11 +949,13 @@ function damagePlayersInRoom(room,pos,exceptId,amount,reason="โดนผลก
 }
 function applyGhostCounter(room,p,color,skipProtection=false){
   const ghost=currentGhost(room);
-  if(!skipProtection&&offerNegativeReaction(room,p,{source:"ghost",reason:`${ghost.name} สวนกลับ (${color})`,apply:()=>applyGhostCounter(room,p,color,true)}))return true;
+  const splash=['ghost-pregnant','ghost-widow'].includes(ghost.id)&&color!=='green'?(color==='black'?2:1):0;
+  const supportTargets=room.players.filter(x=>x.id!==p.id&&x.hp>0&&x.pos===p.pos&&!x.guardAll&&!x.guardGhost&&!x.equip.some(c=>c.wardOnce)).map(x=>({id:x.id,amount:splash}));
+  if(!skipProtection&&offerNegativeReaction(room,p,{source:"ghost",reason:`${ghost.name} สวนกลับ (${color})`,supportTargets,apply:()=>applyGhostCounter(room,p,color,true)}))return true;
   const pos=p.pos,hit=(n,r)=>ghostDamage(room,p,n,r),others=(n,r)=>damagePlayersInRoom(room,pos,p.id,n,r,true);
   if(ghost.id==="ghost-occult-master"){hit(color==="green"?1:2,`${ghost.name} สวนกลับ`);if(color!=="green")addCurseProgress(room,color==="black"?2:1,`${ghost.name} สวนกลับ`);}
-  else if(ghost.id==="ghost-treasure-guard")ghostMoneyLoss(room,p,(color==="pink"||color==="black")?2:1,`${ghost.name} สวนกลับ`);
-  else if(ghost.id==="ghost-pob-jaothi")hit(color==="green"?1:color==="black"?3:2,`${ghost.name} สวนกลับ`);
+  else if(ghost.id==="ghost-treasure-guard"){const cost=color==="black"?3:color==="pink"?2:1;if(p.score>0)ghostMoneyLoss(room,p,cost,ghost.name+" สวนกลับ");else ghostDamage(room,p,cost,ghost.name+" ไม่มีเงิน");}
+  else if(ghost.id==="ghost-pob-jaothi"){hit(color==="green"?1:color==="black"?3:2,ghost.name+" สวนกลับ");if(color==="black")queueCurseDiscard(room,p,1,ghost.name+" สวนกลับ");}
   else if(ghost.id==="ghost-pregnant"){hit(color==="green"?1:2,`${ghost.name} สวนกลับ`);if(color!=="green")others(color==="black"?2:1,`${ghost.name} สวนกลับ`);}
   else if(ghost.id==="ghost-oil-pillar"){if(color!=="green")hit(color==="blue"?1:2,`${ghost.name} สวนกลับ`);moveByGhost(room,p,{reason:`${ghost.name} ผลักออกจากพิธี`});}
   else if(ghost.id==="ghost-headless"){if(color!=="green")hit(color==="blue"?1:2,`${ghost.name} สวนกลับ`);moveByGhost(room,p,{anywhere:true,reason:`${ghost.name} ทำให้หลงทาง`});}
@@ -924,7 +969,7 @@ function computeResults(room){
   const rows=room.players.map(p=>({
     id:p.id,name:p.name,char:p.char?.name||"",ritual:p.score,
     hand:p.sac.reduce((n,c)=>n+(Number(c.end)||0),0),
-    total:p.score+p.sac.reduce((n,c)=>n+(Number(c.end)||0),0)
+    support:p.supportScore||0,total:(p.supportScore||0)+p.score+p.sac.reduce((n,c)=>n+(Number(c.end)||0),0)
   })).sort((a,b)=>b.total-a.total);
   const best=rows[0]?.total ?? 0;
   room.result={
@@ -940,7 +985,7 @@ function beginTurn(room){
   const g=room.game;
   let p=active(room);
 
-  if(p.hp<=0 && p.char?.skillType!=="self_revive"){
+  if(p.hp<=0 && (p.char?.skillType!=="self_revive"||p.selfReviveUsed)){
     markNewDeaths(room);
     const next=nextAliveIndex(room,g.turn);
     if(next===null){ checkDefeat(room); return; }
@@ -958,13 +1003,13 @@ function beginTurn(room){
 
   if(g.stats) g.stats.turns++;
   g.movementRange=0;g.moveDistances={};
-  g.actions=3; g.sanity=null; g.sanityBase=null; g.sanityBonus=0; g.sanityDecision=false; g.moveFear=null; g.lastDice=null; g.rolled=false; g.moved=false;
+  g.catHelp=null;g.actions=3; g.sanity=null; g.sanityBase=null; g.sanityBonus=0; g.sanityDecision=false; g.moveFear=null; g.lastDice=null; g.rolled=false; g.moved=false;
   g.mustMove=false; g.moveOptional=false; g.legal=[]; g.sacDrawn=false; g.traded=false; g.pendingRitual=null;
   g.escapeRequired=false; g.escapeRule=null; g.escapeAttempts=0;
 
   if(p.hp<=0 && p.char?.skillType==="self_revive"){
     g.rolled=true;g.moved=true;
-    addLog(room,`${p.name} ถึงเทิร์นขณะ HP 0 → สามารถใช้สกิลฟื้น HP +3 ได้`);
+    addLog(room,`${p.name} ถึงเทิร์นขณะ HP 0 → สามารถใช้สกิลฟื้น HP 2 ได้`);
     return;
   }
 
@@ -1016,7 +1061,7 @@ function startRoom(room,chosenGhost=null){
     p.hp=p.char.hp;
     p.deadAnnounced=false;
     p.score=0;
-    p.skipTurns=0;p.guardAll=0;p.guardGhost=0;p.freeSpecialExit=false;p.skipSpecialStartEffect=false;
+    p.supportScore=0;p.selfReviveUsed=false;p.skipTurns=0;p.guardAll=0;p.guardGhost=0;p.freeSpecialExit=false;p.skipSpecialStartEffect=false;
     p.pos=bossIndex;
     p.equip=[];
     p.sac=[];
@@ -1107,7 +1152,7 @@ function addCardToZone(p, zone, card){
   return true;
 }
 
-const accounts=createAccounts({avatars:CHARS.map(c=>({key:c.key,name:c.name,art:c.art}))});
+const accounts=createAccounts({avatars:CHARS.map(c=>({key:c.key,name:c.name,art:c.art,skill:c.skill}))});
 accounts.install(app,express);
 accounts.installSockets(io);
 if(accounts.enabled)app.get('/api/account/current-room',async(req,res)=>{res.set('Cache-Control','no-store');try{const user=await accounts.identity(req,res);if(!user)return res.status(401).json({error:'กรุณาเข้าสู่ระบบ'});const room=[...rooms.values()].find(r=>r.players.some(p=>p.accountId===user.id));res.json({code:room?.code||null})}catch{res.status(503).json({error:'เชื่อมต่อไม่ได้'})}});
@@ -1120,14 +1165,14 @@ function saveAccountResult(room){
  try{accounts.record(room)}catch{console.error("XP queue could not be saved; retrying while room remains available");room.accountSaveFailed=true}
 }
 io.on("connection", socket=>{
-  socket.on("createRoom", ({name,sessionToken})=>{
+  socket.on("createRoom", ({name,sessionToken,allowDuplicateCharacters=true})=>{
     if(accountRoom(socket))return fail(socket,"คุณมีห้องอยู่แล้ว กลับเข้าห้องเดิมหรือออกจากห้องก่อน");
     const code=makeCode();
     const token=safeToken(sessionToken);
     const p={id:randomUUID(),socketId:socket.id,token,name:safeName(name),seat:1,characterKey:null,characterPreviewKey:null,characterConfirmed:false,ready:false};
     const room={
       code,hostId:p.id,phase:"lobby",players:[],log:[],chat:[],trade:null,updatedAt:Date.now(),
-      settings:{...DEFAULT_SETTINGS},ghostSelection:null
+      settings:{...DEFAULT_SETTINGS,allowDuplicateCharacters:normalizeSetting("allowDuplicateCharacters",allowDuplicateCharacters)??true},ghostSelection:null
     };
     attachAccount(p,socket);
     room.players.push(p);
@@ -1217,24 +1262,30 @@ io.on("connection", socket=>{
     addLog(room,`${p.name} ย้ายที่นั่ง P${old} → P${seat}`);emitRoom(room);
   });
 
-  socket.on("selectCharacter", ({key=null})=>{
+  socket.on("selectCharacter", async ({key=null})=>{
     const room=rooms.get(socket.data.roomCode); if(!room) return;
     if(room.phase!=="lobby") return fail(socket,"เลือกตัวละครได้เฉพาะก่อนเริ่มเกม");
     const p=playerBySocket(room,socket.id); if(!p) return;
     if(p.ready) return fail(socket,"กด Unready ก่อนเปลี่ยนตัวละคร");
     if(p.characterConfirmed) return fail(socket,"ปล่อยตัวละครเดิมก่อนเลือกใหม่");
-    const claimed=new Set(room.players.filter(x=>x.id!==p.id&&x.characterConfirmed&&x.characterKey).map(x=>x.characterKey));
-    const eligible=CHARS.filter(c=>!claimed.has(c.key)); if(!eligible.length) return fail(socket,"ไม่มีตัวละครว่างแล้ว");
+    const claimed=new Set(room.settings.allowDuplicateCharacters?[]:room.players.filter(x=>x.id!==p.id&&x.characterConfirmed&&x.characterKey).map(x=>x.characterKey));
+    let owned=null;if(accounts.shopEnabled){try{owned=(await accounts.shopState(p.accountId)).owned}catch{return fail(socket,"ตรวจสิทธิ์ตัวละครไม่ได้ ลองใหม่")}}
+    if(room.phase!=="lobby"||p.ready||p.characterConfirmed)return;
+    const eligible=CHARS.filter(c=>!claimed.has(c.key)&&(!owned||owned.includes(c.key))); if(!eligible.length) return fail(socket,"ไม่มีตัวละครว่างแล้ว");
     let chosen=null;
     if(key===null||key==="random") chosen=eligible[Math.floor(Math.random()*eligible.length)];
     else { chosen=CHARS.find(x=>x.key===key); if(!chosen)return fail(socket,"ไม่พบตัวละครนี้"); if(claimed.has(chosen.key))return fail(socket,"ตัวละครนี้ถูกยืนยันโดยผู้เล่นอื่นแล้ว"); }
+    if(owned&&!owned.includes(chosen.key))return fail(socket,"ปลดล็อกตัวละครนี้ในร้านค้าก่อน");
     p.characterPreviewKey=chosen.key;p.ready=false;addLog(room,`${p.name} กำลังดู ${chosen.name} (ยังไม่ยืนยัน)`);emitRoom(room);
   });
-  socket.on("confirmCharacter", ()=>{
+  socket.on("confirmCharacter", async ()=>{
     const room=rooms.get(socket.data.roomCode); if(!room)return;if(room.phase!=="lobby")return fail(socket,"ยืนยันตัวละครได้เฉพาะใน Lobby");
     const p=playerBySocket(room,socket.id);if(!p)return;if(p.ready)return fail(socket,"กด Unready ก่อนเปลี่ยนการยืนยัน");if(!p.characterPreviewKey)return fail(socket,"เลือกหรือสุ่มตัวละครก่อน");
     const chosen=CHARS.find(c=>c.key===p.characterPreviewKey);if(!chosen)return fail(socket,"ไม่พบตัวละครที่เลือก");
-    if(room.players.some(x=>x.id!==p.id&&x.characterConfirmed&&x.characterKey===chosen.key))return fail(socket,"ตัวละครนี้เพิ่งถูกผู้เล่นอื่นยืนยันไปแล้ว ลองเลือกใหม่");
+    if(!room.settings.allowDuplicateCharacters&&room.players.some(x=>x.id!==p.id&&x.characterConfirmed&&x.characterKey===chosen.key))return fail(socket,"ตัวละครนี้เพิ่งถูกผู้เล่นอื่นยืนยันไปแล้ว ลองเลือกใหม่");
+    if(accounts.shopEnabled){try{if(!await accounts.canUse(p.accountId,chosen.key))return fail(socket,"ยังไม่ได้ปลดล็อกตัวละครนี้")}catch{return fail(socket,"ตรวจสิทธิ์ตัวละครไม่ได้")}}
+    if(room.phase!=="lobby"||p.ready||p.characterConfirmed||p.characterPreviewKey!==chosen.key)return;
+    if(!room.settings.allowDuplicateCharacters&&room.players.some(x=>x.id!==p.id&&x.characterConfirmed&&x.characterKey===chosen.key))return fail(socket,"ตัวละครถูกเลือกแล้ว");
     p.characterKey=chosen.key;p.characterConfirmed=true;p.ready=false;addLog(room,`${p.name} ยืนยันตัวละคร ${chosen.name}`);emitRoom(room);
   });
   socket.on("releaseCharacter", ()=>{
@@ -1253,6 +1304,10 @@ io.on("connection", socket=>{
     if(room.phase!=="lobby") return fail(socket,"เปลี่ยน Playtest Settings ได้ก่อนเริ่มเกมเท่านั้น");
     const normalized=normalizeSetting(key,value);
     if(normalized===undefined) return fail(socket,"Setting ไม่ถูกต้อง");
+    if(key==="allowDuplicateCharacters"&&normalized===false){
+      const keys=room.players.filter(p=>p.characterConfirmed).map(p=>p.characterKey);
+      if(new Set(keys).size!==keys.length)return fail(socket,"มีผู้เล่นยืนยันตัวละครซ้ำอยู่ ให้เปลี่ยนตัวละครก่อนปิดการเลือกซ้ำ");
+    }
     room.settings[key]=normalized;
     addLog(room,`Host เปลี่ยน Setting: ${key} = ${String(normalized)}`);
     emitRoom(room);
@@ -1499,13 +1554,13 @@ io.on("connection", socket=>{
     const healTypes=["heal_self","heal_room","heal_range"];
     if(!ref||ref.zone!=="amu"||!healTypes.includes(ref.card.type)||!g.moved)return fail(socket,"ใช้การ์ดช่วยเหลือไม่ได้");
     if(!freeByCat&&g.actions<1)return fail(socket,"ธูปไม่พอ");
-    if(freeByCat && p.char?.skillType!=="remote_help")return fail(socket,"เฉพาะแมวจรใช้ช่วยเหลือระยะไกลแบบ Skill ได้");
+    if(freeByCat)return fail(socket,"ใช้การช่วยระยะไกลผ่านปุ่ม Skill เท่านั้น");
     if(!freeByCat)g.actions--;
     const card=removeCard(p,ref),amount=Number(card.heal)||1;revealCard(room,p,card,"amulet","play");
     if(freeByCat){const target=room.players.find(x=>x.id===targetId&&x.hp>0);if(!target){p.amu.push(card);return fail(socket,"เลือกเพื่อนที่ยังมีชีวิต");}changeHp(room,target,amount,`${p.name} (แมวจร) ใช้ ${card.name}`);addLog(room,`${p.name} ใช้ ${card.name} ช่วย ${target.name} ระยะไกล → HP +${amount}`);}
     else if(card.type==="heal_self"){changeHp(room,p,amount,`ใช้ ${card.name}`);addLog(room,`${p.name} ใช้ ${card.name} → HP +${amount}`);}
-    else if(card.type==="heal_room"){const targets=room.players.filter(x=>x.hp>0&&x.pos===p.pos);targets.forEach(x=>changeHp(room,x,amount,`${p.name} ใช้ ${card.name}`));addLog(room,`${p.name} ใช้ ${card.name} → คนในห้อง HP +${amount}`);}
-    else if(card.type==="heal_range"){const r1=Math.floor(p.pos/3),c1=p.pos%3,range=Number(card.range)||1;const targets=room.players.filter(x=>x.hp>0&&Math.abs(Math.floor(x.pos/3)-r1)+Math.abs((x.pos%3)-c1)<=range);targets.forEach(x=>changeHp(room,x,amount,`${p.name} ใช้ ${card.name}`));addLog(room,`${p.name} ใช้ ${card.name} → ระยะ ${range} ช่อง HP +${amount}`);}
+    else if(card.type==="heal_room"){const targets=room.players.filter(x=>x.hp>0&&x.pos===p.pos);targets.forEach(x=>healFriend(room,p,x,amount,`${p.name} ใช้ ${card.name}`));addLog(room,`${p.name} ใช้ ${card.name} → คนในห้อง HP +${amount}`);}
+    else if(card.type==="heal_range"){const r1=Math.floor(p.pos/3),c1=p.pos%3,range=Number(card.range)||1;const targets=room.players.filter(x=>x.hp>0&&Math.abs(Math.floor(x.pos/3)-r1)+Math.abs((x.pos%3)-c1)<=range);targets.forEach(x=>healFriend(room,p,x,amount,`${p.name} ใช้ ${card.name}`));addLog(room,`${p.name} ใช้ ${card.name} → ระยะ ${range} ช่อง HP +${amount}`);}
     returnAmuletToBottom(room,card,"ใช้การ์ดช่วยเหลือ");emitRoom(room);
   });
 
@@ -1519,7 +1574,7 @@ io.on("connection", socket=>{
     if(!target||target.hp>0||target.id===p.id) return fail(socket,"ต้องเลือกเพื่อนที่เสียชีวิต");
     g.actions--;
     const card=removeCard(p,ref);
-    revivePlayer(room,target,card.reviveHp||1,card.name);
+    reviveFriend(room,p,target,card.reviveHp||1,card.name);
     revealCard(room,p,card,"amulet","play");
     returnAmuletToBottom(room,card,"ใช้การ์ดชุบชีวิต");
     emitRoom(room);
@@ -1555,11 +1610,11 @@ io.on("connection", socket=>{
   socket.on("skill", ({targetId=null,index=null,uid=null,side=null}={})=>{
     const room=rooms.get(socket.data.roomCode);if(!room)return;const p=checkTurn(socket,room);if(!p)return;const g=room.game,type=p.char?.skillType;
     if(!type)return fail(socket,"ตัวละครนี้ไม่มีสกิล");
-    if(g.actions<3)return fail(socket,"ต้องมีธูป 3 ดอกเพื่อใช้ Skill");
+    if(g.actions<3&&!(type==="remote_help"&&g.catHelp?.playerId===p.id))return fail(socket,"ต้องมีธูป 3 ดอกเพื่อใช้ Skill");
     if(g.stats)g.stats.skillsUsed++;
 
     if(type==="self_revive"){
-      if(p.hp>0)return fail(socket,"พ่อไกรใช้สกิลนี้เมื่อ HP 0 เท่านั้น");g.actions=0;revivePlayer(room,p,3,"สกิลพ่อไกร");g.rolled=true;g.moved=true;addLog(room,`${p.name} ใช้สกิลพ่อไกร → ฟื้น HP 3`);emitRoom(room);return;
+      if(p.hp>0||p.selfReviveUsed)return fail(socket,"พ่อไกรคืนชีพได้ครั้งเดียวต่อเกมเมื่อ HP 0");p.selfReviveUsed=true;g.actions=0;revivePlayer(room,p,2,"สกิลพ่อไกร");g.rolled=true;g.moved=true;addLog(room,`${p.name} ใช้สกิลพ่อไกร → ฟื้น HP 2`);emitRoom(room);return;
     }
     if(p.hp<=0)return fail(socket,"ผู้เล่นที่เสียชีวิตใช้สกิลนี้ไม่ได้");
 
@@ -1571,11 +1626,11 @@ io.on("connection", socket=>{
     }
 
     if(type==="heal_all_living"){
-      if(!g.moved)return fail(socket,"ต้อง Resolve การเดินก่อนใช้สกิลหมอสาว");g.actions=0;room.players.filter(x=>x.id!==p.id&&x.hp>0).forEach(x=>changeHp(room,x,1,`${p.name} ใช้สกิลหมอสาว`));changeHp(room,p,-3,"ค่าพลังสกิลหมอสาว");addLog(room,`${p.name} ใช้สกิลหมอสาว → เพื่อนที่ยังมีชีวิต HP +1 • ตัวเอง HP -3`);if(resolveDeathsAfterAction(room,p.id)){emitRoom(room);return;}emitRoom(room);return;
+      if(!g.moved)return fail(socket,"ต้อง Resolve การเดินก่อนใช้สกิลหมอสาว");g.actions=0;room.players.filter(x=>x.id!==p.id&&x.hp>0).forEach(x=>healFriend(room,p,x,1,`${p.name} ใช้สกิลหมอสาว`));changeHp(room,p,-2,"ค่าพลังสกิลหมอสาว");addLog(room,`${p.name} ใช้สกิลหมอสาว → เพื่อนที่ยังมีชีวิต HP +1 • ตัวเอง HP -2`);if(resolveDeathsAfterAction(room,p.id)){emitRoom(room);return;}emitRoom(room);return;
     }
 
     if(type==="move_to_friend_hp2"){
-      if(g.escapeRequired)return fail(socket,"ต้องหลุดจากคำสาป/กับดักก่อน");const target=room.players.find(x=>x.id===targetId&&x.id!==p.id&&x.hp>0);if(!target)return fail(socket,"เลือกเพื่อนที่ยังมีชีวิต");g.actions=0;p.pos=target.pos;g.rolled=true;g.moved=true;g.mustMove=false;g.moveOptional=false;g.legal=[];changeHp(room,p,-2,"ค่าพลังสกิลเด็กเนิร์ด");bumpRoomVisit(room,p.pos);addLog(room,`${p.name} ใช้สกิลเด็กเนิร์ด → ไปหา ${target.name} • HP -2`);if(resolveDeathsAfterAction(room,p.id)){emitRoom(room);return;}emitRoom(room);return;
+      if(g.escapeRequired)return fail(socket,"ต้องหลุดจากคำสาป/กับดักก่อน");const target=room.players.find(x=>x.id===targetId&&x.id!==p.id&&x.hp>0);if(!target)return fail(socket,"เลือกเพื่อนที่ยังมีชีวิต");g.actions=0;p.pos=target.pos;g.rolled=true;g.moved=true;g.mustMove=false;g.moveOptional=false;g.legal=[];healFriend(room,p,target,1,"สกิลเด็กเนิร์ด");changeHp(room,p,-2,"ค่าพลังสกิลเด็กเนิร์ด");bumpRoomVisit(room,p.pos);addLog(room,`${p.name} ใช้สกิลเด็กเนิร์ด → ไปหา ${target.name} • HP -2`);if(resolveDeathsAfterAction(room,p.id)){emitRoom(room);return;}emitRoom(room);return;
     }
 
     if(type==="remote_ritual_hp3"){
@@ -1584,20 +1639,36 @@ io.on("connection", socket=>{
     }
 
     if(type==="free_any_trap_curse"){
-      const target=room.players.find(x=>x.id===(targetId||p.id)&&x.hp>0);if(!target)return fail(socket,"เลือกผู้เล่นที่ยังมีชีวิต");const rr=roomAt(room,target.pos);if(!rr||!["คำสาป","กับดัก"].includes(rr.type))return fail(socket,"เป้าหมายต้องอยู่ในห้องคำสาปหรือกับดัก");g.actions=0;target.freeSpecialExit=true;if(target.id===p.id){g.escapeRequired=false;g.escapeRule=null;}else target.skipSpecialStartEffect=true;addLog(room,`${p.name} ใช้สกิลหมอธรรม → ปลด ${target.name} จาก ${rr.name} ทั่วกระดาน`);emitRoom(room);return;
+      const target=room.players.find(x=>x.id===(targetId||p.id)&&x.hp>0);if(!target)return fail(socket,"เลือกผู้เล่นที่ยังมีชีวิต");const rr=roomAt(room,target.pos);if(!rr||!["คำสาป","กับดัก"].includes(rr.type))return fail(socket,"เป้าหมายต้องอยู่ในห้องคำสาปหรือกับดัก");if(target.freeSpecialExit||target.skipSpecialStartEffect)return fail(socket,"เป้าหมายถูกปลดแล้ว");g.actions=0;addSupport(room,p,target,2,"ปลดคำสาป/กับดัก");target.freeSpecialExit=true;if(target.id===p.id){g.escapeRequired=false;g.escapeRule=null;}else target.skipSpecialStartEffect=true;addLog(room,`${p.name} ใช้สกิลหมอธรรม → ปลด ${target.name} จาก ${rr.name} ทั่วกระดาน`);emitRoom(room);return;
     }
 
     if(type==="peek_four_choose_two"){
-      if(!g.moved)return fail(socket,"ต้อง Resolve การเดินก่อนใช้สกิลหมาวัด");if(!["top","bottom"].includes(side))return fail(socket,"เลือกดูบนสุดหรือล่างสุด");if(g.amuDeck.length<2)return fail(socket,"กอง Amulet เหลือน้อยเกินไป");g.actions=0;const block=(side==="top"?g.amuDeck.slice(0,4):g.amuDeck.slice(-4));g.pendingRoomEffect={id:`dog-peek-${Date.now()}`,type:"skillPeekChoose",playerId:p.id,side,reason:`หมาวัด: ดู${side==="top"?"บนสุด":"ล่างสุด"} ${block.length} ใบ แล้วเลือกเก็บ 2 ใบ`,options:block.map(c=>({uid:c.uid,name:c.name,type:c.type,category:c.category,desc:c.desc||c.effect||"",art:c.art||null}))};addLog(room,`${p.name} ใช้สกิลหมาวัด → ดู ${side==="top"?"บน":"ล่าง"} ${block.length} ใบ`);emitRoom(room);return;
+      if(!g.moved)return fail(socket,"ต้องเดินก่อนใช้สกิลหมาวัด");
+      if(!g.amuDeck.length)return fail(socket,"กอง Amulet หมด");
+      g.actions=0;const block=g.amuDeck.slice(0,4),count=Math.min(2,block.filter(c=>c.type!=="event").length);
+      g.pendingRoomEffect={id:'dog-'+randomUUID(),type:'skillPeekChoose',playerId:p.id,side:'top',count,reason:'หมาวัด: เลือกได้ '+count+' ใบ',options:block.map(c=>c.type==='event'?{uid:c.uid,type:'event',name:'เหตุการณ์ — เลือกไม่ได้',disabled:true}:{...c})};
+      emitRoom(room);return;
     }
 
     if(type==="remote_help"){
-      if(!g.moved)return fail(socket,"ต้อง Resolve การเดินก่อนใช้สกิลแมวจร");const ref=cardFromPlayer(p,uid);if(!ref||ref.zone!=="amu"||ref.card.category!=="ช่วยเหลือ")return fail(socket,"เลือกการ์ดช่วยเหลือ 1 ใบ");const card=ref.card,target=room.players.find(x=>x.id===targetId&&x.id!==p.id);if(!target)return fail(socket,"เลือกเพื่อน 1 คน");if(card.type==="revive"&&target.hp>0)return fail(socket,"การ์ดนี้ต้องใช้กับเพื่อนที่เสียชีวิต");if(card.type!=="revive"&&target.hp<=0)return fail(socket,"เพื่อนที่เสียชีวิตต้องใช้การ์ดชุบชีวิต");g.actions=0;removeCard(p,ref);revealCard(room,p,card,"amulet","skill");
-      if(card.type==="revive")revivePlayer(room,target,card.reviveHp||1,`${p.name} ใช้ ${card.name} ระยะไกล`);
-      else if(card.type==="heal_self")changeHp(room,target,card.heal||1,`${p.name} ใช้ ${card.name} ระยะไกล`);
-      else if(card.type==="heal_room")room.players.filter(x=>x.hp>0&&x.pos===target.pos).forEach(x=>changeHp(room,x,card.heal||1,`${p.name} ใช้ ${card.name} ระยะไกล`));
-      else if(card.type==="heal_range"){const r0=Math.floor(target.pos/3),c0=target.pos%3,range=Number(card.range)||1;room.players.filter(x=>x.hp>0&&Math.abs(Math.floor(x.pos/3)-r0)+Math.abs((x.pos%3)-c0)<=range).forEach(x=>changeHp(room,x,card.heal||1,`${p.name} ใช้ ${card.name} ระยะไกล`));}
-      returnAmuletToBottom(room,card,"สกิลแมวจร");addLog(room,`${p.name} ใช้สกิลแมวจร → ${card.name} ให้ ${target.name} จากคนละห้องได้`);emitRoom(room);return;
+      if(!g.moved)return fail(socket,"ต้องเดินก่อนใช้สกิลแมวจร");
+      const ref=cardFromPlayer(p,uid),target=room.players.find(x=>x.id===targetId&&x.id!==p.id);
+      if(!ref||ref.zone!=='amu'||ref.card.category!=='ช่วยเหลือ'||!target)return fail(socket,"เลือกการ์ดช่วยเหลือและเพื่อน");
+      const card=ref.card,session=g.catHelp;
+      if((card.type==='revive')!==(target.hp<=0))return fail(socket,"เลือกการ์ดให้ตรงกับสถานะเพื่อน");
+      if(session?.targets.includes(target.id))return fail(socket,"เพื่อนคนนี้ได้รับการ์ดจากสกิลแล้วในเทิร์นนี้");
+      if(!session){g.actions=0;g.catHelp={playerId:p.id,targets:[]};}
+      g.catHelp.targets.push(target.id);removeCard(p,ref);revealCard(room,p,card,"amulet","skill");
+      if(card.type==='revive')reviveFriend(room,p,target,card.reviveHp||1,card.name);
+      else {
+        let targets=[target];
+        if(card.type==='heal_room')targets=room.players.filter(x=>x.hp>0&&x.pos===target.pos);
+        if(card.type==='heal_range')targets=room.players.filter(x=>x.hp>0&&Math.abs(Math.floor(x.pos/3)-Math.floor(target.pos/3))+Math.abs(x.pos%3-target.pos%3)<=(Number(card.range)||1));
+        for(const x of targets){if(x.id===p.id||x.id!==target.id&&g.catHelp.targets.includes(x.id))continue;healFriend(room,p,x,card.heal||1,card.name);if(!g.catHelp.targets.includes(x.id))g.catHelp.targets.push(x.id);}
+      }
+      returnAmuletToBottom(room,card,"สกิลแมวจร");
+      if(!p.amu.some(c=>c.category==='ช่วยเหลือ')||room.players.every(x=>x.id===p.id||g.catHelp.targets.includes(x.id)))g.catHelp=null;
+      emitRoom(room);return;
     }
 
     return fail(socket,"สกิลนี้ยังไม่มี Logic");
@@ -1729,7 +1800,7 @@ io.on("connection", socket=>{
     }else if(pending.type==="spellMoveAny" || pending.type==="spellMoveDiagonal"){
       const index=Number(uid);if(!pending.options?.some(x=>x.index===index))return fail(socket,"เลือกห้องปลายทางไม่ถูกต้อง");p.pos=index;room.game.rolled=true;room.game.moved=true;room.game.mustMove=false;room.game.moveOptional=false;room.game.legal=[];bumpRoomVisit(room,index);addLog(room,`${p.name} ใช้คาถาเคลื่อนที่ → ${roomAt(room,index).name}`);room.game.pendingRoomEffect=null;
     }else if(pending.type==="skillPeekChoose"){
-      const chosen=[...new Set(Array.isArray(uids)?uids:[])];if(chosen.length!==2)return fail(socket,"ต้องเลือก 2 ใบ");const opt=pending.options||[];if(chosen.some(id=>!opt.some(o=>o.uid===id)))return fail(socket,"เลือกการ์ดไม่ถูกต้อง");
+      const chosen=[...new Set(Array.isArray(uids)?uids:[])];if(chosen.length!==pending.count)return fail(socket,"เลือกให้ครบ "+pending.count+" ใบ");const opt=pending.options||[];if(chosen.some(id=>!opt.some(o=>o.uid===id&&!o.disabled)))return fail(socket,"เลือกการ์ดไม่ถูกต้อง");
       const set=new Set(opt.map(o=>o.uid));const block=room.game.amuDeck.filter(c=>set.has(c.uid));room.game.amuDeck=room.game.amuDeck.filter(c=>!set.has(c.uid));const picked=block.filter(c=>chosen.includes(c.uid)),rest=block.filter(c=>!chosen.includes(c.uid));picked.forEach(c=>p.amu.push(c));if(pending.side==="top")room.game.amuDeck.unshift(...rest);else room.game.amuDeck.push(...rest);addLog(room,`${p.name} เลือกเก็บ ${picked.map(c=>c.name).join(", ")} จาก ${pending.side==="top"?"บนสุด":"ล่างสุด"} 4 ใบ`);room.game.pendingRoomEffect=null;if(p.amu.length>5){room.game.pendingRoomEffect={id:`peek-overflow-${Date.now()}`,type:"discardAmuletOverflow",playerId:p.id,reason:"สกิลหมาวัด: มือเกิน 5 ใบ",count:p.amu.length-5,options:p.amu.map(c=>({uid:c.uid,name:c.name,type:c.type,category:c.category,desc:c.desc||c.effect||"",art:c.art||null}))};}
     }else if(pending.type==="chooseBrokenEquip"){
       const idx=p.equip.findIndex(c=>c.uid===uid);
@@ -1878,4 +1949,4 @@ setInterval(()=>{
   for(const room of rooms.values())if(room.accountSaveFailed&&!room.accountResultQueued)saveAccountResult(room);
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.10.0 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.11.0 listening on :${PORT}`));

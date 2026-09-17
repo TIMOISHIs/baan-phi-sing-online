@@ -413,7 +413,7 @@ function flushDiceQueues(kind=null){
 }
 migrateLegacyRoom();
 
-$("#createForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("createRoom",{name:$("#createName").value,sessionToken})});
+$("#createForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("createRoom",{name:$("#createName").value,sessionToken,allowDuplicateCharacters:$("#createDuplicates").value==="true"})});
 $("#joinForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("joinRoom",{name:$("#joinName").value,code:$("#joinCode").value,sessionToken})});
 $("#startBtn").onclick=()=>socket.emit("startGame");
 $("#copyCodeBtn").onclick=async()=>{try{await navigator.clipboard.writeText(state.code);toast(`Copy ${state.code} แล้ว`)}catch{toast(`Room Code: ${state.code}`)}};
@@ -421,6 +421,7 @@ $("#randomCharBtn").onclick=()=>runCharacterRandom();
 $("#confirmCharBtn").onclick=()=>socket.emit("confirmCharacter");
 $("#releaseCharBtn").onclick=()=>socket.emit("releaseCharacter");
 $("#readyBtn").onclick=()=>{const me=state?.players?.find(p=>p.id===myId());socket.emit("setReady",{ready:!me?.ready});};
+$("#settingDuplicates").onchange=e=>socket.emit("updateSettings",{key:"allowDuplicateCharacters",value:e.target.value});
 $("#settingForced").onchange=e=>socket.emit("updateSettings",{key:"forcedMovement",value:e.target.value});
 $("#settingSacDraw").onchange=e=>socket.emit("updateSettings",{key:"sacrificeDraw",value:e.target.value});
 $("#settingFailedSac").onchange=e=>socket.emit("updateSettings",{key:"failedSacrifice",value:e.target.value});
@@ -466,10 +467,10 @@ $("#skillBtn").onclick=()=>{
     const targets=state.players.filter(x=>!x.dead&&["คำสาป","กับดัก"].includes(roomAt(x.pos)?.type));if(!targets.length){toast("ยังไม่มีใครติดห้องคำสาป/กับดัก");return;}const box=document.createElement("div");box.innerHTML=`<p class="muted">เลือกตัวเองหรือเพื่อนที่ติดคำสาป/กับดัก • ปลดฟรีทั่วกระดาน</p>`;targets.forEach(x=>{const b=document.createElement("button");b.className="modal-option";b.innerHTML=`<b>${x.id===myId()?"ตัวเอง · ":""}${x.name}</b><span>${roomAt(x.pos)?.name||""}</span>`;b.onclick=()=>{socket.emit("skill",{targetId:x.id});closeModal()};box.appendChild(b)});openModal("Skill — หมอธรรม",box);return;
   }
   if(t==="peek_four_choose_two"){
-    const box=document.createElement("div");box.innerHTML=`<p class="muted">เลือกว่าจะดู Amulet บนสุดหรือล่างสุด 4 ใบ แล้วค่อยเลือกเก็บ 2 ใบ</p>`;for(const [side,label] of [["top","ดูบนสุด 4 ใบ"],["bottom","ดูล่างสุด 4 ใบ"]]){const b=document.createElement("button");b.className="modal-option";b.textContent=label;b.onclick=()=>{socket.emit("skill",{side});closeModal()};box.appendChild(b)}openModal("Skill — หมาวัด",box);return;
+    socket.emit("skill",{side:"top"});return;
   }
   if(t==="remote_help"){
-    const cards=(mine.amu||[]).filter(c=>c.category==="ช่วยเหลือ");if(!cards.length){toast("ไม่มีการ์ดช่วยเหลือบนมือ");return;}const box=document.createElement("div");box.innerHTML=`<p class="muted">เลือกเพื่อน แล้วเลือกการ์ดช่วยเหลือ 1 ใบ • ใช้ได้แม้อยู่คนละห้อง</p>`;const sel=document.createElement("select");sel.className="skill-target-select";state.players.filter(x=>x.id!==myId()).forEach(x=>{const o=document.createElement("option");o.value=x.id;o.textContent=`${x.name} · ${x.dead?"เสียชีวิต":roomAt(x.pos)?.name||""}`;sel.appendChild(o)});box.appendChild(sel);cards.forEach(c=>{const b=document.createElement("button");b.className="modal-option";b.innerHTML=`${artMarkup(c.art,"option-art",c.name)}<b>${c.name}</b><span>${c.desc||""}</span>`;b.onclick=()=>{socket.emit("skill",{targetId:sel.value,uid:c.uid});closeModal()};box.appendChild(b)});openModal("Skill — แมวจร",box);return;
+    const cards=(mine.amu||[]).filter(c=>c.category==="ช่วยเหลือ");if(!cards.length){toast("ไม่มีการ์ดช่วยเหลือบนมือ");return;}const box=document.createElement("div");box.innerHTML=`<p class="muted">เลือกเพื่อน แล้วเลือกการ์ดช่วยเหลือ 1 ใบ • ใช้ได้แม้อยู่คนละห้อง</p>`;const sel=document.createElement("select");sel.className="skill-target-select";state.players.filter(x=>x.id!==myId()&&!mine?.catHelp?.targets.includes(x.id)).forEach(x=>{const o=document.createElement("option");o.value=x.id;o.textContent=`${x.name} · ${x.dead?"เสียชีวิต":roomAt(x.pos)?.name||""}`;sel.appendChild(o)});box.appendChild(sel);cards.forEach(c=>{const b=document.createElement("button");b.className="modal-option";b.innerHTML=`${artMarkup(c.art,"option-art",c.name)}<b>${c.name}</b><span>${c.desc||""}</span>`;b.onclick=()=>{socket.emit("skill",{targetId:sel.value,uid:c.uid});closeModal()};box.appendChild(b)});openModal("Skill — แมวจร",box);return;
   }
 };
 $("#homeHelpBtn").onclick=openHowToPlay;
@@ -565,7 +566,7 @@ function showCharacterPreviewReveal(key){
 function runCharacterRandom(){
   if(charRandomAnimating||state?.phase!=="lobby")return;const me=state.players.find(p=>p.id===myId());if(!me)return;
   if(me.ready){toast("กด Unready ก่อนเปลี่ยนตัวละคร");return}if(me.characterConfirmed){toast("กด “เปลี่ยนตัวละคร” ก่อนสุ่มใหม่");return}
-  const claimed=new Set(state.players.filter(p=>p.id!==myId()&&p.characterConfirmed&&p.characterKey).map(p=>p.characterKey));const eligible=(state.characters||[]).filter(c=>!claimed.has(c.key));if(!eligible.length){toast("ไม่มีตัวละครว่างแล้ว");return}
+  const claimed=new Set(state.settings?.allowDuplicateCharacters?[]:state.players.filter(p=>p.id!==myId()&&p.characterConfirmed&&p.characterKey).map(p=>p.characterKey));const eligible=(state.characters||[]).filter(c=>!claimed.has(c.key));if(!eligible.length){toast("ไม่มีตัวละครว่างแล้ว");return}
   charRandomAnimating=true;renderLobby();const keys=eligible.map(c=>c.key),delays=[65,65,65,65,70,70,75,75,85,95,110,125,145,170,210,260];let step=0;
   const flash=()=>{document.querySelectorAll(".char-pick").forEach(el=>el.classList.remove("random-flash"));const key=keys[step%keys.length],t=document.querySelector(`.char-pick[data-char-key="${key}"]`);if(t)t.classList.add("random-flash");if(step<delays.length-1){const d=delays[step];step++;setTimeout(flash,d)}else setTimeout(()=>{document.querySelectorAll(".char-pick").forEach(el=>el.classList.remove("random-flash"));charRandomAnimating=false;socket.emit("selectCharacter",{key:"random"})},300)};flash();
 }
@@ -589,12 +590,12 @@ function renderLobbySeats(){
 
 function renderLobby(){
   $("#roomCode").textContent=state.code;renderLobbySeats();
-  const me=state.players.find(p=>p.id===myId()),previewKey=mine?.characterPreviewKey||null,taken=new Set(state.players.filter(p=>p.id!==myId()&&p.characterConfirmed&&p.characterKey).map(p=>p.characterKey));$("#characterGrid").innerHTML="";
-  (state.characters||[]).forEach(c=>{const isPreview=previewKey===c.key,isConfirmed=me?.characterConfirmed&&me?.characterKey===c.key,isTaken=taken.has(c.key),b=document.createElement("button");b.dataset.charKey=c.key;b.className="char-pick "+(isPreview?"selected preview ":"")+(isConfirmed?"confirmed ":"")+(isTaken?"taken ":"");b.disabled=isTaken||!!me?.ready||!!me?.characterConfirmed||charRandomAnimating;b.innerHTML=`${isTaken?'<span class="char-taken-label">ถูกเลือกแล้ว</span>':""}${isConfirmed?'<span class="char-confirmed-label">✓ ยืนยันแล้ว</span>':""}<div class="mini-character-card char-theme-${c.key}"><div class="mini-char-head"><span class="incense-badge">🕯3</span><div><b>${c.name}</b><small>${c.role}</small></div><span class="hp-badge">♥ ${c.hp}</span></div><div class="char-pick-art">${artMarkup(c.art,"character-art-img",c.name)||`<span>${c.name}</span><small>CHARACTER ART</small>`}</div><div class="mini-char-foot"><b>ใช้ธูป 3 ดอก</b><p>${c.skill.replace(/^ใช้ธูป 3 ดอก:\s*/,"")}</p><small>Equip ${c.slots} ช่อง</small></div></div>`;b.onclick=()=>{if(!charRandomAnimating)socket.emit("selectCharacter",{key:c.key})};$("#characterGrid").appendChild(b)});
+  const me=state.players.find(p=>p.id===myId()),previewKey=mine?.characterPreviewKey||null,taken=new Set(state.settings?.allowDuplicateCharacters?[]:state.players.filter(p=>p.id!==myId()&&p.characterConfirmed&&p.characterKey).map(p=>p.characterKey));$("#characterGrid").innerHTML="";
+  (state.characters||[]).forEach(c=>{const locked=window.shopOwnership&&!window.shopOwnership.includes(c.key),isPreview=previewKey===c.key,isConfirmed=me?.characterConfirmed&&me?.characterKey===c.key,isTaken=taken.has(c.key),b=document.createElement("button");b.dataset.charKey=c.key;b.className="char-pick "+(isPreview?"selected preview ":"")+(isConfirmed?"confirmed ":"")+(isTaken?"taken ":"");b.disabled=locked||isTaken||!!me?.ready||!!me?.characterConfirmed||charRandomAnimating;b.innerHTML=`${locked?'<span class="char-taken-label">ปลดล็อกที่ร้านค้า</span>':""}${isTaken?'<span class="char-taken-label">ถูกเลือกแล้ว</span>':""}${isConfirmed?'<span class="char-confirmed-label">✓ ยืนยันแล้ว</span>':""}<div class="mini-character-card char-theme-${c.key}"><div class="mini-char-head"><span class="incense-badge">🕯3</span><div><b>${c.name}</b><small>${c.role}</small></div><span class="hp-badge">♥ ${c.hp}</span></div><div class="char-pick-art">${artMarkup(c.art,"character-art-img",c.name)||`<span>${c.name}</span><small>CHARACTER ART</small>`}</div><div class="mini-char-foot"><b>ใช้ธูป 3 ดอก</b><p>${c.skill.replace(/^ใช้ธูป 3 ดอก:\s*/,"")}</p><small>Equip ${c.slots} ช่อง</small></div></div>`;b.onclick=()=>{if(!charRandomAnimating)socket.emit("selectCharacter",{key:c.key})};$("#characterGrid").appendChild(b)});
   const preview=characterByKey(previewKey),confirmed=characterByKey(me?.characterKey);if(me?.ready&&confirmed)$("#charSelectionStatus").innerHTML=`🔒 <b>${confirmed.name}</b> พร้อมแล้ว`;else if(me?.characterConfirmed&&confirmed)$("#charSelectionStatus").innerHTML=`✓ ยืนยัน <b>${confirmed.name}</b> แล้ว · กด Ready เมื่อพร้อม`;else if(preview)$("#charSelectionStatus").innerHTML=`กำลังดู <b>${preview.name}</b> · สุ่มใหม่ได้จนกว่าจะยืนยัน`;else $("#charSelectionStatus").textContent="เลือกเองหรือกดสุ่มตัวละครได้";
   $("#randomCharBtn").disabled=!!me?.ready||!!me?.characterConfirmed||charRandomAnimating;$("#randomCharBtn").textContent=charRandomAnimating?"🎲 กำลังสุ่ม...":"🎲 สุ่มตัวละคร";$("#confirmCharBtn").disabled=!previewKey||!!me?.characterConfirmed||!!me?.ready||charRandomAnimating;$("#releaseCharBtn").disabled=(!previewKey&&!me?.characterConfirmed)||!!me?.ready||charRandomAnimating;$("#readyBtn").disabled=(!me?.characterConfirmed&&!me?.ready)||charRandomAnimating;$("#readyBtn").classList.toggle("ready-active",!!me?.ready);$("#readyBtn").textContent=me?.ready?"✓ Ready แล้ว · กดเพื่อ Unready":"Ready";
   const allReady=state.players.length>0&&state.players.every(p=>p.connected&&p.characterConfirmed&&p.characterKey&&p.ready);$("#startBtn").style.display=isHost()?"inline-block":"none";$("#startBtn").disabled=isHost()?!allReady:true;const pending=state.players.filter(p=>!p.connected||!p.characterConfirmed||!p.characterKey||!p.ready);$("#hostNote").textContent=isHost()?(allReady?"ทุกคนพร้อมแล้ว ✦ Host เริ่มเกมได้":`รอ: ${pending.map(p=>p.name).join(", ")} ยืนยันตัวละคร + Ready ให้ครบ`):(me?.ready?"พร้อมแล้ว · รอ Host เริ่มเกม":"เลือกตัวละคร → ยืนยัน → Ready");
-  const st=state.settings||{};$("#settingForced").value=String(st.forcedMovement!==false);$("#settingSacDraw").value=st.sacrificeDraw||"onePerTurn";$("#settingFailedSac").value=st.failedSacrifice||"bottom";$("#settingBreak").value=st.equipmentBreak||"one";["#settingForced","#settingSacDraw","#settingFailedSac","#settingBreak"].forEach(id=>$(id).disabled=!isHost());$("#playtestSettings").classList.toggle("read-only",!isHost());$("#settingsSummary").textContent=settingsText(st);
+  const st=state.settings||{};$("#settingDuplicates").value=String(st.allowDuplicateCharacters===true);$("#settingForced").value=String(st.forcedMovement!==false);$("#settingSacDraw").value=st.sacrificeDraw||"onePerTurn";$("#settingFailedSac").value=st.failedSacrifice||"bottom";$("#settingBreak").value=st.equipmentBreak||"one";["#settingDuplicates","#settingForced","#settingSacDraw","#settingFailedSac","#settingBreak"].forEach(id=>$(id).disabled=!isHost());$("#playtestSettings").classList.toggle("read-only",!isHost());$("#settingsSummary").textContent=settingsText(st);
 }
 function settingsText(st=state?.settings||{}){
   return [
@@ -867,6 +868,7 @@ function renderGame(){
   $("#hp").textContent=mine?.char?`${mine.hp}/${mine.char.hp}`:"—";
   $("#actions").textContent=`${g.actions}/3`;
   $("#score").textContent=mine?.score??0;
+  $("#supportScore").textContent=mePublic()?.supportScore??0;
   $("#sanity").textContent=g.sanity??"—";
   $("#curse").textContent=`${g.curse}/6`;
 
@@ -949,7 +951,7 @@ function renderGame(){
   const skillType=mine?.char?.skillType;
   const preMoveSkill=["move_to_friend_hp2"].includes(skillType);
   const afterMoveSkill=["draw_five_stop_event","heal_all_living","peek_four_choose_two","remote_help"].includes(skillType);
-  let skillDisabled=!canAct||g.actions<3||!skillType;
+  let skillDisabled=!canAct||(g.actions<3&&!mine?.catHelp)||!skillType;
   if(skillType==="self_revive") skillDisabled=skillDisabled||!mp?.dead;
   else if(preMoveSkill) skillDisabled=skillDisabled||g.rolled||g.moved||g.escapeRequired;
   else if(afterMoveSkill) skillDisabled=skillDisabled||!g.moved;
@@ -1219,10 +1221,10 @@ function renderPendingRoomEffect(pending){
   }
 
   else if(pending.type==="skillPeekChoose"){
-    const need=Math.min(2,(pending.options||[]).length);
+    const need=pending.count??Math.min(2,(pending.options||[]).filter(c=>!c.disabled).length);
     const help=document.createElement("p");help.className="muted";help.textContent=`การ์ด ${pending.side==="top"?"บนสุด":"ล่างสุด"} ที่เปิดมา • เลือกเก็บ ${need} ใบ แล้วใบที่เหลือกลับด้านเดิมตามลำดับ`;box.appendChild(help);
     const grid=document.createElement("div");grid.className="peek-card-grid";
-    (pending.options||[]).forEach(c=>{const lab=document.createElement("label");lab.className="peek-card-choice";lab.innerHTML=`<input type="checkbox" value="${c.uid}"><div>${artMarkup(c.art,"peek-card-art",c.name)}<b>${c.name}</b><small>${c.category||c.type||"Amulet"}</small><span>${c.desc||""}</span></div>`;grid.appendChild(lab)});box.appendChild(grid);
+    (pending.options||[]).forEach(c=>{const lab=document.createElement("label");lab.className="peek-card-choice";lab.innerHTML=`<input type="checkbox" ${c.disabled?"disabled":""} value="${c.uid}"><div>${c.disabled?'<div class="peek-card-art">✦</div>':artMarkup(c.art,"peek-card-art",c.name)}<b>${c.name}</b><small>${c.category||c.type||"Amulet"}</small><span>${c.desc||""}</span></div>`;grid.appendChild(lab)});box.appendChild(grid);
     const ok=document.createElement("button");ok.className="primary";ok.textContent=`ยืนยันเลือก ${need} ใบ`;ok.onclick=()=>{const ids=[...grid.querySelectorAll('input:checked')].map(x=>x.value);if(ids.length!==need){toast(`ต้องเลือก ${need} ใบ`);return;}socket.emit("resolveRoomEffect",{uids:ids});closeModal()};box.appendChild(ok);
   }
 
@@ -1268,9 +1270,9 @@ function renderResult(){
   const defeated=state.phase==="defeat"||state.result?.defeat;
   $("#resultEyebrow").textContent=defeated?"ALL PLAYERS DOWN":"GHOST DEFEATED";
   $("#resultTitle").textContent=defeated?"บ้านนี้กลืนทุกคนไปแล้ว":"ปราบผีสำเร็จ";
-  $("#resultText").textContent=defeated?"ผู้เล่นทุกคน HP เหลือ 0 — เกมจบทันที":"คะแนนจากเงิน + คะแนนเครื่องเซ่นบนมือ";
+  $("#resultText").textContent=defeated?"ผู้เล่นทุกคน HP เหลือ 0 — เกมจบทันที":"คะแนนจากเงิน + เครื่องเซ่นบนมือ + คะแนนซัพพอร์ต";
   const rows=state.result?.rows||[];
-  rows.forEach(p=>{const d=document.createElement("div");d.className="result-player "+(p.winner?"winner":"");d.innerHTML=`<span>${p.winner?"🏆 ":""}${p.name} · ${p.char}</span><b>${p.total} คะแนน ${p.xp!=null?`· +${p.xp} EXP`:""} <small style="display:block;color:#9c978c">เงิน ${p.ritual} + เครื่องเซ่น ${p.hand}</small></b>`;$("#results").appendChild(d)});
+  rows.forEach(p=>{const d=document.createElement("div");d.className="result-player "+(p.winner?"winner":"");d.innerHTML=`<span>${p.winner?"🏆 ":""}${p.name} · ${p.char}</span><b>${p.total} คะแนน ${p.xp!=null?`· +${p.xp} EXP`:""} <small style="display:block;color:#9c978c">เงิน ${p.ritual} + เครื่องเซ่น ${p.hand} + ซัพพอร์ต ${p.support||0}</small></b>`;$("#results").appendChild(d)});
   $("#resultStats").innerHTML="";
   $("#resultStats").appendChild(statsNode());
 }

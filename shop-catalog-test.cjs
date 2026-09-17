@@ -1,0 +1,13 @@
+'use strict';
+const assert = require('node:assert/strict');
+const { characterPrice, ownedCharacters, canUseCharacter } = require('./lib/shop-catalog.cjs');
+assert.deepEqual(ownedCharacters(), ['mae-mali', 'doctor', 'nerd', 'mor-tham']);
+assert.equal(characterPrice('por-krai'), 250);
+assert.equal(characterPrice('black-shaman'), 500);
+assert.equal(characterPrice('temple-dog'), 600);
+assert.equal(characterPrice('stray-cat'), 600);
+assert.equal(characterPrice('__proto__'), null);
+assert.equal(canUseCharacter('stray-cat'), false);
+assert.equal(canUseCharacter('stray-cat', ['stray-cat']), true);
+assert.deepEqual(ownedCharacters(['unknown', 'doctor', 'doctor']), ownedCharacters());
+console.log('Shop catalog: free roster, prices and ownership validation passed');

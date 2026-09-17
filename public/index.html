@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Online Friends Build V1.10.0</title>
+<title>บ้านผีสิง — Online Friends Build V1.11.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -41,7 +41,7 @@
  <div id="accountProfile" class="account-profile hidden"><img data-account-avatar alt=""><div class="account-identity"><small>ผู้มาเยือน</small><h2 data-account-name></h2><b data-account-level></b><progress id="accountXP" value="0" max="100" aria-label="EXP ไปเลเวลถัดไป"></progress><small id="accountXPText"></small><details><summary>ข้อมูลโปรไฟล์</summary><small id="accountID"></small><p>เล่นจบ <b id="accountGames"></b> · อันดับ 1 <b id="accountWins"></b></p><button id="accountStats">ดูสถิติ</button><button id="accountEdit">แก้ไขโปรไฟล์</button><button id="accountLogout">ออกจากระบบ</button></details></div></div>
 
   <div class="hero">
-    <div class="eyebrow">ONLINE FRIENDS BUILD V1.10.0</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.11.0</div>
     <h1>บ้านผีสิง</h1>
     <p>แสงเทียนยังไม่ดับ… คืนนี้ใครจะกลับออกมา</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
@@ -52,6 +52,7 @@
     <form id="createForm" class="card-panel">
       <small>HOST A NIGHT</small><h2>สร้างห้อง</h2>
       <label>ชื่อ<input id="createName" value="ติม" maxlength="18"></label>
+      <label>ตัวละครซ้ำในห้อง<select id="createDuplicates"><option value="true">อนุญาตให้เลือกซ้ำ (แนะนำ)</option><option value="false">ไม่อนุญาตให้เลือกซ้ำ</option></select></label>
       <button class="primary">เริ่มคืนใหม่ · สร้างห้อง</button>
     </form>
     <form id="joinForm" class="card-panel">
@@ -61,14 +62,18 @@
       <button class="secondary">เข้าห้องเพื่อน</button>
     </form>
   </div>
-<div class="lobby-footer"><button id="shopBtn" class="shop-button"><span aria-hidden="true">♜</span> ร้านค้า <small>เร็ว ๆ นี้</small></button><span>เล่นกับเพื่อน 2–6 คน · V1.10.0</span></div>
+<div class="lobby-footer"><button id="shopBtn" class="shop-button"><span aria-hidden="true">♜</span> ร้านค้า <small>เร็ว ๆ นี้</small></button><span>เล่นกับเพื่อน 2–6 คน · V1.11.0</span></div>
 </section>
 
 <section id="lobby" class="screen">
   <div class="lobby-wrap">
     <div class="eyebrow">WAITING ROOM</div>
     <h1>Room <span id="roomCode">—</span></h1>
-    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 6 คนใน V1.10.0</p>
+    <div class="lobby-start-controls">
+      <button id="startBtn" class="primary start-game-btn">Host เริ่มเกม</button>
+      <p id="hostNote" class="muted" role="status"></p>
+    </div>
+    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 6 คนใน V1.11.0</p>
     <div class="room-code-tools">
       <button id="copyCodeBtn" class="secondary">📋 Copy Room Code</button>
       <button id="lobbyHelpBtn" class="secondary">? วิธีเล่น</button>
@@ -96,6 +101,7 @@
         <span class="beta-badge">V1.0</span>
       </div>
       <div class="settings-grid">
+        <label><span>ตัวละครซ้ำในห้อง</span><select id="settingDuplicates"><option value="true">อนุญาตให้เลือกซ้ำ</option><option value="false">ไม่อนุญาตให้เลือกซ้ำ</option></select></label>
         <label><span>Movement</span>
           <select id="settingForced">
             <option value="true">บังคับเดิน (Recommended)</option>
@@ -124,8 +130,6 @@
       <div id="settingsSummary" class="settings-summary"></div>
     </section>
 
-    <button id="startBtn" class="primary start-game-btn">Host เริ่มเกม</button>
-    <p id="hostNote" class="muted"></p>
   </div>
 </section>
 
@@ -138,6 +142,7 @@
     <div class="hud-stat">❤️ <b id="hp">—</b><small>HP</small></div>
     <div class="hud-stat">🕯 <b id="actions">—</b><small>ธูป</small></div>
     <div class="hud-stat">💰 <b id="score">—</b><small>เงิน</small></div>
+    <div class="hud-stat">♡ <b id="supportScore">0</b><small>ซัพพอร์ต</small></div>
     <div class="hud-stat">🧠 <b id="sanity">—</b><small>สติ</small></div>
     <div class="hud-stat">👻 <b id="curse">—</b><small>Curse</small></div>
     <span id="connectionState" class="connection-state online">● Online</span>
@@ -241,7 +246,7 @@
 <section id="result" class="screen">
   <div class="result-wrap">
     <div id="resultEyebrow" class="eyebrow">GHOST DEFEATED</div><h1 id="resultTitle">ปราบผีสำเร็จ</h1>
-    <p id="resultText" class="muted">คะแนนจากเงิน + คะแนนเครื่องเซ่นบนมือ</p>
+    <p id="resultText" class="muted">คะแนนจากเงิน + เครื่องเซ่นบนมือ + คะแนนซัพพอร์ต</p>
     <div id="results"></div>
     <div id="resultStats" class="result-stats"></div>
     <button id="downloadReportBtn" class="secondary report-download">⬇️ Export Playtest JSON</button>
@@ -325,5 +330,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="/app.js"></script>
 <script src="/accounts.js"></script>
+<link rel="stylesheet" href="/shop.css">
+<script src="/shop.js"></script>
 </body>
 </html>

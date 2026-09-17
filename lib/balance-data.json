@@ -1,0 +1,687 @@
+{
+  "characters": [
+    {
+      "id": "por-krai",
+      "field": "hp",
+      "value": 7
+    },
+    {
+      "id": "por-krai",
+      "field": "skill",
+      "value": "เมื่อ HP เหลือ 0 ใช้ธูป 3 ดอกเพื่อคืนชีพ"
+    },
+    {
+      "id": "mae-mali",
+      "field": "role",
+      "value": "สายซัพพอร์ต"
+    },
+    {
+      "id": "mae-mali",
+      "field": "slots",
+      "value": 2
+    },
+    {
+      "id": "doctor",
+      "field": "role",
+      "value": "สายซัพพอร์ต"
+    },
+    {
+      "id": "doctor",
+      "field": "slots",
+      "value": 2
+    },
+    {
+      "id": "doctor",
+      "field": "skill",
+      "value": "เมื่อใส่สกิลเพิ่มเลือดทุกคนในเกม +1 แต่แลก HP-2 ของตัวเอง"
+    },
+    {
+      "id": "nerd",
+      "field": "role",
+      "value": "สายซัพพอร์ต"
+    },
+    {
+      "id": "nerd",
+      "field": "slots",
+      "value": 2
+    },
+    {
+      "id": "nerd",
+      "field": "skill",
+      "value": "ใช้ธูป 3 ดอก: เลือกวาร์ปไปหาเพื่อน 1 คน • ตัวเอง HP -2 เพื่อนที่โดนวาร์ปไป HP+1"
+    },
+    {
+      "id": "black-shaman",
+      "field": "role",
+      "value": "สายโจมตี"
+    },
+    {
+      "id": "black-shaman",
+      "field": "slots",
+      "value": 2
+    },
+    {
+      "id": "mor-tham",
+      "field": "role",
+      "value": "สายซัพพอร์ต"
+    },
+    {
+      "id": "mor-tham",
+      "field": "slots",
+      "value": 2
+    },
+    {
+      "id": "mor-tham",
+      "field": "skill",
+      "value": "ใช้ธูป 3 ดอก: ปลดตัวเองหรือเพื่อนจากห้องคำสาป/กับดัก ได้ทั่วกระดาน"
+    },
+    {
+      "id": "temple-dog",
+      "field": "role",
+      "value": "สายซัพพอร์ต"
+    },
+    {
+      "id": "temple-dog",
+      "field": "skill",
+      "value": "ใช้ธูป 3 ดอก: เลือกดูการ์ดบนสุด 4 ใบ แล้วเลือกเก็บ 2 ใบ • อีก 2 ใบคืนเข้ากองจั่ว"
+    },
+    {
+      "id": "stray-cat",
+      "field": "role",
+      "value": "สายซัพพอร์ต"
+    },
+    {
+      "id": "stray-cat",
+      "field": "hp",
+      "value": 5
+    },
+    {
+      "id": "stray-cat",
+      "field": "skill",
+      "value": "ใช้ธูป 3 ดอก: ใช้การ์ดหมวด\"ช่วยเหลือ\" กี่ใบก็ได้ให้เพื่อนคนใดก็ได้ ไม่จำกัดห้อง"
+    }
+  ],
+  "ghosts": [
+    {
+      "id": "ghost-occult-master",
+      "field": "dice.green.value",
+      "value": 7
+    },
+    {
+      "id": "ghost-occult-master",
+      "field": "dice.green.label",
+      "value": "7-"
+    },
+    {
+      "id": "ghost-occult-master",
+      "field": "dice.black.value",
+      "value": 9
+    },
+    {
+      "id": "ghost-occult-master",
+      "field": "dice.black.label",
+      "value": "9+"
+    },
+    {
+      "id": "ghost-occult-master",
+      "field": "curseTrigger.label",
+      "value": "ผลรวมเต๋า = 8+"
+    },
+    {
+      "id": "ghost-occult-master",
+      "field": "curseText",
+      "value": "ผลรวมเต๋า = 8+ → Curse +1 ผู้เล่นที่ยังมีชีวิตทุกคน HP -2"
+    },
+    {
+      "id": "ghost-occult-master",
+      "field": "curseEffectText",
+      "value": "ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และผู้เล่นทุกคนโดนบังคับทิ้งการ์ด Amulet 2 ใบ"
+    },
+    {
+      "id": "ghost-treasure-guard",
+      "field": "fear",
+      "value": 6
+    },
+    {
+      "id": "ghost-treasure-guard",
+      "field": "curseText",
+      "value": "มีลูกเต๋าหน้า 1 → Curse +1 ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และเสียเงิน -1"
+    },
+    {
+      "id": "ghost-treasure-guard",
+      "field": "counterText.pink",
+      "value": "พลาด: เงิน -2 • ถ้าไม่มีเงิน HP -2"
+    },
+    {
+      "id": "ghost-treasure-guard",
+      "field": "counterText.black",
+      "value": "พลาด: เงิน -3 • ถ้าไม่มีเงิน HP -3"
+    },
+    {
+      "id": "ghost-treasure-guard",
+      "field": "curseEffectText",
+      "value": "ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และเสียเงิน -1"
+    },
+    {
+      "id": "ghost-pob-jaothi",
+      "field": "curseTrigger.label",
+      "value": "ผลรวมเต๋า = 4-"
+    },
+    {
+      "id": "ghost-pob-jaothi",
+      "field": "curseText",
+      "value": "ผลรวมเต๋า = 4- → Curse +1 ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และเสียการ์ดเครื่องเซ่น 1 ใบ"
+    },
+    {
+      "id": "ghost-pob-jaothi",
+      "field": "counterText.black",
+      "value": "พลาด: HP -3 เสียการ์ด Amulet 1 ใบ"
+    },
+    {
+      "id": "ghost-pob-jaothi",
+      "field": "curseEffectText",
+      "value": "ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และเสียการ์ดเครื่องเซ่น 1 ใบ"
+    },
+    {
+      "id": "ghost-pregnant",
+      "field": "need.green",
+      "value": 3
+    },
+    {
+      "id": "ghost-pregnant",
+      "field": "need.pink",
+      "value": 3
+    },
+    {
+      "id": "ghost-pregnant",
+      "field": "dice.green.value",
+      "value": 7
+    },
+    {
+      "id": "ghost-pregnant",
+      "field": "dice.green.label",
+      "value": "7-"
+    },
+    {
+      "id": "ghost-pregnant",
+      "field": "dice.blue.value",
+      "value": 7
+    },
+    {
+      "id": "ghost-pregnant",
+      "field": "dice.blue.label",
+      "value": "7+"
+    },
+    {
+      "id": "ghost-pregnant",
+      "field": "dice.pink.value",
+      "value": 8
+    },
+    {
+      "id": "ghost-pregnant",
+      "field": "dice.pink.label",
+      "value": "8+"
+    },
+    {
+      "id": "ghost-pregnant",
+      "field": "curseText",
+      "value": "มีลูกเต๋าหน้า 6 → Curse +1 ผู้เล่นที่ยังมีชีวิตทุกคน HP -3 และดึงผู้เล่นมารวมตัวที่ห้องเดียวกัน"
+    },
+    {
+      "id": "ghost-pregnant",
+      "field": "curseEffectText",
+      "value": "ผู้เล่นที่ยังมีชีวิตทุกคน HP -3 และดึงผู้เล่นมารวมตัวที่ห้องเดียวกัน"
+    },
+    {
+      "id": "ghost-oil-pillar",
+      "field": "fear",
+      "value": 6
+    },
+    {
+      "id": "ghost-oil-pillar",
+      "field": "need.pink",
+      "value": 2
+    },
+    {
+      "id": "ghost-oil-pillar",
+      "field": "dice.pink.value",
+      "value": 8
+    },
+    {
+      "id": "ghost-oil-pillar",
+      "field": "dice.pink.label",
+      "value": "8+"
+    },
+    {
+      "id": "ghost-oil-pillar",
+      "field": "dice.black.value",
+      "value": 9
+    },
+    {
+      "id": "ghost-oil-pillar",
+      "field": "dice.black.label",
+      "value": "9+"
+    },
+    {
+      "id": "ghost-oil-pillar",
+      "field": "curseText",
+      "value": "ลูกเต๋าออกเลขเหมือนกัน → Curse +1  ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และถูกผลักออกไปหาห้องติดกันที่ตัวเองอยู่แบบสุ่ม"
+    },
+    {
+      "id": "ghost-oil-pillar",
+      "field": "curseEffectText",
+      "value": "ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และถูกผลักออกไปหาห้องติดกันที่ตัวเองอยู่แบบสุ่ม"
+    },
+    {
+      "id": "ghost-headless",
+      "field": "need.green",
+      "value": 2
+    },
+    {
+      "id": "ghost-headless",
+      "field": "need.black",
+      "value": 2
+    },
+    {
+      "id": "ghost-headless",
+      "field": "curseText",
+      "value": "มีลูกเต๋าหน้า 2 → Curse +1 ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และโดนปลดของสวมใส่ 1 ชิ้น"
+    },
+    {
+      "id": "ghost-headless",
+      "field": "curseEffectText",
+      "value": "ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และโดนปลดของสวมใส่ 1 ชิ้น"
+    },
+    {
+      "id": "ghost-widow",
+      "field": "fear",
+      "value": 6
+    },
+    {
+      "id": "ghost-widow",
+      "field": "need.green",
+      "value": 1
+    },
+    {
+      "id": "ghost-widow",
+      "field": "need.blue",
+      "value": 1
+    },
+    {
+      "id": "ghost-widow",
+      "field": "need.black",
+      "value": 3
+    },
+    {
+      "id": "ghost-widow",
+      "field": "dice.green.value",
+      "value": 8
+    },
+    {
+      "id": "ghost-widow",
+      "field": "dice.green.label",
+      "value": "8-"
+    },
+    {
+      "id": "ghost-widow",
+      "field": "dice.blue.value",
+      "value": 7
+    },
+    {
+      "id": "ghost-widow",
+      "field": "dice.blue.label",
+      "value": "7+"
+    },
+    {
+      "id": "ghost-widow",
+      "field": "dice.black.value",
+      "value": 9
+    },
+    {
+      "id": "ghost-widow",
+      "field": "dice.black.label",
+      "value": "9+"
+    },
+    {
+      "id": "ghost-widow",
+      "field": "curseText",
+      "value": "ผลรวมเต๋า = 9 → Curse +1 ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และเสียการ์ด Amulet 2 ใบ"
+    },
+    {
+      "id": "ghost-widow",
+      "field": "curseEffectText",
+      "value": "ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และเสียการ์ด Amulet 2 ใบ"
+    },
+    {
+      "id": "ghost-kumarn",
+      "field": "fear",
+      "value": 6
+    },
+    {
+      "id": "ghost-kumarn",
+      "field": "curseText",
+      "value": "ผลรวมเต๋า = 5 → Curse +1 ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และเสียการ์ด Amulet 1 ใบ แต่จะได้เงินคนละ 3 แต้ม"
+    },
+    {
+      "id": "ghost-kumarn",
+      "field": "curseEffectText",
+      "value": "ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และเสียการ์ด Amulet 1 ใบ แต่จะได้เงินคนละ 3 แต้ม"
+    },
+    {
+      "id": "ghost-wanderer",
+      "field": "fear",
+      "value": 6
+    },
+    {
+      "id": "ghost-wanderer",
+      "field": "need.pink",
+      "value": 3
+    },
+    {
+      "id": "ghost-wanderer",
+      "field": "curseTrigger.label",
+      "value": "ผลรวมเต๋า = 7"
+    },
+    {
+      "id": "ghost-wanderer",
+      "field": "curseText",
+      "value": "ผลรวมเต๋า = 7→ Curse +1 ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และบังคับให้ทิ้งการ์ด Amulet จนเหลือ 2 ใบ"
+    },
+    {
+      "id": "ghost-wanderer",
+      "field": "curseEffectText",
+      "value": "ผู้เล่นที่ยังมีชีวิตทุกคน HP -2 และบังคับให้ทิ้งการ์ด Amulet จนเหลือ 2 ใบในมือ"
+    }
+  ],
+  "amulets": [
+    {
+      "id": "E01",
+      "field": "fear",
+      "value": 1
+    },
+    {
+      "id": "E01",
+      "field": "attackMod",
+      "value": 1
+    },
+    {
+      "id": "E02",
+      "field": "fear",
+      "value": 1
+    },
+    {
+      "id": "E02",
+      "field": "attackMod",
+      "value": 1
+    },
+    {
+      "id": "E03",
+      "field": "fear",
+      "value": 1
+    },
+    {
+      "id": "E03",
+      "field": "attackMod",
+      "value": 1
+    },
+    {
+      "id": "E04",
+      "field": "fear",
+      "value": 2
+    },
+    {
+      "id": "E05",
+      "field": "fear",
+      "value": 2
+    },
+    {
+      "id": "E06",
+      "field": "fear",
+      "value": 2
+    },
+    {
+      "id": "E07",
+      "field": "fear",
+      "value": 2
+    },
+    {
+      "id": "E08",
+      "field": "fear",
+      "value": 2
+    },
+    {
+      "id": "E09",
+      "field": "fear",
+      "value": 2
+    },
+    {
+      "id": "E10",
+      "field": "fear",
+      "value": 3
+    },
+    {
+      "id": "E11",
+      "field": "fear",
+      "value": 3
+    },
+    {
+      "id": "E12",
+      "field": "fear",
+      "value": 3
+    },
+    {
+      "id": "M01",
+      "field": "sanityChoices",
+      "value": [
+        1
+      ]
+    },
+    {
+      "id": "M01",
+      "field": "desc",
+      "value": "เพิ่มค่าสติ +1"
+    },
+    {
+      "id": "M02",
+      "field": "sanityChoices",
+      "value": [
+        1
+      ]
+    },
+    {
+      "id": "M02",
+      "field": "desc",
+      "value": "เพิ่มค่าสติ +1"
+    },
+    {
+      "id": "M03",
+      "field": "sanityChoices",
+      "value": [
+        1
+      ]
+    },
+    {
+      "id": "M03",
+      "field": "desc",
+      "value": "เพิ่มค่าสติ +1"
+    },
+    {
+      "id": "M04",
+      "field": "sanityChoices",
+      "value": [
+        1
+      ]
+    },
+    {
+      "id": "M04",
+      "field": "desc",
+      "value": "เพิ่มค่าสติ +1"
+    },
+    {
+      "id": "M05",
+      "field": "sanityChoices",
+      "value": [
+        2
+      ]
+    },
+    {
+      "id": "M05",
+      "field": "desc",
+      "value": "เพิ่มค่าสติ +2"
+    },
+    {
+      "id": "M06",
+      "field": "sanityChoices",
+      "value": [
+        2
+      ]
+    },
+    {
+      "id": "M06",
+      "field": "desc",
+      "value": "เพิ่มค่าสติ +2"
+    },
+    {
+      "id": "M07",
+      "field": "sanityChoices",
+      "value": [
+        1
+      ]
+    },
+    {
+      "id": "M07",
+      "field": "desc",
+      "value": "เพิ่มค่าสติ +1"
+    },
+    {
+      "id": "M08",
+      "field": "sanityChoices",
+      "value": [
+        1
+      ]
+    },
+    {
+      "id": "M08",
+      "field": "desc",
+      "value": "เพิ่มค่าสติ +1"
+    },
+    {
+      "id": "M09",
+      "field": "sanityChoices",
+      "value": [
+        1
+      ]
+    },
+    {
+      "id": "M09",
+      "field": "desc",
+      "value": "เพิ่มค่าสติ +1"
+    },
+    {
+      "id": "M10",
+      "field": "sanityChoices",
+      "value": [
+        1
+      ]
+    },
+    {
+      "id": "M10",
+      "field": "desc",
+      "value": "เพิ่มค่าสติ +1"
+    },
+    {
+      "id": "M11",
+      "field": "sanityChoices",
+      "value": [
+        2
+      ]
+    },
+    {
+      "id": "M11",
+      "field": "desc",
+      "value": "เพิ่มค่าสติ +2"
+    },
+    {
+      "id": "M12",
+      "field": "sanityChoices",
+      "value": [
+        2
+      ]
+    },
+    {
+      "id": "M12",
+      "field": "desc",
+      "value": "เพิ่มค่าสติ +2"
+    },
+    {
+      "id": "V01",
+      "field": "name",
+      "value": "เหยย!!! แย่แหล๊ะ"
+    },
+    {
+      "id": "V02",
+      "field": "desc",
+      "value": "ถือธูปจี้หลังเพื่อน • ตัวคุณ กับ เพื่อนฝั่งซ้าย เลือด -2"
+    },
+    {
+      "id": "V03",
+      "field": "name",
+      "value": "เหยวว ไหลนอง"
+    },
+    {
+      "id": "V04",
+      "field": "name",
+      "value": "สุดแสบ!! สุดเสว..."
+    },
+    {
+      "id": "V04",
+      "field": "desc",
+      "value": "ขูดเลขเสี้ยนตำ • หยุดนั่งพันแผล 1 เทิร์น"
+    },
+    {
+      "id": "V05",
+      "field": "name",
+      "value": "อ๊าาเฉิบบบ!! ขอเข้าเลยละกัน"
+    },
+    {
+      "id": "V06",
+      "field": "name",
+      "value": "อุ๊ย!! ชิบยาย แล้วละ..."
+    },
+    {
+      "id": "V06",
+      "field": "desc",
+      "value": "ลื่นเครื่องเซ่นหัวทิ่ม ขาฟาดปากเพื่อน • ตัวคุณ และ เพื่อนฝั่งขวา เลือด -2"
+    },
+    {
+      "id": "V07",
+      "field": "name",
+      "value": "ไอ้..เหยย!!"
+    },
+    {
+      "id": "V09",
+      "field": "name",
+      "value": "แหมะ!! อะไรติดหน้า"
+    },
+    {
+      "id": "V09",
+      "field": "desc",
+      "value": "ยันต์ปลิวติดหน้า • ทุกคนเลือด +2 "
+    },
+    {
+      "id": "V10",
+      "field": "name",
+      "value": "เพล้ง! ใครผลักตูว้ะ!!"
+    },
+    {
+      "id": "V11",
+      "field": "name",
+      "value": "0997997789 โทรมานะ โยม.."
+    },
+    {
+      "id": "V12",
+      "field": "name",
+      "value": "ทาดา! โชคดีดี๊"
+    }
+  ]
+}

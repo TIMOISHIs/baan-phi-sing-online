@@ -66,7 +66,7 @@ function takeSac(room,color='green'){
 
 // Lobby + uniqueness + ghost one-shot + game setup.
 const host=fakeIO.connect('host');
-host.trigger('createRoom',{name:'ติม',sessionToken:'token_host_123456'});
+host.trigger('createRoom',{name:'ติม',allowDuplicateCharacters:false,sessionToken:'token_host_123456'});
 const code=state(host).code;
 const guest=fakeIO.connect('guest');
 guest.trigger('joinRoom',{code,name:'เพื่อน',sessionToken:'token_guest_12345'});
@@ -83,7 +83,7 @@ assert.equal(T.AMULETS.length,63);assert.equal(T.SACRIFICES.length,54);assert.eq
 
 
 function prepare(){
- cleanTurn(room,hp);room.trade=null;hp.char=T.CHARS.find(c=>c.key==='por-krai');hp.hp=10;hp.amu=[];hp.equip=[];hp.pos=0;
+ cleanTurn(room,hp);room.trade=null;hp.char={...T.CHARS.find(c=>c.key==='por-krai'),hp:10};hp.hp=10;hp.amu=[];hp.equip=[];hp.pos=0;
  gp.hp=7;gp.pos=8;g.bossIndex=8;g.ghost=T.GHOSTS[0];g.curse=0;g.curseResolving=false;
  g.rooms=Array.from({length:9},()=>({...T.ROOMS.find(r=>r.type==='ปลอดภัย'),fear:1,capacity:null,effectId:null}));g.amuDiscard=[];g.amuDeck=[];
 }
