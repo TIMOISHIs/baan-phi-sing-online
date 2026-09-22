@@ -1,4 +1,7 @@
 const socket=io({autoConnect:false});
+const serverClock=GameSync.createClock(),diceGate=GameSync.createDiceGate();
+function syncClock(){const sent=performance.now();socket.emit("clockSync",reply=>serverClock.observe(reply?.serverNow,performance.now()-sent,true))}
+function receiveDice(e){if(e?.roomCode&&state?.code&&e.roomCode!==state.code)return;if(diceGate.accept(e,serverClock.now())){rollRequestPending=false;showDiceFx(e)}}
 const $=s=>document.querySelector(s);
 const show=id=>["home","lobby","game","result"].forEach(x=>$("#"+x).classList.toggle("active",x===id));
 const tokenKey="bpsSessionTokenV09",roomKey="bpsRoomCodeV13",legacyRoomKey="bpsRoomCodeV09";
@@ -317,7 +320,7 @@ function stopTurnTimer({reset=true}={}){
   if(turnTimerRaf)cancelAnimationFrame(turnTimerRaf);turnTimerRaf=null;turnTimerStart=0;turnTimerPlayerId=null;turnTimerAlerted=false;if(reset)turnTimerProgress=0;paintTurnTimer();
 }
 function startTurnTimer(p){
-  stopTurnTimer();if(!p||state?.phase!=="game")return;turnTimerPlayerId=p.id;turnTimerStart=performance.now();
+  stopTurnTimer();if(!p||state?.phase!=="game")return;turnTimerPlayerId=p.id;turnTimerStart=performance.now()-Math.max(0,(serverClock.now()||0)-(state.game.turnStartedAt||serverClock.now()||0));
   const tick=()=>{
     if(state?.phase!=="game"||activePlayer()?.id!==turnTimerPlayerId){stopTurnTimer();return}
     turnTimerProgress=Math.min(1,(performance.now()-turnTimerStart)/TURN_ALERT_MS);paintTurnTimer();
@@ -403,6 +406,7 @@ function applyIncomingState(s){
   if(turnChanged||enteringGame||resumingGame){turnTransitionActive=true;stopTurnTimer();ritualRollSelection=null;hideRollFocus();}
   if(prev?.code!==s.code||s.phase!=="game")resetPresentationMotion();
   state=s;persistSession();syncChatFromState(s);render();
+  if(s.phase==="ghostSelect"&&s.ghostSelection?.startAt)runGameStartCountdown({...s.ghostSelection,serverNow:s.serverNow});
   if(moved.length)moved.forEach(p=>{const move=s.game.lastMove;if(move&&move.seq!==prev?.game?.lastMove?.seq&&move.playerId===p.id)animatePawnPath(p,move.path);else showMoveFx(p,p.pos)});
   if(turnChanged){const ap=s.players?.[s.game?.turn||0];queueTurnHandoff(ap,ap?.id===id,90)}
   if(enteringGame){hideGhostSelectionOverlay();if(previousPhase==="lobby")setTimeout(openSetupReveal,420);else{const ap=s.players?.[s.game?.turn||0];queueTurnHandoff(ap,ap?.id===id,520)}}
@@ -483,6 +487,7 @@ $("#closeModal").onclick=()=>{const d=myMandatoryDecision();if(d){toast(d.kind==
 
 socket.on("errorMessage",msg=>{rollRequestPending=false;toast(msg);setTimeout(updateRollFocus,40)});
 socket.on("connect",()=>{
+  serverClock.reset();syncClock();setTimeout(syncClock,700);setTimeout(syncClock,2000);
   const c=localStorage.getItem(roomKey);
   if(c) socket.emit("resumeRoom",{code:c,sessionToken});
   const el=$("#connectionState");if(el){el.textContent="● Online";el.className="connection-state online"}
@@ -498,6 +503,8 @@ socket.on("leftRoom",()=>{
 });
 
 socket.on("state",s=>{
+  serverClock.observe(s.serverNow);
+  if(s.phase==="game")receiveDice(s.game?.lastDiceEvent);
   if(diceAnimating&&state?.phase==="game"&&s?.phase==="game"){queuedState=s;return;}
   applyIncomingState(s);
 });
@@ -508,7 +515,7 @@ socket.on("ghostReveal",e=>{if(e?.ghost)revealFinalGhost(e.ghost)});
 socket.on("gameStartCountdown",e=>runGameStartCountdown(e));
 socket.on("hpFx",e=>{if(diceAnimating){queuedHpEvents.push(e);return}const fire=()=>queueHpFx(e.delta,e.reason||"HP เปลี่ยน");if(/สวนกลับ|ดูดเลือด/.test(e.reason||""))setTimeout(fire,2600);else fire()});
 socket.on("cardReveal",enqueueCardReveal);
-socket.on("diceFx",e=>{rollRequestPending=false;showDiceFx(e)});
+socket.on("diceFx",receiveDice);
 socket.on("ritualFx",showRitualFx);
 socket.on("spellFx",e=>toast(`${e.playerName} ใช้ ${e.name} • ${e.success?"สำเร็จ":"ไม่สำเร็จ"} (${e.dice?.total??"?"} / ${e.condition||"?"})`));
 
@@ -529,15 +536,16 @@ function clearGhostStartCountdown(){
   const c=$("#ghostStartCountdown");if(c)c.remove();
 }
 function runGameStartCountdown(e={}){
+  if(e.serverNow)serverClock.observe(e.serverNow);
   clearGhostStartCountdown();
   const o=ensureGhostSelectionOverlay();o.classList.remove("hidden");
   const reveal=o.querySelector("#ghostFinalReveal");if(reveal)reveal.classList.add("hidden");
   const c=document.createElement("div");c.id="ghostStartCountdown";c.className="ghost-start-countdown";
   c.innerHTML=`<div class="ghost-countdown-inner"><div class="ghost-countdown-kicker">GET READY</div><b id="ghostCountdownNumber" class="ghost-countdown-number">5</b><div id="ghostCountdownLabel" class="ghost-countdown-label">เกมจะเริ่มใน</div><span class="ghost-countdown-sub">ทุกคนเตรียมตัว • เทิร์นจะเริ่มหลังนับถอยหลัง</span></div>`;
   o.appendChild(c);
-  const startAt=Number(e.startAt)||Date.now()+5000,num=c.querySelector("#ghostCountdownNumber"),label=c.querySelector("#ghostCountdownLabel");
+  const startAt=Number(e.startAt)||(serverClock.now()||0)+5000,num=c.querySelector("#ghostCountdownNumber"),label=c.querySelector("#ghostCountdownLabel");
   const tick=()=>{
-    const ms=startAt-Date.now(),left=Math.max(0,Math.ceil(ms/1000));
+    const left=serverClock.countdown(startAt);
     const shown=left>0?String(left):"เกมเริ่ม!";
     if(shown!==ghostStartCountdownLast){
       ghostStartCountdownLast=shown;num.textContent=shown;num.classList.remove("pulse");void num.offsetWidth;num.classList.add("pulse");
@@ -788,10 +796,10 @@ function showDiceFx(e){
   const box=$("#diceFx"),aEl=$("#dieA"),bEl=$("#dieB"),total=$("#diceFxTotal");
   $("#diceFxPlayer").textContent=e.playerName||"";
   $("#diceFxKind").textContent=e.kind==="ritual"?"ทอยทำพิธี":e.kind==="escape"?"ทอยหนีห้อง":"ทอยเดิน";
-  box.classList.remove("hidden","pop","dice-result");box.classList.add("dice-rolling");
+  box.classList.remove("hidden","pop","dice-result","dice-rolling");void box.offsetWidth;box.classList.add("dice-rolling");
   clearTimeout(diceTimer);clearInterval(diceAnimTimer);
   clearTimeout(diceSettleTimer);buildDie(aEl);buildDie(bEl);
-  const rollMs=2100;
+  const rollMs=Math.max(0,2100-Math.max(0,(serverClock.now()||e.at||0)-(e.at||serverClock.now()||0)));
   playDiceRollSound(rollMs);
   total.textContent="กำลังทอย…";
   aEl.setAttribute("aria-label","ลูกเต๋ากำลังทอย");bEl.setAttribute("aria-label","ลูกเต๋ากำลังทอย");
@@ -836,7 +844,7 @@ function updateRollFocus(){
   }else if(!g.rolled){
     mode="move";kick.textContent="YOUR ROLL";btn.textContent="🎲 ทอยเพื่อเดิน";hint.textContent="ทอย 2 ลูก แล้วค่อยคำนวณ Fear / สติ";cancel.classList.add("hidden");box.classList.remove("ritual-armed");
   }
-  if(!mode){hideRollFocus();return}
+  if(!mode||mode!=="ritual"){hideRollFocus();return}
   box.dataset.mode=mode;btn.disabled=false;box.classList.remove("hidden");
 }
 let lastPendingRitualId=null;
@@ -898,7 +906,7 @@ function renderGame(){
     $("#board").appendChild(b);
   }
   if(!isMyTurn())$("#message").textContent=`รอ ${ap?.name||"ผู้เล่น"} เล่นเทิร์น`;
-  else if(mp?.dead&&mine?.char?.skillType==="self_revive")$("#message").textContent="พ่อไกรล้มอยู่ — เทิร์นนี้ใช้ Skill 3🕯 เพื่อฟื้น HP +3 ได้";
+  else if(mp?.dead&&mine?.char?.skillType==="self_revive")$("#message").textContent="พ่อไกรล้มอยู่ — เทิร์นนี้ใช้ Skill 3🕯 เพื่อฟื้น HP +2 ได้";
   else if(mp?.dead)$("#message").textContent="คุณเสียชีวิต — รอเพื่อนมาชุบชีวิต";
   else if(g.pendingRoomEffect && g.pendingRoomEffect.playerId===myId())$("#message").textContent=g.pendingRoomEffect.type==="negativeReaction"?"⚠️ มีผลลบกำลังเกิด — การ์ดคาถาป้องกันถูก Highlight ให้เลือกใช้":"ต้อง Resolve Effect ก่อนทำ Action ต่อ";
   else if(g.pendingRitual)$("#message").textContent=g.pendingRitual.playerId===myId()?"กำลังทำพิธี — เลือก Modifier แล้วค่อยดูผล":"กำลังรอผู้เล่น Resolve พิธี";
@@ -932,6 +940,7 @@ function renderGame(){
   if($("#amuDeckCount"))$("#amuDeckCount").textContent=`จั่ว ${g.amuDeckCount??g.deckCounts?.amuletDraw??0} • ทิ้ง ${g.amuDiscardCount??g.deckCounts?.amuletDiscard??0}`;
   if($("#sacDeckCount"))$("#sacDeckCount").textContent=`เหลือ ${g.sacDeckCount??g.deckCounts?.sacrificeDraw??0} ใบ`;
   renderPrivate();
+  window.renderDashboard?.();
 
   const pendingMine=!!(g.pendingRoomEffect && g.pendingRoomEffect.playerId===myId());
   const ritualLocked=!!g.pendingRitual;
@@ -957,7 +966,7 @@ function renderGame(){
   else if(afterMoveSkill) skillDisabled=skillDisabled||!g.moved;
   $("#skillBtn").disabled=skillDisabled;
   $("#ritualBtn").disabled=!canAct||!g.moved||g.actions<2||!myRoom?.boss||!(mine?.sac||[]).some(c=>(g.ghost?.need?.[c.color]||0)>(g.bossDone[c.color]||0));
-  $("#tradeBtn").disabled=!canAct||!g.moved||g.traded||!!state.trade||!state.players.some(p=>p.id!==myId()&&p.pos===mp?.pos&&!p.dead);
+  $("#tradeBtn").disabled=!canAct||!g.moved||g.actions<1||g.traded||!!state.trade||!state.players.some(p=>p.id!==myId()&&p.pos===mp?.pos&&!p.dead);
   $("#endBtn").disabled=!canAct||g.sanityDecision||g.mustMove||g.moveOptional||(g.escapeRequired&&g.actions>0);
   renderTurnGuide({ap,mp,g,myRoom,pendingMine,canAct});
 
@@ -986,7 +995,7 @@ function renderPrivate(){
   const cards=mine.amu||[],n=cards.length;
   cards.forEach((c,i)=>{
     const b=document.createElement("button"),offset=i-(n-1)/2;
-    const fanStep=Math.max(38,Math.min(76,(window.innerWidth-148)/Math.max(1,n-1)));
+    const fanStep=Math.max(38,Math.min(76,(($("#amuHand")?.clientWidth||window.innerWidth)-140)/Math.max(1,n-1)));
     const react=state?.game?.pendingRoomEffect?.type==="negativeReaction"&&state.game.pendingRoomEffect.playerId===myId()&&state.game.pendingRoomEffect.options?.some(o=>o.uid===c.uid);
     b.className=`game-card amulet-card amu-type-${c.type} ${state?.game?.sanityDecision&&c.type==="sanity"&&isMyTurn()?"sanity-ready":""} ${react?"negative-ready":""}`;
     b.style.setProperty("--fan-x",`${offset*fanStep}px`);b.style.setProperty("--fan-rot",`${offset*6.5}deg`);b.style.setProperty("--fan-y",`${Math.abs(offset)*5}px`);b.style.zIndex=String(20+i);
@@ -1085,7 +1094,7 @@ function openHowToPlay(){
     <div class="howto-step"><b>1 · ทอยเดิน</b><p>ทอยเต๋า 2 ลูก → หัก Fear ของห้องปัจจุบันหลังรวมผลของสวมใส่ → ถ้ามีการ์ดค่าสติจะได้เลือกใช้ก่อนเปิดห้องที่เดินได้</p></div>
     <div class="howto-step"><b>2 · ${forced?"ต้องย้ายห้อง":"เลือกย้ายหรืออยู่เดิม"}</b><p>เลือกปลายทางได้ไม่เกินผลรวมเต๋า (บน/ล่าง/ซ้าย/ขวา) • ทุกห้องตามทางต้อง Fear ≤ สติ และไม่เต็ม • หยุดเมื่อถึงห้องคำสาป/กับดักหรือห้องผี • ${forced?"ถ้ามีทาง ต้องย้ายห้อง":"เลือกอยู่ห้องเดิมได้"}</p></div>
     <div class="howto-step"><b>3 · ใช้ธูป 3 ดอก</b><p>จั่ว Amulet 1 ดอก · สวม/ถอด 1 ดอก · ${sacRule} · ตีผี 2 ดอก · Skill 3 ดอก</p></div>
-    <div class="howto-step"><b>4 · ฟาร์มแล้วต่อรอง</b><p>Amulet เก็บได้สูงสุด 5 ใบ ถ้าเกินให้เลือกทิ้งลงกองทิ้ง · เมื่อกองจั่วหมดจะสับกองทิ้งขึ้นใหม่ · เครื่องเซ่น 7 ใบ · Trade ฟรี 1 ครั้ง/เทิร์นกับคนห้องเดียวกัน</p></div>
+    <div class="howto-step"><b>4 · ฟาร์มแล้วต่อรอง</b><p>Amulet เก็บได้สูงสุด 5 ใบ ถ้าเกินให้เลือกทิ้งลงกองทิ้ง · เมื่อกองจั่วหมดจะสับกองทิ้งขึ้นใหม่ · เครื่องเซ่น 7 ใบ · แลกเปลี่ยน 1 ธูปเมื่อสำเร็จ • 1 ครั้ง/เทิร์นกับคนห้องเดียวกัน</p></div>
     <div class="howto-step"><b>5 · ปราบผี</b><p>เข้าห้อง Boss ให้ได้ → เลือกเครื่องเซ่นที่ตรงสี → ทอยผ่านเกณฑ์ของสีนั้น → ปิด Symbol และรับ 💰 เงินตามค่าบนเครื่องเซ่น</p></div>
     <div class="howto-step danger"><b>☠️ ระวัง</b><p>HP = 0 จะตายและรอชุบ · ผีสะสม Curse ครบ 6 จะสร้างความเสียหายแล้วรีเซ็ต</p></div>`;
   openModal("วิธีเล่นแบบ 60 วินาที",box);

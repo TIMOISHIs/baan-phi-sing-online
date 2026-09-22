@@ -15,7 +15,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.11.0",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.12.0",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -456,7 +456,7 @@ function bumpRoomVisit(room,index){
 function recordDice(room,p,d,kind){
   const g=room.game;
   g.diceSeq=(g.diceSeq||0)+1;
-  g.lastDiceEvent={seq:g.diceSeq,a:d.a,b:d.b,total:d.total,kind,playerId:p.id,playerName:p.name};
+  g.lastDiceEvent={seq:g.diceSeq,at:Date.now(),matchId:room.accountMatchId,roomCode:room.code,a:d.a,b:d.b,total:d.total,kind,playerId:p.id,playerName:p.name};
   io.to(room.code).emit("diceFx",g.lastDiceEvent);
 }
 function revealCard(room,p,card,zone,reason="draw"){
@@ -493,6 +493,7 @@ function publicSnapshot(room){
   const g=room.game;
   return {
     code:room.code,
+    serverNow:Date.now(),
     phase:room.phase,
     hostId:room.hostId,
     settings:{...room.settings},
@@ -520,6 +521,8 @@ function publicSnapshot(room){
       isTurn:g ? i===g.turn : false
     })),
     game:g ? {
+      matchId:room.accountMatchId,startedAt:g.startedAt,turnStartedAt:g.turnStartedAt,round:g.round||1,
+      amuletDiscard:(g.amuDiscard||[]).map(c=>({...c})),
       turn:g.turn,
       bossIndex:g.bossIndex,
       bossArt:BOSS_ART,
@@ -993,6 +996,10 @@ function beginTurn(room){
     p=active(room);
   }
 
+  // Consume each eligible seat once per round, including skipped turns.
+  g.roundPending=(g.roundPending||room.players.filter(canTakeTurn).map(x=>x.id)).filter(id=>room.players.some(x=>x.id===id&&canTakeTurn(x)));
+  if(!g.roundPending.length){g.round=(g.round||1)+1;g.roundPending=room.players.filter(canTakeTurn).map(x=>x.id)}
+  g.roundPending=g.roundPending.filter(id=>id!==p.id);g.turnStartedAt=Date.now();
   if((p.skipTurns||0)>0){
     p.skipTurns--;
     addLog(room,`${p.name} ข้ามเทิร์นจาก Event • เหลือ ${p.skipTurns} เทิร์น`);
@@ -1071,6 +1078,7 @@ function startRoom(room,chosenGhost=null){
   const starterIndex=room.players.reduce((best,p,i,arr)=>{if(i===0)return 0;return (p.char?.hp||0)>(arr[best].char?.hp||0)?i:best;},0);
 
   room.game={
+    startedAt:Date.now(),turnStartedAt:Date.now(),round:1,roundPending:room.players.filter(canTakeTurn).map(p=>p.id),
     turn:starterIndex, rooms:map, bossIndex, actions:3, sanity:null,sanityBase:null,sanityBonus:0,sanityDecision:false,moveFear:null,lastDice:null,
     rolled:false,moved:false,mustMove:false,moveOptional:false,legal:[],sacDrawn:false,traded:false,
     curse:0,curseWarned:false,curseResolving:false,curseResolveAt:null,bossDone:{green:0,blue:0,pink:0,black:0}, pendingRoomEffect:null,pendingRitual:null,
@@ -1165,6 +1173,7 @@ function saveAccountResult(room){
  try{accounts.record(room)}catch{console.error("XP queue could not be saved; retrying while room remains available");room.accountSaveFailed=true}
 }
 io.on("connection", socket=>{
+  socket.on("clockSync",ack=>{if(typeof ack==="function")ack({serverNow:Date.now()})});
   socket.on("createRoom", ({name,sessionToken,allowDuplicateCharacters=true})=>{
     if(accountRoom(socket))return fail(socket,"คุณมีห้องอยู่แล้ว กลับเข้าห้องเดิมหรือออกจากห้องก่อน");
     const code=makeCode();
@@ -1338,13 +1347,14 @@ io.on("connection", socket=>{
     setTimeout(()=>{
       const latest=rooms.get(room.code);if(!latest||latest.phase!=="ghostSelect"||latest.ghostSelection?.seq!==seq)return;
       const startAt=Date.now()+5000;latest.ghostSelection.startAt=startAt;
-      io.to(latest.code).emit("gameStartCountdown",{seq,startAt,seconds:5});
+      io.to(latest.code).emit("gameStartCountdown",{seq,startAt,serverNow:Date.now(),seconds:5});
+      emitRoom(latest);
       addLog(latest,"เตรียมเริ่มเกม — นับถอยหลัง 5 วินาที");
     },4800);
     setTimeout(()=>{
       const latest=rooms.get(room.code);if(!latest||latest.phase!=="ghostSelect"||latest.ghostSelection?.seq!==seq)return;
       startRoom(latest,ghost);emitRoom(latest);
-    },10200);
+    },9800);
   });
 
   socket.on("escapeRoom", ()=>{
@@ -1841,9 +1851,9 @@ io.on("connection", socket=>{
     const room=rooms.get(socket.data.roomCode); if(!room) return;
     const p=checkTurn(socket,room); if(!p) return;
     const g=room.game;
-    if(!g.moved||g.traded||room.trade) return fail(socket,"Trade ไม่ได้ตอนนี้");
+    if(!g.moved||g.traded||room.trade||g.actions<1) return fail(socket,"แลกเปลี่ยนต้องมี 1 ธูป และใช้ได้ 1 ครั้ง/เทิร์น");
     const target=room.players.find(x=>x.id===toId);
-    if(!target||target.pos!==p.pos||target.hp<=0) return fail(socket,"Trade ได้เฉพาะคนที่อยู่ห้องเดียวกัน");
+    if(!target||target.id===p.id||target.pos!==p.pos||target.hp<=0) return fail(socket,"Trade ได้เฉพาะคนที่อยู่ห้องเดียวกัน");
     giveScore=Math.max(0,Math.floor(Number(giveScore)||0));
     askScore=Math.max(0,Math.floor(Number(askScore)||0));
     askCardCount=Math.max(0,Math.min(2,Math.floor(Number(askCardCount)||0)));
@@ -1854,6 +1864,7 @@ io.on("connection", socket=>{
       if(!ref) return fail(socket,"มีการ์ดในข้อเสนอที่ไม่ถูกต้อง");
       refs.push(ref);
     }
+    if(!refs.length&&!giveScore&&!askScore&&!askCardCount)return fail(socket,"เลือกสิ่งที่ต้องการแลกก่อน");
     if(g.stats) g.stats.trades.offers++;
     room.trade={
       id:`t${Date.now()}`, fromId:p.id,toId:target.id,giveScore,askScore,askCardCount,
@@ -1880,6 +1891,8 @@ io.on("connection", socket=>{
     const target=playerBySocket(room,socket.id);
     const from=room.players.find(x=>x.id===t.fromId);
     if(!target||target.id!==t.toId||!from) return fail(socket,"Trade นี้ไม่ถูกต้อง");
+    if(room.phase!=="game"||active(room)?.id!==from.id||from.hp<=0||target.hp<=0||from.pos!==target.pos||room.game.actions<1)return fail(socket,"ไม่สามารถแลกเปลี่ยนได้ในตอนนี้");
+    if(!Array.isArray(returnUids)||new Set(returnUids).size!==returnUids.length)return fail(socket,"ต้องเลือกการ์ดตอบกลับไม่ซ้ำกัน");
     if(target.score<t.askScore||from.score<t.giveScore) return fail(socket,"เงินไม่พอสำหรับ Trade");
     if(returnUids.length!==t.askCardCount) return fail(socket,`ต้องเลือกการ์ดตอบกลับ ${t.askCardCount} ใบ`);
     const giveRefs=t.giveCards.map(x=>cardFromPlayer(from,x.uid));
@@ -1907,6 +1920,7 @@ io.on("connection", socket=>{
     returnRefs.forEach(ref=>addCardToZone(from,ref.zone,ref.card));
     from.score = from.score - t.giveScore + t.askScore;
     target.score = target.score + t.giveScore - t.askScore;
+    room.game.actions--;
     if(room.game?.stats) room.game.stats.trades.accepted++;
     addLog(room,`${target.name} ยอมรับ Trade กับ ${from.name}`);
     room.trade=null; room.game.traded=true;
@@ -1949,4 +1963,4 @@ setInterval(()=>{
   for(const room of rooms.values())if(room.accountSaveFailed&&!room.accountResultQueued)saveAccountResult(room);
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.11.0 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.12.0 listening on :${PORT}`));

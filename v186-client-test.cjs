@@ -15,7 +15,7 @@ class Element{
 }
 const elements=new Map(),element=s=>{if(!elements.has(s))elements.set(s,new Element());return elements.get(s)};
 let clock=0,next=1;const timers=new Map(),storage=new Map();
-const ctx={console,Math,Number,String,Set,JSON,document:{querySelector:element,createElement:()=>new Element(),activeElement:null},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},
+const ctx={serverClock:{now:()=>clock},console,Math,Number,String,Set,JSON,document:{querySelector:element,createElement:()=>new Element(),activeElement:null},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},
  setTimeout:(fn,ms)=>{const id=next++;timers.set(id,{fn,at:clock+ms});return id},clearTimeout:id=>timers.delete(id),
  render(){},recoverMandatoryDecision(){},updateRollFocus(){},hideRollFocus(){},playCardFlipSound(){},artMarkup:()=>'',socket:{emit(){}},closeModal(){},toast(){},openModal:(title,box)=>ctx.modal=box,
  mine:{amu:Array.from({length:5},(_,i)=>({uid:`old-${i}`,name:`old-${i}`}))},myId:()=> 'p1'};
@@ -51,3 +51,4 @@ for(const key of ['lofi_midnight','lofi_lantern','lofi_rain']){
  assert.equal(run('trackTimers.length'),1);assert.equal(run('trackNodes.length'),2);run('clearTrack()');assert.equal(run('trackTimers.length'),0);assert.equal(run('trackNodes.length'),0);
 }
 console.log('V1.8.6 CLIENT REGRESSION: PASS (3D faces/server result, log text safety, all 3 music timer lifecycles)');
+
