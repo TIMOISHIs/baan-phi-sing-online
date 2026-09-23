@@ -96,3 +96,25 @@ body{font-family:BPS,'Noto Sans Thai',system-ui,sans-serif}body:has(#game.active
 @media(min-width:1600px){#game.active{grid-template-rows:56px minmax(0,1fr) 40px}#game.bag-open{grid-template-rows:56px minmax(0,1fr) 222px}}
 @media(max-width:1100px){#game.active{height:auto;grid-template-rows:auto auto 40px}.bps-table{grid-template-columns:170px minmax(0,1fr)}#game .bps-center{display:grid;height:650px;min-height:0;grid-template-rows:38px 32px minmax(0,1fr) auto auto!important;overflow:hidden}.bps-local-profile-toggle{max-width:150px}.bps-map-frame{container-type:size}.bps-footer{height:auto;min-height:40px}.bps-bag-toggle{height:39px}#game.bag-open{height:auto;grid-template-rows:auto auto auto}#game.bag-open .bps-footer{display:grid;grid-template-columns:1fr 1fr;row-gap:12px;padding:8px 10px 22px}#game.bag-open .bps-footer>section{height:175px!important;border-right:0;border-bottom:1px solid #4a414e}}
 @media(max-width:620px){.bps-table{display:flex;flex-direction:column}.bps-party{max-height:180px;flex-direction:column}.bps-party>.panel{width:100%;flex:none}.bps-empty{display:none}.bps-center{height:auto!important;min-height:0!important;padding:8px}.bps-board-heading h3{font-size:14px}#game .bps-board-shell{height:clamp(290px,82vw,390px);min-height:0;flex:none;grid-template-columns:minmax(0,1fr) 51px 54px;gap:5px}#game #board{gap:4px;padding:5px}#game .room{padding:4px!important}#game .room-top b{font-size:clamp(9px,2.8vw,12px)}#game .room-top small{font-size:clamp(8px,2.2vw,10px)}#game .room-bottom>span{font-size:clamp(8px,2.2vw,10px);max-height:2.5em}#game .fear-badge{width:17px;height:17px;min-width:17px;font-size:9px}.bps-local-profile-toggle{left:auto;right:82px;transform:translateY(-50%);max-width:115px}.bps-brand small{display:none}.bps-header{gap:6px;padding:6px 8px}.bps-header .turn-title{flex:1}.bps-footer{grid-template-columns:1fr!important}.bps-footer>section{border-right:0;border-bottom:1px solid #49404e}#game.bag-open{grid-template-rows:auto auto auto}#game.bag-open .bps-footer{grid-template-columns:1fr!important}#game.bag-open .bps-footer>section{height:175px!important}#game #amuletDock{height:180px!important}#game .bps-own-profile{left:auto;right:8px;transform:none;width:min(360px,calc(100vw - 16px));flex-wrap:wrap}.bps-own-profile .inventory-head{display:none}}
+
+/* v1.13.2: inventory toggle has its own row; decks follow the square board. */
+#game .bps-board-shell{display:grid;grid-template-columns:minmax(0,1fr);place-items:center;gap:0;--deck-width:76px;--action-width:68px;--cluster-gap:7px}
+.bps-board-cluster{display:grid;grid-template-columns:minmax(0,1fr) var(--deck-width) var(--action-width);gap:var(--cluster-gap);width:min(100cqw,calc(100cqh + var(--deck-width) + var(--action-width) + 2 * var(--cluster-gap)));height:min(100cqh,calc(100cqw - var(--deck-width) - var(--action-width) - 2 * var(--cluster-gap)));min-width:0;min-height:0}
+#game.bag-open .bps-footer{grid-template-rows:minmax(0,1fr) 22px;padding:8px 10px 0}
+#game.bag-open .bps-bag-toggle{grid-column:1/-1;grid-row:2;height:22px;font-size:10px}
+#game.bag-open .bps-footer>section{grid-row:1;min-height:0}
+#game.bag-open .bps-offering-zone{grid-column:1}
+#game.bag-open #amuletDock{grid-column:2;grid-row:1!important}
+#game.bag-open .bps-equip-zone{grid-column:3}
+#game.bag-open .bps-status-zone{grid-column:4}
+@media(max-width:1100px){
+ #game.bag-open .bps-footer{grid-template-rows:22px auto auto;row-gap:12px;padding-bottom:22px}
+ #game.bag-open .bps-bag-toggle{grid-row:1}
+ #game.bag-open .bps-footer>section{grid-column:auto;grid-row:auto}
+ #game.bag-open #amuletDock{grid-column:auto;grid-row:auto!important}
+}
+@media(max-width:620px){
+ #game .bps-board-shell{grid-template-columns:minmax(0,1fr);--deck-width:51px;--action-width:54px;--cluster-gap:5px}
+ .bps-board-cluster{height:100cqh}
+ #game.bag-open .bps-footer{grid-template-rows:22px repeat(4,auto)}
+}

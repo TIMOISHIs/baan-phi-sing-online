@@ -3,7 +3,7 @@
  const q=s=>document.querySelector(s),make=(tag,cls,html='')=>{const e=document.createElement(tag);e.className=cls;e.innerHTML=html;return e};
  const hud=q('#game .hud'),table=q('#game .table'),left=q('#game .rail'),center=q('#game .board-zone'),right=q('#game .boss-column');
  hud.className='bps-header';table.className='bps-table';left.className='bps-party';center.className='bps-center';right.className='bps-spirit';
- hud.prepend(make('div','bps-brand','<b>บ้านผีสิง</b><small>v1.13.1</small>'));
+ hud.prepend(make('div','bps-brand','<b>บ้านผีสิง</b><small>v1.13.2</small>'));
  const online=make('span','bps-online');online.id='onlineCount';hud.insertBefore(online,q('#connectionState'));
  const settings=make('button','','⚙');settings.title='ตั้งค่าเสียง';settings.setAttribute('aria-label','ตั้งค่าเสียง');settings.onclick=()=>q('#settingsBtn').click();hud.insertBefore(settings,q('#gameLeaveBtn'));
  const profile=make('button','bps-profile','โปรไฟล์');profile.onclick=()=>q('#accountChip').click();hud.insertBefore(profile,settings);
@@ -46,6 +46,7 @@
  // Move actual draw buttons onto decks; animation source .deck-card stays correct.
  [q('#drawAmu'),q('#drawSac')].forEach((b,i)=>{b.className='deck-card bps-draw-deck';b.replaceChildren(...piles[i].childNodes);const cost=make('small','','จั่ว · 1 ธูป');b.append(cost);piles[i].replaceWith(b)});search.remove();
  shell.append(actions);actions.classList.add('bps-action-rail');ap.remove();
+ const boardCluster=make('div','bps-board-cluster');shell.append(boardCluster);boardCluster.append(mapFrame,decks,actions);
  const offerings=make('section','bps-offering-zone');offerings.innerHTML='<h3>กระเป๋าเครื่องเซ่น</h3>';offerings.append(q('.hand-title'),q('#sacHand'));
  const equipment=make('section','bps-equip-zone');equipment.innerHTML='<h3>กระเป๋าสวมใส่</h3>';equipment.append(q('.equip-row'));
  const status=make('section','bps-status-zone');status.innerHTML='<h3>สถานะของฉัน</h3>';status.append(stats);
