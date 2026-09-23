@@ -50,3 +50,49 @@ body{font-family:BPS,'Noto Sans Thai',system-ui,sans-serif}body:has(#game.active
 @media(min-width:1101px){#game.active{grid-template-rows:52px minmax(0,1fr) 200px}}
 @media(min-width:1600px){#game.active{grid-template-rows:56px minmax(0,1fr) 222px}}
 .bps-stats svg{vertical-align:-2px;margin-right:3px}
+
+/* v1.13.1 layout refinement: square map, compact sidebars, and a non-overlapping inventory drawer. */
+.bps-header{position:relative;z-index:30}
+.bps-table{grid-template-columns:clamp(174px,14vw,252px) minmax(0,1fr) clamp(205px,15vw,270px)}
+.bps-party,.bps-spirit{padding:10px;min-width:0}
+.bps-party{gap:8px}
+.bps-spirit{overflow-y:auto}
+.bps-center{grid-template-rows:38px 32px minmax(0,1fr) auto auto!important;padding:8px 10px;gap:4px;overflow:hidden}
+.bps-board-heading{min-height:0}
+.bps-board-heading h3{font-size:17px}
+.bps-own-profile{display:none;position:absolute;top:calc(100% + 7px);left:50%;z-index:80;transform:translateX(-50%);width:min(430px,calc(100vw - 24px));max-width:none;height:auto;min-height:76px;box-shadow:0 12px 35px #000b}
+#game.profile-open .bps-own-profile{display:flex}
+.bps-local-profile-toggle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;max-width:min(230px,22vw);overflow:hidden;text-overflow:ellipsis}
+#game .bps-board-shell{grid-template-columns:minmax(0,1fr) 76px 68px;gap:7px;max-width:none;width:100%;height:100%;min-height:0;margin:0 auto;container-type:size}
+.bps-map-frame{display:grid;place-items:center;min-width:0;min-height:0;width:100%;height:100%;container-type:size}
+#game #board{width:min(100cqw,100cqh)!important;height:min(100cqw,100cqh)!important;aspect-ratio:1/1!important;place-self:center;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:clamp(4px,.55vw,9px);padding:clamp(5px,.7vw,10px)}
+#game .room{position:relative;overflow:hidden;justify-content:flex-end;gap:2px;padding:clamp(6px,.65vw,10px)!important;transform:none!important}
+#game .room.illegal{opacity:1!important}
+#game .room-art{position:absolute!important;inset:0!important;z-index:0;opacity:.82!important;pointer-events:none;border-radius:inherit;filter:saturate(.9)}
+#game .room-top,#game .room-bottom{z-index:1}
+#game .room-top{position:relative!important;inset:auto!important;width:100%!important;min-height:0!important;margin-top:auto!important;display:flex;align-items:flex-end;justify-content:center;padding:0 0 2px!important;text-align:center}
+#game .room-top>div{width:100%;min-width:0}
+#game .room-top b{display:block;width:100%;font-size:clamp(11px,.82vw,15px);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#game .room-top small{display:block;font-size:clamp(9px,.65vw,11px);line-height:1.25}
+#game .room-top .fear-badge,#game .fear-badge{position:absolute;top:5px;right:5px;z-index:2;width:clamp(19px,1.6vw,25px);height:clamp(19px,1.6vw,25px);min-width:0;font-size:clamp(10px,.72vw,13px)}
+#game .room-bottom{flex:0 0 auto;min-height:0;gap:3px;padding:0!important}
+#game .room-bottom>span{width:100%;font-size:clamp(10px,.72vw,12px);line-height:1.3;max-height:2.6em;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;text-align:center}
+#game .pawns{min-height:24px;justify-content:center;gap:3px}
+#game .room.legal{transform:translateY(-3px)!important;z-index:2;box-shadow:inset 0 0 28px color-mix(in srgb,var(--room-color) 24%,transparent),0 0 14px color-mix(in srgb,var(--room-color) 55%,transparent)!important}
+#game .bps-action-rail .bps-action-grid{grid-template-rows:repeat(4,minmax(40px,1fr));gap:4px}
+#game .bps-action-rail .bps-action{padding:4px 2px;border-radius:8px}
+#game .bps-action-rail .bps-action i{font-size:16px}
+#game .bps-action-rail .bps-action span,#game .bps-action-rail .bps-action small{font-size:9px;line-height:1.2}
+#game .bps-action-rail .bps-end-button{height:40px;font-size:10px}
+#game.active{grid-template-rows:52px minmax(0,1fr) 40px}
+.bps-footer{display:block;padding:0 10px;background:#1c1b20;border-top:1px solid #39313f;overflow:visible}
+.bps-bag-toggle{width:100%;height:39px;display:flex;align-items:center;justify-content:center;gap:10px;background:transparent;border:0;color:#e2dce7;font-weight:700;font-size:11px;cursor:pointer}
+.bps-bag-toggle b{font-size:14px;color:#c2a8d2}
+.bps-footer>section{display:none}
+#game.bag-open{grid-template-rows:52px minmax(0,1fr) 200px}
+#game.bag-open .bps-footer{display:grid;grid-template-columns:minmax(0,30%) minmax(0,38%) minmax(0,18%) minmax(0,14%);gap:0;padding:8px 10px 22px}
+#game.bag-open .bps-footer>section{display:block;min-width:0;padding:4px 12px;border-right:1px solid #4a414e}
+#game.bag-open .bps-footer>section:last-child{border-right:0}
+@media(min-width:1600px){#game.active{grid-template-rows:56px minmax(0,1fr) 40px}#game.bag-open{grid-template-rows:56px minmax(0,1fr) 222px}}
+@media(max-width:1100px){#game.active{height:auto;grid-template-rows:auto auto 40px}.bps-table{grid-template-columns:170px minmax(0,1fr)}#game .bps-center{display:grid;height:650px;min-height:0;grid-template-rows:38px 32px minmax(0,1fr) auto auto!important;overflow:hidden}.bps-local-profile-toggle{max-width:150px}.bps-map-frame{container-type:size}.bps-footer{height:auto;min-height:40px}.bps-bag-toggle{height:39px}#game.bag-open{height:auto;grid-template-rows:auto auto auto}#game.bag-open .bps-footer{display:grid;grid-template-columns:1fr 1fr;row-gap:12px;padding:8px 10px 22px}#game.bag-open .bps-footer>section{height:175px!important;border-right:0;border-bottom:1px solid #4a414e}}
+@media(max-width:620px){.bps-table{display:flex;flex-direction:column}.bps-party{max-height:180px;flex-direction:column}.bps-party>.panel{width:100%;flex:none}.bps-empty{display:none}.bps-center{height:auto!important;min-height:0!important;padding:8px}.bps-board-heading h3{font-size:14px}#game .bps-board-shell{height:clamp(290px,82vw,390px);min-height:0;flex:none;grid-template-columns:minmax(0,1fr) 51px 54px;gap:5px}#game #board{gap:4px;padding:5px}#game .room{padding:4px!important}#game .room-top b{font-size:clamp(9px,2.8vw,12px)}#game .room-top small{font-size:clamp(8px,2.2vw,10px)}#game .room-bottom>span{font-size:clamp(8px,2.2vw,10px);max-height:2.5em}#game .fear-badge{width:17px;height:17px;min-width:17px;font-size:9px}.bps-local-profile-toggle{left:auto;right:82px;transform:translateY(-50%);max-width:115px}.bps-brand small{display:none}.bps-header{gap:6px;padding:6px 8px}.bps-header .turn-title{flex:1}.bps-footer{grid-template-columns:1fr!important}.bps-footer>section{border-right:0;border-bottom:1px solid #49404e}#game.bag-open{grid-template-rows:auto auto auto}#game.bag-open .bps-footer{grid-template-columns:1fr!important}#game.bag-open .bps-footer>section{height:175px!important}#game #amuletDock{height:180px!important}#game .bps-own-profile{left:auto;right:8px;transform:none;width:min(360px,calc(100vw - 16px));flex-wrap:wrap}.bps-own-profile .inventory-head{display:none}}
