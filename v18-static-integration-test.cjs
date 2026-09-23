@@ -112,9 +112,10 @@ cleanTurn(room,hp);hp.pos=g.bossIndex;hp.hp=4;gp.hp=3;g.ritualHealAllCharges=1;c
 host.trigger('resolveRitual',{modifier:0});
 
 // Mor Tham cleans friend's next special-room start penalty.
-cleanTurn(room,hp);hp.char=T.CHARS.find(c=>c.key==='mor-tham');g.actions=3;const trapIndex=[0,1,2,3,4,5,6,7,8].find(i=>i!==g.bossIndex&&i!==hp.pos);g.rooms[trapIndex]={...T.ROOMS.find(r=>r.type==='กับดัก')};gp.pos=trapIndex;gp.hp=Math.max(3,gp.hp);const guestHpBefore=gp.hp;host.trigger('skill',{targetId:gp.id});assert.equal(gp.hp,guestHpBefore);assert.equal(room.game.turn,room.players.indexOf(gp));assert.equal(room.game.escapeRequired,false);
+cleanTurn(room,hp);hp.char=T.CHARS.find(c=>c.key==='mor-tham');g.actions=3;const trapIndex=[0,1,2,3,4,5,6,7,8].find(i=>i!==g.bossIndex&&i!==hp.pos);g.rooms[trapIndex]={...T.ROOMS.find(r=>r.type==='กับดัก')};gp.pos=trapIndex;gp.hp=Math.max(3,gp.hp);const guestHpBefore=gp.hp;host.trigger('skill',{targetId:gp.id});assert.equal(gp.hp,guestHpBefore);assert.equal(room.game.turn,room.players.indexOf(hp));assert.equal(g.rescue.playerId,gp.id);guest.trigger("rescueRoll");const exit=state(guest).game.rescue.legal[0];guest.trigger("rescueMove",{index:exit});assert.equal(gp.pos,exit);assert.equal(room.game.turn,room.players.indexOf(gp));
 
 console.log('V1.8 STATIC INTEGRATION: PASS');
 console.log(JSON.stringify({cards:{amulet:T.AMULETS.length,sacrifice:T.SACRIFICES.length,ghosts:T.GHOSTS.length,characters:T.CHARS.length,rooms:T.ROOMS.length},roomCode:code},null,2));
 
 global.setTimeout=origTimeout;global.setInterval=origInterval;Module._load=origLoad;
+

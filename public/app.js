@@ -24,7 +24,8 @@ const PLAYER_META={
 let diceAnimating=false,queuedState=null,queuedPrivateState=null,queuedHpEvents=[];
 let hpFxBusy=false;const hpFxQueue=[];
 let moveFxTimer=null,turnFxTimer=null,turnHandoffQueueTimer=null;
-const TURN_TRANSITION_MS=1900,TURN_ALERT_MS=60000;
+const TURN_TRANSITION_MS=1900,TURN_ALERT_MS=120000;
+let turnWarn30=false,turnWarn10=false;
 let turnTransitionActive=false,turnTimerRaf=null,turnTimerStart=0,turnTimerProgress=0,turnTimerPlayerId=null,turnTimerAlerted=false;
 let ritualRollSelection=null,rollRequestPending=false;
 let chatRoomCode=null,chatSeenIds=new Set(),chatUnread=0;
@@ -313,6 +314,7 @@ function playTurnTimeWarningSound(){
 }
 function paintTurnTimer(){
   const ap=activePlayer(),seat=playerSeat(ap),meta=PLAYER_META[seat]||PLAYER_META[1],angle=`${Math.max(0,Math.min(1,turnTimerProgress))*360}deg`;
+  const left=Math.max(0,Math.ceil(((state?.game?.turnDeadline||0)-(serverClock.now()||0))/1000));const timer=$("#turnCountdown");if(timer){timer.textContent=`${Math.floor(left/60)}:${String(left%60).padStart(2,"0")}`;timer.classList.toggle("urgent",left<=10);timer.classList.toggle("warning",left<=30);}
   const hud=$("#turnEnergyRing");if(hud){hud.style.setProperty("--turn-angle",angle);hud.style.setProperty("--pcolor",`var(--p${seat})`);hud.classList.toggle("timer-full",turnTimerProgress>=1)}
   document.querySelectorAll(".turn-timer-ring").forEach(el=>{el.style.setProperty("--turn-angle",angle);el.classList.toggle("timer-full",turnTimerProgress>=1)});
 }
@@ -320,10 +322,13 @@ function stopTurnTimer({reset=true}={}){
   if(turnTimerRaf)cancelAnimationFrame(turnTimerRaf);turnTimerRaf=null;turnTimerStart=0;turnTimerPlayerId=null;turnTimerAlerted=false;if(reset)turnTimerProgress=0;paintTurnTimer();
 }
 function startTurnTimer(p){
-  stopTurnTimer();if(!p||state?.phase!=="game")return;turnTimerPlayerId=p.id;turnTimerStart=performance.now()-Math.max(0,(serverClock.now()||0)-(state.game.turnStartedAt||serverClock.now()||0));
+  stopTurnTimer();if(!p||state?.phase!=="game")return;turnTimerPlayerId=p.id;turnWarn30=false;turnWarn10=false;turnTimerStart=performance.now()-Math.max(0,(serverClock.now()||0)-(state.game.turnStartedAt||serverClock.now()||0));
   const tick=()=>{
     if(state?.phase!=="game"||activePlayer()?.id!==turnTimerPlayerId){stopTurnTimer();return}
-    turnTimerProgress=Math.min(1,(performance.now()-turnTimerStart)/TURN_ALERT_MS);paintTurnTimer();
+    const left=Math.max(0,(state.game.turnDeadline||(state.game.turnStartedAt+TURN_ALERT_MS))-(serverClock.now()||0));
+    turnTimerProgress=Math.max(0,Math.min(1,1-left/TURN_ALERT_MS));paintTurnTimer();
+    if(left<=30000&&!turnWarn30){turnWarn30=true;if(turnTimerPlayerId===myId())toast("เหลือเวลา 30 วินาที")}
+    if(left<=10000&&!turnWarn10){turnWarn10=true;if(turnTimerPlayerId===myId())playTurnTimeWarningSound()}
     if(turnTimerProgress>=1){
       if(!turnTimerAlerted){turnTimerAlerted=true;if(turnTimerPlayerId===myId())playTurnTimeWarningSound()}
       turnTimerRaf=null;return;
@@ -417,7 +422,7 @@ function flushDiceQueues(kind=null){
 }
 migrateLegacyRoom();
 
-$("#createForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("createRoom",{name:$("#createName").value,sessionToken,allowDuplicateCharacters:$("#createDuplicates").value==="true"})});
+$("#createForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("createRoom",{name:$("#createName").value,sessionToken,allowDuplicateCharacters:true})});
 $("#joinForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("joinRoom",{name:$("#joinName").value,code:$("#joinCode").value,sessionToken})});
 $("#startBtn").onclick=()=>socket.emit("startGame");
 $("#copyCodeBtn").onclick=async()=>{try{await navigator.clipboard.writeText(state.code);toast(`Copy ${state.code} แล้ว`)}catch{toast(`Room Code: ${state.code}`)}};
@@ -444,7 +449,7 @@ $("#chatToggle").onclick=()=>setChatCollapsed(!$("#chatDock").classList.contains
 $("#chatForm").addEventListener("submit",e=>{e.preventDefault();const input=$("#chatInput"),text=input.value.trim();if(!text||!state?.code)return;socket.emit("chatMessage",{text});input.value="";input.focus()});
 $("#stayBtn").onclick=()=>socket.emit("stayInRoom");
 $("#escapeBtn").onclick=()=>socket.emit("escapeRoom");
-$("#rollBtn").onclick=()=>socket.emit("roll");
+$("#rollBtn").onclick=()=>socket.emit(state?.game?.rescue?"rescueRoll":"roll");
 $("#rollFocusBtn").onclick=()=>{
   if(rollRequestPending||!state?.game||!isMyTurn())return;const mode=$("#rollFocus")?.dataset.mode;rollRequestPending=true;hideRollFocus();ensureAudio();
   if(mode==="ritual"&&ritualRollSelection){const pick=ritualRollSelection;ritualRollSelection=null;socket.emit("ritual",{uid:pick.uid});return}
@@ -468,7 +473,7 @@ $("#skillBtn").onclick=()=>{
     const box=document.createElement("div");box.innerHTML=`<p class="muted">เลือกเครื่องเซ่นเพื่อท้าดวลผีจากห้องไหนก็ได้ • ใช้ธูป 3 • หลัง Resolve HP -3</p>`;eligible.forEach(c=>{const b=document.createElement("button");b.className=`modal-option ${c.color}`;b.innerHTML=`<b>${c.name}</b><span>${c.group||c.color} · ตีผี ${c.boss}</span>`;b.onclick=()=>{socket.emit("skill",{uid:c.uid});closeModal()};box.appendChild(b)});openModal("Skill — หมอผีดำ",box);return;
   }
   if(t==="free_any_trap_curse"){
-    const targets=state.players.filter(x=>!x.dead&&["คำสาป","กับดัก"].includes(roomAt(x.pos)?.type));if(!targets.length){toast("ยังไม่มีใครติดห้องคำสาป/กับดัก");return;}const box=document.createElement("div");box.innerHTML=`<p class="muted">เลือกตัวเองหรือเพื่อนที่ติดคำสาป/กับดัก • ปลดฟรีทั่วกระดาน</p>`;targets.forEach(x=>{const b=document.createElement("button");b.className="modal-option";b.innerHTML=`<b>${x.id===myId()?"ตัวเอง · ":""}${x.name}</b><span>${roomAt(x.pos)?.name||""}</span>`;b.onclick=()=>{socket.emit("skill",{targetId:x.id});closeModal()};box.appendChild(b)});openModal("Skill — หมอธรรม",box);return;
+    const targets=state.players.filter(x=>!x.dead&&["คำสาป","กับดัก"].includes(roomAt(x.pos)?.type));if(!targets.length){toast("ยังไม่มีใครติดห้องคำสาป/กับดัก");return;}const box=document.createElement("div");box.innerHTML=`<p class="muted">เลือกตัวเองหรือเพื่อนที่ติดคำสาป/กับดัก • ใช้ 3 ธูป ช่วยทั่วกระดาน • ผู้ถูกช่วยทอยและเดินหนีทันที</p>`;targets.forEach(x=>{const b=document.createElement("button");b.className="modal-option";b.innerHTML=`<b>${x.id===myId()?"ตัวเอง · ":""}${x.name}</b><span>${roomAt(x.pos)?.name||""}</span>`;b.onclick=()=>{socket.emit("skill",{targetId:x.id});closeModal()};box.appendChild(b)});openModal("Skill — หมอธรรม",box);return;
   }
   if(t==="peek_four_choose_two"){
     socket.emit("skill",{side:"top"});return;
@@ -891,15 +896,16 @@ function renderGame(){
   $("#board").innerHTML="";
   for(let i=0;i<9;i++){
     const r=roomAt(i),b=document.createElement("button");
-    const style=r.boss?"boss":(r.type==="คำสาป"?"curse":(r.type==="กับดัก"?"trap":(r.type==="ปลอดภัย"||r.type==="ธรรมดา"?"safe":"mystery")));
+    const style=r.boss?"boss":r.type==="คำสาป"?"curse":r.type==="กับดัก"?"trap":r.sac?"mystery":"safe";
     b.className=`room room-${style} ${r.boss?"boss":""}`;
     b.dataset.roomIndex=String(i);
-    if(g.sanityDecision){
+    if(g.rescue){b.classList.add((g.rescue.legal||[]).includes(i)?"legal":"illegal");}
+    else if(g.sanityDecision){
       const allowed=(g.movementPreview?.legal||[]).includes(i);b.classList.add(allowed?"legal":"illegal");
     }else if(g.mustMove||g.moveOptional)b.classList.add(g.legal.includes(i)?"legal":"illegal");
     const pawns=state.players.map(p=>p.pos===i?pawnMarkup(p):"").join("");
     b.innerHTML=`<div class="room-top"><div><b>${r.boss?"👻 ":""}${r.name}</b><small>${r.type}</small></div><span class="fear-badge">${r.fear}</span></div><div class="room-art">${artMarkup(r.art,"room-art-img",r.name)|| (r.boss?"BOSS":"ROOM")}</div><div class="room-bottom">${r.effectText?`<span>${r.effectText.split("•")[0]}</span>`:"<span>คลิกเพื่อดู Effect</span>"}<div class="pawns">${pawns}</div></div>`;
-    b.onclick=()=>{
+    b.onclick=()=>{if(g.rescue){if(g.rescue.playerId===myId()&&g.rescue.phase==="move"&&!g.curseResolving&&!g.pendingRoomEffect&&!diceAnimating&&!movingSeats.size)socket.emit("rescueMove",{index:i});return;}
       if(isMyTurn()&&!g.sanityDecision&&(g.mustMove||g.moveOptional)&&g.legal.includes(i)&&!g.curseResolving&&!eventRevealOpen&&!movingSeats.size) socket.emit("move",{index:i});
       else openRoomInfo(r,i);
     };
@@ -940,19 +946,19 @@ function renderGame(){
   if($("#amuDeckCount"))$("#amuDeckCount").textContent=`จั่ว ${g.amuDeckCount??g.deckCounts?.amuletDraw??0} • ทิ้ง ${g.amuDiscardCount??g.deckCounts?.amuletDiscard??0}`;
   if($("#sacDeckCount"))$("#sacDeckCount").textContent=`เหลือ ${g.sacDeckCount??g.deckCounts?.sacrificeDraw??0} ใบ`;
   renderPrivate();
-  window.renderDashboard?.();
+
 
   const pendingMine=!!(g.pendingRoomEffect && g.pendingRoomEffect.playerId===myId());
   const ritualLocked=!!g.pendingRitual;
   const deadSelfRevive=isMyTurn()&&mp?.dead&&mine?.char?.skillType==="self_revive";
-  const canAct=isMyTurn()&&(!mp?.dead||deadSelfRevive)&&!pendingMine&&!ritualLocked&&!g.curseResolving&&!eventRevealOpen&&!turnTransitionActive&&!diceAnimating&&!movingSeats.size;
+  const canAct=!g.rescue&&isMyTurn()&&(!mp?.dead||deadSelfRevive)&&!g.pendingRoomEffect&&!ritualLocked&&!g.curseResolving&&!eventRevealOpen&&!turnTransitionActive&&!diceAnimating&&!movingSeats.size;
   $("#finishSanityBtn").style.display=(isMyTurn()&&g.sanityDecision)?"inline-block":"none";
   $("#finishSanityBtn").disabled=!isMyTurn()||!g.sanityDecision;
   $("#stayBtn").style.display=g.moveOptional?"inline-block":"none";
   $("#stayBtn").disabled=!canAct||!g.moveOptional;
   $("#escapeBtn").style.display=g.escapeRequired?"inline-block":"none";
   $("#escapeBtn").disabled=!canAct||!g.escapeRequired||g.actions<1;
-  $("#rollBtn").disabled=!canAct||g.escapeRequired||g.rolled;
+  $("#rollBtn").disabled=g.rescue?!(g.rescue.playerId===myId()&&g.rescue.phase==="roll"&&!g.curseResolving&&!g.pendingRoomEffect&&!diceAnimating&&!turnTransitionActive):(!canAct||g.escapeRequired||g.rolled);
   $("#drawAmu").disabled=!canAct||!g.moved||g.actions<1;
   const myRoom=mp?.pos!=null?roomAt(mp.pos):null;
   const sacLimited=(state.settings?.sacrificeDraw||"onePerTurn")==="onePerTurn";
@@ -969,6 +975,7 @@ function renderGame(){
   $("#tradeBtn").disabled=!canAct||!g.moved||g.actions<1||g.traded||!!state.trade||!state.players.some(p=>p.id!==myId()&&p.pos===mp?.pos&&!p.dead);
   $("#endBtn").disabled=!canAct||g.sanityDecision||g.mustMove||g.moveOptional||(g.escapeRequired&&g.actions>0);
   renderTurnGuide({ap,mp,g,myRoom,pendingMine,canAct});
+  window.renderDashboard?.();
 
   if(!tutorialShown && mine && !localStorage.getItem("bpsSeenTutorialV10")){
     tutorialShown=true;localStorage.setItem("bpsSeenTutorialV10","1");
@@ -989,7 +996,7 @@ function renderPrivate(){
   $("#equipStats").innerHTML=`<span>⚔️ ปรับเต๋าพิธี ±${eq.attack}</span><span>🛡️ กันผี ${eq.defense}</span><span>👁 Fear ${eq.fear>0?"+":""}${eq.fear}</span>${eq.lifeSteal?`<span>❤ ดูดเลือด +${eq.lifeSteal}</span>`:""}`;
   $("#equip").innerHTML="";
   for(let i=0;i<(mine.char?.slots||0);i++){
-    const c=mine.equip[i],b=document.createElement("button");b.className="equip";b.textContent=c?c.name:`Equip ${i+1}`;b.disabled=!c;if(c)b.onclick=()=>openAmuletCard(c,{equipped:true});$("#equip").appendChild(b)
+    const c=mine.equip[i],b=document.createElement("button");b.className="equip";if(c)b.innerHTML=`${artMarkup(c.art,"equip-item-art",c.name)}<span>${c.name}</span>`;else b.textContent=`Equip ${i+1}`;b.disabled=!c;if(c)b.onclick=()=>openAmuletCard(c,{equipped:true});$("#equip").appendChild(b)
   }
   $("#amuHand").innerHTML="";
   const cards=mine.amu||[],n=cards.length;
@@ -1004,6 +1011,7 @@ function renderPrivate(){
   });
   $("#sacHand").innerHTML="";
   mine.sac.forEach(c=>{const b=document.createElement("button");b.className=`game-card ${c.color}`;b.innerHTML=`<b>${c.name}</b><small>${c.group||c.color}</small><div class="art sacrifice-art">${artMarkup(c.art,"sacrifice-art-img",c.name)}</div><small>ตีผี ${c.boss} · จบเกม ${c.end>=0?"+":""}${c.end}</small>`;if(pendingHandCards.has(c.uid))b.style.visibility="hidden";b.onclick=()=>openSacrificeCard(c);$("#sacHand").appendChild(b)});
+  for(let i=mine.sac.length;i<7;i++){const empty=document.createElement("div");empty.className="sac-placeholder";empty.textContent=`SLOT ${i+1}`;$("#sacHand").appendChild(empty)}
 }
 function equipmentStatsLocal(){
   return (mine?.equip||[]).reduce((a,c)=>{a.attack+=Number(c.attackMod)||0;a.defense+=c.wardOnce?1:(Number(c.defense)||0);a.fear+=Number(c.fear)||0;a.lifeSteal+=Number(c.lifeSteal)||0;return a},{attack:0,defense:0,fear:0,lifeSteal:0});
@@ -1012,7 +1020,7 @@ function amuletTypeLabel(c){
   if(c.category)return c.category;const map={equip:"สวมใส่",spell:"คาถาอาคม",event:"เหตุการณ์",heal_self:"ช่วยเหลือ",heal_room:"ช่วยเหลือ",heal_range:"ช่วยเหลือ",revive:"ช่วยเหลือ",sanity:"เรียกสติ"};return map[c.type]||"Amulet";
 }
 function canUseAmulet(c,{equipped=false}={}){
-  const g=state?.game,mp=mePublic();if(!g||!isMyTurn()||g.curseResolving||g.pendingRoomEffect||g.pendingRitual||eventRevealOpen||turnTransitionActive||diceAnimating||movingSeats.size)return false;
+  const g=state?.game,mp=mePublic();if(!g||g.rescue||!isMyTurn()||g.curseResolving||g.pendingRoomEffect||g.pendingRitual||eventRevealOpen||turnTransitionActive||diceAnimating||movingSeats.size)return false;
   if(mp?.dead)return mine?.char?.skillType==="self_revive"?false:false;
   if(equipped)return g.moved&&g.actions>=1;
   if(c.type==="sanity")return !!g.sanityDecision&&g.actions>=1;
@@ -1117,8 +1125,9 @@ function renderTurnGuide({ap,mp,g,myRoom,pendingMine,canAct}){
     title.textContent=t;text.textContent=x;
     steps.innerHTML=["ทอย/หนี","เดิน","ใช้ธูป","ส่งเทิร์น"].map((s,i)=>`<span class="${i===activeStep?"active":i<activeStep?"done":""}">${i+1} ${s}</span>`).join("");
   };
+  if(g.rescue){const who=state.players.find(p=>p.id===g.rescue.playerId)?.name||"ผู้ถูกช่วย";set(g.rescue.playerId===myId()?"หมอธรรมช่วยแล้ว — เดินหนีทันที":`รอ ${who} เดินหนี`,g.rescue.phase==="roll"?"ผู้ถูกช่วยกดทอยเดิน ไม่เสียธูปและไม่ใช้เทิร์นปกติ":"เลือกห้องที่ไฮไลท์ รับประกันออกได้อย่างน้อย 1 ห้องติดกัน",1);return}
   if(!isMyTurn()){set(`รอ ${ap?.name||"เพื่อน"}`,`ตอนนี้เป็นเทิร์นของ ${ap?.name||"ผู้เล่นอื่น"} ดูแผนที่และวางแผนการ์ดของเราไว้ก่อนได้`,0);return}
-  if(mp?.dead&&mine?.char?.skillType==="self_revive"){set("พ่อไกรยังกลับมาได้","HP 0 แต่สกิลพ่อไกรใช้ได้ตอนตาย • กด Skill 3🕯 เพื่อฟื้น HP +3",2);return}
+  if(mp?.dead&&mine?.char?.skillType==="self_revive"){set("พ่อไกรยังกลับมาได้","HP 0 แต่สกิลพ่อไกรใช้ได้ตอนตาย • กด Skill 3🕯 เพื่อฟื้น HP +2",2);return}
   if(mp?.dead){set("รอการชุบชีวิต","HP ของคุณเป็น 0 ผู้เล่นคนอื่นต้องใช้การ์ดที่ชุบชีวิตได้",0);return}
   if(pendingMine){set("Resolve Room Effect ก่อน","Effect ของห้องยังทำงานไม่เสร็จ เลือกการ์ด/ผลลัพธ์ในหน้าต่างที่เปิดอยู่",2);return}
   if(g.pendingRitual){set("กำลังเทียบผลพิธี",g.pendingRitual.playerId===myId()?`เต๋าดิบ ${g.pendingRitual.dice.total} • ของสวมใส่ปรับได้ ±${g.pendingRitual.attackMax} • เลือก Modifier แล้ว Confirm`:`รอ ${g.pendingRitual.playerName} เลือก Modifier`,2);return}

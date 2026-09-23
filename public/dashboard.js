@@ -3,7 +3,7 @@
  const q=s=>document.querySelector(s),make=(tag,cls,html='')=>{const e=document.createElement(tag);e.className=cls;e.innerHTML=html;return e};
  const hud=q('#game .hud'),table=q('#game .table'),left=q('#game .rail'),center=q('#game .board-zone'),right=q('#game .boss-column');
  hud.className='bps-header';table.className='bps-table';left.className='bps-party';center.className='bps-center';right.className='bps-spirit';
- hud.prepend(make('div','bps-brand','<b>บ้านผีสิง</b><small>v1.12.0</small>'));
+ hud.prepend(make('div','bps-brand','<b>บ้านผีสิง</b><small>v1.13.0</small>'));
  const online=make('span','bps-online');online.id='onlineCount';hud.insertBefore(online,q('#connectionState'));
  const settings=make('button','','⚙');settings.title='ตั้งค่าเสียง';settings.setAttribute('aria-label','ตั้งค่าเสียง');settings.onclick=()=>q('#settingsBtn').click();hud.insertBefore(settings,q('#gameLeaveBtn'));
  const profile=make('button','bps-profile','โปรไฟล์');profile.onclick=()=>q('#accountChip').click();hud.insertBefore(profile,settings);
@@ -25,8 +25,7 @@
  personal.className='bps-personal';q('#characterCard').className='bps-character';const name=make('b','bps-my-name');name.id='personalName';q('#characterCard').prepend(name);
  q('.inventory').className='bps-inventory';const stats=make('div','bps-stats');[...hud.querySelectorAll('.hud-stat')].forEach(e=>stats.append(e));personal.append(stats);
  const dialog=(title,id)=>{const d=make('dialog','bps-dialog',`<header><h2>${title}</h2><button aria-label="ปิด">✕</button></header>`);d.id=id;document.body.append(d);d.querySelector('button').onclick=()=>d.close();return d};
- const offerings=dialog('กระเป๋าเครื่องเซ่น','offeringsDialog');offerings.append(q('.hand-title'),q('#sacHand'));q('#sacHand').addEventListener('click',e=>{if(e.target.closest('.game-card'))offerings.close()},true);
- const bag=make('button','bps-bag','<span>◆</span><b>เครื่องเซ่น</b><small id="offeringCount">0/7</small>');bag.id='offeringsBtn';bag.onclick=()=>offerings.showModal();hand.append(bag);
+ 
  actions.className='bps-actions';const cluster=q('.action-cluster');cluster.className='bps-action-grid';const walk=q('#rollBtn');cluster.prepend(walk);
  const search=make('div','bps-search');q('#drawAmu').before(search);search.append(q('#drawAmu'),q('#drawSac'));
  const labels=[['rollBtn','➤','เดิน','ทอยฟรี'],['drawAmu','✦','จั่ว Amulet','1 AP'],['drawSac','◆','จั่วเครื่องเซ่น','1 AP'],['tradeBtn','⇄','แลกเปลี่ยน','1 AP'],['ritualBtn','♧','ทำพิธี','2 AP'],['skillBtn','✧','สกิลพิเศษ','3 AP']];
@@ -35,8 +34,25 @@
  const ap=make('div','bps-ap','ธูปของเทิร์นนี้ <b id="actionPips"></b>');actions.prepend(ap);
  const discardDialog=dialog('กองทิ้ง Amulet','discardDialog'),gallery=make('div','bps-gallery');discardDialog.append(gallery);
  discard.onclick=()=>{gallery.replaceChildren();(state?.game?.amuletDiscard||[]).forEach(c=>{const card=make('article','');if(c.art){const img=document.createElement('img');img.src=c.art;img.alt=c.name;card.append(img)}const n=make('b',''),d=make('p','');n.textContent=c.name;d.textContent=[c.condition,c.desc||c.effect].filter(Boolean).join(' · ');card.append(n,d);gallery.append(card)});if(!gallery.children.length)gallery.textContent='ยังไม่มีการ์ดในกองทิ้ง';discardDialog.showModal()};
- window.renderDashboard=()=>{if(!state?.game)return;const g=state.game;q('#personalName').textContent=mine?.name||'';q('#onlineCount').textContent=`● ออนไลน์ ${state.players.filter(p=>p.connected).length}/${state.players.length}`;q('#matchRound').textContent=g.round||1;q('#storyName').textContent=g.ghost?.name||'';q('#discardCount').textContent=`${g.amuDiscardCount||0} ใบ`;q('#amuDeckCount').textContent=`${g.amuDeckCount||0} ใบ`;q('#offeringCount').textContent=`${mine?.sac?.length||0}/7`;q('#actionPips').textContent=`${g.actions}/3  ${'●'.repeat(Math.max(0,Math.min(3,g.actions)))}${'○'.repeat(Math.max(0,3-g.actions))}`;
- q('#playerList').querySelectorAll('.player-row').forEach((row,i)=>{const p=state.players[i];if(p?.char?.art){const img=document.createElement('img');img.src=p.char.art;img.alt=p.char.name;img.className='bps-party-art';row.prepend(img)}});for(let i=state.players.length;i<6;i++)q('#playerList').append(make('div','bps-empty',`P${i+1} · ที่นั่งว่าง`));updateElapsed()};
+
+ // v1.13 inventory-first layout: personal card is always the local player.
+ const profileCard=make('section','bps-own-profile');profileCard.id='ownProfile';profileCard.append(q('#characterCard'),q('.inventory-head'));top.firstElementChild.remove();top.prepend(profileCard);
+ const timer=make('b','bps-countdown','2:00');timer.id='turnCountdown';q('.turn-title').append(timer);
+ const guide=q('#turnGuide');left.querySelector('.panel').after(guide);
+ const oldLog=q('.log-panel'),logs=make('details','bps-log');logs.innerHTML='<summary>GAME LOG <span>เปิดดูเหตุการณ์</span></summary>';logs.append(q('#log'));oldLog.replaceWith(logs);
+ const rules=make('details','bps-rules');rules.innerHTML='<summary>สัญลักษณ์และเงื่อนไขพิธีกรรม</summary>';q('#ghostRules').before(rules);rules.append(q('#ghostRules'),q('#bossHelpBtn'));
+ // Move actual draw buttons onto decks; animation source .deck-card stays correct.
+ [q('#drawAmu'),q('#drawSac')].forEach((b,i)=>{b.className='deck-card bps-draw-deck';b.replaceChildren(...piles[i].childNodes);const cost=make('small','','จั่ว · 1 ธูป');b.append(cost);piles[i].replaceWith(b)});search.remove();
+ shell.append(actions);actions.classList.add('bps-action-rail');ap.remove();
+ const offerings=make('section','bps-offering-zone');offerings.innerHTML='<h3>กระเป๋าเครื่องเซ่น</h3>';offerings.append(q('.hand-title'),q('#sacHand'));
+ const equipment=make('section','bps-equip-zone');equipment.innerHTML='<h3>กระเป๋าสวมใส่</h3>';equipment.append(q('.equip-row'));
+ const status=make('section','bps-status-zone');status.innerHTML='<h3>สถานะของฉัน</h3>';status.append(stats);
+ footer.replaceChildren(offerings,hand,equipment,status);personal.remove();
+ const icons={hp:['#ee7580','M12 20 3 11C-1 5 7 1 12 7C17 1 25 5 21 11Z'],actions:['#e2b45e','M6 21V8M12 21V5M18 21V8M4 23H20M6 3V1M12 2V0M18 3V1'],score:['#dfbd62','M12 2V22M17 6H9A4 4 0 0 0 9 14H15A4 4 0 0 1 15 22H6'],supportScore:['#bb96d5','M12 20 3 11C-1 5 7 1 12 7C17 1 25 5 21 11Z'],sanity:['#80b6c6','M8 20C2 20 1 12 5 10C2 4 8 1 12 5C16 1 22 4 19 10C23 12 22 20 16 20M12 5V22M6 12H10M14 16H19']};
+ for(const [id,[color,d]] of Object.entries(icons)){const stat=q('#'+id).parentElement;if(stat.firstChild.nodeType===3)stat.firstChild.textContent='';const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('width','14');icon.setAttribute('height','14');icon.setAttribute('aria-hidden','true');icon.innerHTML=`<path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;stat.prepend(icon);}
+
+ window.renderDashboard=()=>{if(!state?.game)return;const g=state.game;q('#personalName').textContent=`${playerMeta(mePublic()||mine).label} · ${mine?.name||''}`;q('#ownProfile').style.setProperty('--my-color',`var(--p${playerSeat(mePublic()||mine)})`);q('#onlineCount').textContent=`● ออนไลน์ ${state.players.filter(p=>p.connected).length}/${state.players.length}`;q('#matchRound').textContent=g.round||1;q('#storyName').textContent=g.ghost?.name||'';q('#discardCount').textContent=`${g.amuDiscardCount||0} ใบ`;q('#amuDeckCount').textContent=`${g.amuDeckCount||0} ใบ`;/* moved to local status */const unusedPips=`${g.actions}/3  ${'●'.repeat(Math.max(0,Math.min(3,g.actions)))}${'○'.repeat(Math.max(0,3-g.actions))}`;
+ q('#playerList').querySelectorAll('.player-row').forEach((row,i)=>{const p=state.players[i];if(p?.char?.art){const img=document.createElement('img');img.src=p.char.art;img.alt=p.char.name;img.className='bps-party-art';row.prepend(img)}});for(let i=state.players.length;i<6;i++)q('#playerList').append(make('div','bps-empty',`P${i+1} · ที่นั่งว่าง`));q('#actions').textContent=isMyTurn()?g.actions:'—';q('#sanity').textContent=g.rescue?.playerId===myId()?g.rescue.sanity:(isMyTurn()?(g.sanity??'—'):'—');[q('#drawAmu'),q('#drawSac')].forEach(b=>b.classList.toggle('draw-ready',!b.disabled));updateElapsed()};
  function updateElapsed(){if(state?.phase!=='game')return;const s=Math.floor(Math.max(0,(serverClock.now()||0)-(state.game.startedAt||serverClock.now()||0))/1000);q('#matchElapsed').textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
  setInterval(updateElapsed,1000);window.addEventListener('resize',()=>{if(state?.phase==='game')renderPrivate()});
 })();
