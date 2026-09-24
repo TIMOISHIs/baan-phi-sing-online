@@ -15,7 +15,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.13.0",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.14.0",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -2032,4 +2032,4 @@ setInterval(()=>{
   for(const room of rooms.values())if(room.accountSaveFailed&&!room.accountResultQueued)saveAccountResult(room);
 },60000).unref();
 
-server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.13.0 listening on :${PORT}`));
+server.listen(PORT, "0.0.0.0", ()=>console.log(`บ้านผีสิง V1.14.0 listening on :${PORT}`));

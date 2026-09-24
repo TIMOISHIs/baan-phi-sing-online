@@ -1,6 +1,6 @@
 {
-  "name": "baan-phi-sing-v1-13-0-playtest",
-  "version": "1.13.0",
+  "name": "baan-phi-sing-v1-14-0-playtest",
+  "version": "1.14.0",
   "private": true,
   "type": "commonjs",
   "scripts": {
@@ -9,7 +9,7 @@
     "smoke": "npm test",
     "smoke:legacy": "node smoke-test.js",
     "test:static": "node v18-static-integration-test.cjs",
-    "test": "node v18-regression-test.cjs && node v185-regression-test.cjs && node v185-client-test.cjs && node v186-regression-test.cjs && node v186-client-test.cjs && node v190-regression-test.cjs && node v190-client-test.cjs && node v110-account-test.cjs && node duplicate-characters-test.cjs && node balance-integration-test.cjs && node shop-catalog-test.cjs && node shop-sql-test.cjs && node shop-account-test.cjs && node shop-dom-test.cjs && node v112-test.cjs && node v113-test.cjs"
+    "test": "node v18-regression-test.cjs && node v185-regression-test.cjs && node v185-client-test.cjs && node v186-regression-test.cjs && node v186-client-test.cjs && node v190-regression-test.cjs && node v190-client-test.cjs && node v110-account-test.cjs && node duplicate-characters-test.cjs && node balance-integration-test.cjs && node shop-catalog-test.cjs && node shop-sql-test.cjs && node shop-account-test.cjs && node shop-dom-test.cjs && node v112-test.cjs && node v113-test.cjs && node friends-test.cjs && node friends-sql-test.cjs && node friends-ui-test.cjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -1222,3 +1222,29 @@ body:before{
 .account-chip{position:fixed;top:8px;left:12px;z-index:24;display:flex;align-items:center;gap:8px;background:#101c17ed;color:#dfd1ae;border:1px solid #806e49;border-radius:12px;padding:5px 11px}.account-chip img{width:28px;height:34px;object-fit:cover;object-position:top;border-radius:5px}.account-chip b{color:#c6a368}.account-chip span{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}body:has(#home.active) .account-chip{display:none}.has-account #game,.has-account #lobby,.has-account #result{padding-top:58px}
 .profile-editor{background:#111d17;color:#eee1c7;border:1px solid #9d875a;border-radius:20px;width:min(540px,90vw);max-height:90dvh;overflow:auto;padding:26px}.profile-editor::backdrop{background:#020906dc}.profile-editor h2{font-size:28px;margin:8px 0}.profile-editor p{color:#b0bba7}.profile-editor input{box-sizing:border-box}.profile-editor fieldset{border:0;padding:16px 0}.avatar-options{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.avatar-options label{position:relative;cursor:pointer;text-align:center}.avatar-options img{width:100%;height:110px;object-fit:cover;object-position:top;border:2px solid transparent;border-radius:10px;box-sizing:border-box}.avatar-options input{position:absolute;top:4px;left:4px;width:auto}.avatar-options input:checked+img{border-color:#d3b571;box-shadow:0 0 16px #c2a56855}.avatar-options span{display:block;font-size:11px}.profile-editor #profileError{color:#ffad9c}
 @media(max-width:620px){.account-home{padding:20px 16px}.lobby-topbar{align-items:start;padding-right:40px}.lobby-topbar nav{flex-wrap:wrap;justify-content:end}.lobby-topbar button{font-size:11px;padding:7px}.account-home .hero{padding-top:35px}.account-home .join-grid{grid-template-columns:1fr}.account-profile{padding:12px}.account-home .card-panel{padding:20px}.avatar-options img{height:88px}.lobby-footer{align-items:start}.account-chip{max-width:75vw;font-size:12px}.account-home .hero h1{font-size:58px}}
+
+/* v1.14.0 friends: authenticated Lobby shortcuts and private friend manager. */
+.lobby-footer .lobby-nav{display:none;align-items:center;gap:8px;flex-wrap:wrap}
+.has-account #home .lobby-footer .lobby-nav{display:flex}
+.lobby-nav .shop-button{position:relative;padding:10px 15px;font-size:12px;min-height:48px}
+.lobby-nav .shop-button>span{font-size:21px}
+.lobby-nav .shop-button small{font-size:10px}
+.friend-notice{position:absolute;top:-6px;right:-5px;min-width:19px;height:19px;border-radius:50%;display:grid;place-items:center;background:#aa4f3e;color:#fff;font-size:10px}
+.friends-dialog{width:min(760px,94vw);max-height:min(86dvh,820px);overflow:auto;padding:22px;background:linear-gradient(150deg,#15231b,#101411);color:#eee9df;border:1px solid #796644;border-radius:18px;box-shadow:0 25px 80px #000b}
+.friends-dialog::backdrop{background:#020705d9;backdrop-filter:blur(4px)}
+.friends-heading{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #56604b;padding-bottom:12px}
+.friends-heading small,.friend-code-row small{color:#bca36b;letter-spacing:.1em;font-size:10px}
+.friends-heading h2{margin:2px 0;font-size:27px}
+.friends-heading>button{border:1px solid #555c4d;background:#202820;border-radius:9px;padding:8px 12px;color:#eee}
+.friend-code-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:14px 0;padding:10px 12px;border:1px solid #565b48;border-radius:10px;background:#0c130f}
+.friend-code-row span{min-width:0}.friend-code-row small{display:block}.friend-code-row code{font-size:11px;color:#e4d6b2;overflow-wrap:anywhere}
+.friend-search label{margin:12px 0 5px;color:#c5bea9}.friend-search>div{display:flex;gap:8px}.friend-search input{margin:0;min-width:0}.friend-search button{flex:none}
+.friends-feedback{min-height:20px;color:#cdbb8d;font-size:12px}
+.friends-sections{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.friends-sections>section{min-width:0;padding:11px;border:1px solid #383f34;border-radius:12px;background:#0d120fe0}
+.friends-sections>section:last-child{grid-column:1/-1}
+.friends-sections h3{display:flex;align-items:center;gap:7px;margin:0 0 8px;font-size:14px;color:#e0d1aa}
+.friends-sections h3 span{display:grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border-radius:20px;background:#374134;font-size:10px}
+.friend-list{display:grid;gap:7px}.friend-card{display:flex;align-items:center;gap:9px;min-width:0;padding:8px;border:1px solid #30382f;border-radius:9px;background:#141a15}.friend-avatar{flex:0 0 40px;width:40px;height:44px;object-fit:cover;object-position:top;border-radius:6px;background:#252c25}.friend-details{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.friend-details b{font-size:12px}.friend-details small{font-size:9px;color:#999e90;overflow:hidden;text-overflow:ellipsis}.friend-presence{font-size:10px;color:#a6a396}.friend-presence:before{content:"";display:inline-block;width:7px;height:7px;margin-right:5px;border-radius:50%;background:#777}.friend-presence.is-online{color:#8bd2a2}.friend-presence.is-online:before{background:#64cf8c;box-shadow:0 0 7px #64cf8c88}
+.friend-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.friend-actions button{padding:6px 8px;font-size:10px;border-radius:7px;white-space:nowrap}.friend-actions button:disabled{opacity:.55}.friend-empty{padding:8px;color:#899083;font-size:11px}
+@media(max-width:620px){.lobby-footer{flex-direction:column}.lobby-footer .lobby-nav{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.lobby-nav .shop-button{justify-content:center;padding:9px 5px}.friends-dialog{padding:15px}.friends-sections{grid-template-columns:1fr}.friends-sections>section:last-child{grid-column:auto}.friend-card{flex-wrap:wrap}.friend-actions{width:100%;justify-content:flex-end}.friend-search>div{align-items:stretch}.friend-search button{padding:9px}}

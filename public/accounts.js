@@ -1,6 +1,6 @@
 /* Account UI uses server-owned HttpOnly cookies; no access tokens in browser storage. */
 (()=>{
- const q=s=>document.querySelector(s);let config,profile,busy=false,stopped=false;
+ const q=s=>document.querySelector(s);let config,profile,busy=false,stopped=false,friendData={friends:[],incoming:[],sent:[]},friendBusy=false;
  const status=t=>q('#accountStatus').textContent=t;
  async function api(url,body){const r=await fetch(url,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined,credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Object.assign(Error(data.error||'เชื่อมต่อไม่ได้'),{status:r.status});return data}
  function paint(){
@@ -42,6 +42,39 @@
   const box=document.createElement('div'),summary=document.createElement('p');summary.textContent=`เล่นจบ ${profile.games_played} เกม · อันดับ 1 ${profile.wins} ครั้ง · อัตราอันดับ 1 ${profile.games_played?Math.round(100*profile.wins/profile.games_played):0}%`;box.append(summary);
   try{const data=await api('/api/account/history');if(!data.matches.length){const p=document.createElement('p');p.textContent='ยังไม่มีผลการแข่งขัน เริ่มพิธีแรกของคุณได้เลย';box.append(p)}for(const m of data.matches){const row=document.createElement('p');row.textContent=`${new Date(m.created_at).toLocaleDateString('th-TH')} · อันดับ ${m.rank} · ${m.score} คะแนน · +${m.xp} EXP`;box.append(row)}openModal('สถิติของ '+profile.display_name,box)}catch(e){toast(e.message)}
  }
+ async function friendApi(url,method='GET',body){const r=await fetch(url,{method,headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined,credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Object.assign(Error(data.error||'เชื่อมต่อไม่ได้'),{status:r.status});return data}
+ function friendCard(item,{online=false,controls=[]}={}){
+  const row=document.createElement('article');row.className='friend-card';
+  const avatar=document.createElement('img');avatar.className='friend-avatar';avatar.src=item.avatar||'';avatar.alt='';
+  const details=document.createElement('div');details.className='friend-details';const name=document.createElement('b');name.textContent=item.displayName;details.append(name);
+  const sub=document.createElement('small');sub.textContent=item.id;details.append(sub);
+  if(online){const presence=document.createElement('span');presence.className='friend-presence '+(item.online?'is-online':'');presence.textContent=item.online?'ออนไลน์':'ออฟไลน์';details.append(presence)}
+  row.append(avatar,details);const actions=document.createElement('div');actions.className='friend-actions';for(const {label,run,primary=false}of controls){const b=document.createElement('button');b.type='button';b.textContent=label;b.className=primary?'primary':'secondary';b.onclick=run;actions.append(b)}if(controls.length)row.append(actions);return row
+ }
+ function fillFriendSection(selector,items,empty,make){const box=q(selector);box.replaceChildren();if(!items.length){const p=document.createElement('small');p.className='friend-empty';p.textContent=empty;box.append(p);return}for(const item of items)box.append(make(item))}
+ function renderFriends(){
+  q('#friendCode').textContent=profile?.id||'—';q('#friendCount').textContent=friendData.friends.length;q('#friendIncomingCount').textContent=friendData.incoming.length;q('#friendSentCount').textContent=friendData.sent.length;
+  q('#friendNotice').textContent=String(friendData.incoming.length);q('#friendNotice').classList.toggle('hidden',!friendData.incoming.length);
+  fillFriendSection('#friendList',friendData.friends,'ยังไม่มีเพื่อนที่เพิ่มไว้',p=>friendCard(p,{online:true}));
+  fillFriendSection('#friendIncoming',friendData.incoming,'ไม่มีคำขอใหม่',p=>friendCard(p,{controls:[{label:'ยอมรับ',primary:true,run:()=>friendAction(`/api/friends/requests/${encodeURIComponent(p.requestId)}/accept`,'POST')},{label:'ปฏิเสธ',run:()=>friendAction(`/api/friends/requests/${encodeURIComponent(p.requestId)}`,'DELETE')}]}));
+  fillFriendSection('#friendSent',friendData.sent,'ยังไม่มีคำขอที่รอตอบรับ',p=>friendCard(p,{controls:[{label:'ยกเลิก',run:()=>friendAction(`/api/friends/requests/${encodeURIComponent(p.requestId)}`,'DELETE')}]}));
+ }
+ async function loadFriends(silent=false){if(!profile)return;try{friendData=await friendApi('/api/friends');renderFriends();if(!silent)q('#friendsFeedback').textContent='สถานะออนไลน์อัปเดตอัตโนมัติ';}catch(e){if(!silent)q('#friendsFeedback').textContent=e.status===503?'ระบบเพื่อนยังไม่พร้อม กรุณาติดตั้งไฟล์ Supabase migration ก่อน':e.message}}
+ async function friendAction(url,method,body){if(friendBusy)return;friendBusy=true;try{await friendApi(url,method,body);q('#friendsFeedback').textContent='อัปเดตเพื่อนแล้ว';await loadFriends(true)}catch(e){q('#friendsFeedback').textContent=e.message}finally{friendBusy=false}}
+ async function searchFriends(query){
+  const box=q('#friendSearchResults');box.replaceChildren();if(!query.trim())return;
+  const pendingIds=new Set(friendData.sent.map(x=>x.id)),friendIds=new Set(friendData.friends.map(x=>x.id)),incomingIds=new Set(friendData.incoming.map(x=>x.id));
+  try{const {results}=await friendApi('/api/friends/search?q='+encodeURIComponent(query.trim()));
+   if(!results.length){const p=document.createElement('small');p.className='friend-empty';p.textContent='ไม่พบผู้เล่นที่ตรงกับคำค้น';box.append(p);return}
+   for(const item of results){let label='ส่งคำขอ',disabled=false;if(friendIds.has(item.id)){label='เป็นเพื่อนแล้ว';disabled=true}else if(pendingIds.has(item.id)){label='ส่งคำขอแล้ว';disabled=true}else if(incomingIds.has(item.id)){label='มีคำขอเข้ามา · ดูด้านล่าง';disabled=true}
+    const card=friendCard(item,{controls:[{label,primary:true,run:async()=>{try{await friendAction('/api/friends/requests','POST',{userId:item.id});await searchFriends(query)}catch(e){q('#friendsFeedback').textContent=e.message}},}]});const button=card.querySelector('.friend-actions button');button.disabled=disabled;box.append(card)}
+  }catch(e){q('#friendsFeedback').textContent=e.status===503?'ระบบเพื่อนยังไม่พร้อม กรุณาติดตั้งไฟล์ Supabase migration ก่อน':e.message}
+ }
+ q('#friendsBtn').onclick=async()=>{if(!profile){toast('เข้าสู่ระบบด้วย Google ก่อนเพิ่มเพื่อน');return}q('#friendsDialog').showModal();q('#friendsFeedback').textContent='กำลังโหลดรายชื่อเพื่อน…';await loadFriends();q('#friendSearchInput').focus()};
+ q('#friendsClose').onclick=()=>q('#friendsDialog').close();q('#friendsDialog').addEventListener('click',e=>{if(e.target===q('#friendsDialog'))q('#friendsDialog').close()});
+ q('#copyFriendCode').onclick=async()=>{try{await navigator.clipboard.writeText(profile.id);q('#friendsFeedback').textContent='คัดลอกรหัสผู้เล่นแล้ว'}catch{q('#friendsFeedback').textContent='เลือกและคัดลอกรหัสผู้เล่นด้วยตนเองได้'}};
+ q('#friendSearchForm').onsubmit=e=>{e.preventDefault();searchFriends(q('#friendSearchInput').value)};
+ setInterval(()=>{if(q('#friendsDialog').open)loadFriends(true)},20000);
  q('#googleSignIn').onclick=()=>{location.href='/auth/google'};
  q('#accountStats').onclick=stats;q('#accountChip').onclick=stats;q('#lobbyStatsBtn').onclick=stats;
  q('#accountEdit').onclick=editor;

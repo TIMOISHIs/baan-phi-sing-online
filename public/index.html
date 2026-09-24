@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Online Friends Build V1.12.0</title>
+<title>บ้านผีสิง — Friends Update V1.14.0</title>
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -32,13 +32,21 @@
  <fieldset><legend>เลือกรูปโปรไฟล์</legend><div id="avatarOptions" class="avatar-options"></div></fieldset>
  <p id="profileError" role="alert"></p><button id="profileSave" class="primary">บันทึกโปรไฟล์</button><button id="profileCancel" type="button" class="secondary">ยกเลิก</button></form>
 </dialog>
+<dialog id="friendsDialog" class="friends-dialog" aria-labelledby="friendsTitle">
+ <div class="friends-heading"><div><small>YOUR NIGHT WATCH</small><h2 id="friendsTitle">เพื่อน</h2></div><button id="friendsClose" type="button" aria-label="ปิดหน้าต่างเพื่อน">✕</button></div>
+ <div class="friend-code-row"><span><small>รหัสผู้เล่นของคุณ</small><code id="friendCode"></code></span><button id="copyFriendCode" type="button" class="secondary">คัดลอกรหัส</button></div>
+ <form id="friendSearchForm" class="friend-search"><label for="friendSearchInput">ค้นหาจากชื่อในเกมหรือ Player ID</label><div><input id="friendSearchInput" minlength="2" maxlength="64" autocomplete="off" placeholder="พิมพ์ชื่อหรือวางรหัสผู้เล่น"><button class="primary" type="submit">ค้นหา</button></div></form>
+ <p id="friendsFeedback" class="friends-feedback" role="status"></p>
+ <div id="friendSearchResults" class="friend-list"></div>
+ <div class="friends-sections"><section><h3>คำขอที่ได้รับ <span id="friendIncomingCount">0</span></h3><div id="friendIncoming" class="friend-list"></div></section><section><h3>ส่งคำขอแล้ว <span id="friendSentCount">0</span></h3><div id="friendSent" class="friend-list"></div></section><section><h3>เพื่อนของฉัน <span id="friendCount">0</span></h3><div id="friendList" class="friend-list"></div></section></div>
+</dialog>
 <section id="home" class="screen active account-home">
  <div class="lobby-atmosphere" aria-hidden="true"></div>
  <div class="lobby-topbar"><span class="lobby-brand">บ้านผีสิง <small>THE HAUNTED HOUSE</small></span><nav aria-label="เมนูหลัก"><button id="lobbyStatsBtn">♧ สถิติ</button><button id="lobbyRulesBtn">▤ กติกา</button><button id="lobbySoundBtn">⚙ ตั้งค่า</button></nav></div>
  <div id="accountProfile" class="account-profile hidden"><img data-account-avatar alt=""><div class="account-identity"><small>ผู้มาเยือน</small><h2 data-account-name></h2><b data-account-level></b><progress id="accountXP" value="0" max="100" aria-label="EXP ไปเลเวลถัดไป"></progress><small id="accountXPText"></small><details><summary>ข้อมูลโปรไฟล์</summary><small id="accountID"></small><p>เล่นจบ <b id="accountGames"></b> · อันดับ 1 <b id="accountWins"></b></p><button id="accountStats">ดูสถิติ</button><button id="accountEdit">แก้ไขโปรไฟล์</button><button id="accountLogout">ออกจากระบบ</button></details></div></div>
 
   <div class="hero">
-    <div class="eyebrow">ONLINE FRIENDS BUILD V1.12.0</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.14.0</div>
     <h1>บ้านผีสิง</h1>
     <p>แสงเทียนยังไม่ดับ… คืนนี้ใครจะกลับออกมา</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
@@ -58,7 +66,7 @@
       <button class="secondary">เข้าห้องเพื่อน</button>
     </form>
   </div>
-<div class="lobby-footer"><button id="shopBtn" class="shop-button"><span aria-hidden="true">♜</span> ร้านค้า <small>เร็ว ๆ นี้</small></button><span>เล่นกับเพื่อน 2–6 คน · V1.12.0</span></div>
+<div class="lobby-footer"><nav class="lobby-nav" aria-label="เมนู Lobby"><button id="shopBtn" class="shop-button"><span aria-hidden="true">♜</span> ร้านค้า <small>เร็ว ๆ นี้</small></button><button id="charactersBtn" class="shop-button"><span aria-hidden="true">♟</span> ตัวละคร</button><button id="friendsBtn" class="shop-button" type="button"><span aria-hidden="true">♧</span> เพื่อน <b id="friendNotice" class="friend-notice hidden">0</b></button></nav><span>เล่นกับเพื่อน 2–6 คน</span></div>
 </section>
 
 <section id="lobby" class="screen">
@@ -69,7 +77,7 @@
       <button id="startBtn" class="primary start-game-btn">Host เริ่มเกม</button>
       <p id="hostNote" class="muted" role="status"></p>
     </div>
-    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 6 คนใน V1.12.0</p>
+    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 6 คนใน V1.14.0</p>
     <div class="room-code-tools">
       <button id="copyCodeBtn" class="secondary">📋 Copy Room Code</button>
       <button id="lobbyHelpBtn" class="secondary">? วิธีเล่น</button>
@@ -324,12 +332,12 @@
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="/game-sync.js?v=1.13.0"></script>
-<script src="/app.js?v=1.13.0"></script>
-<script src="/dashboard.js?v=1.13.2"></script>
-<script src="/accounts.js"></script>
-<link rel="stylesheet" href="/shop.css">
-<link rel="stylesheet" href="/dashboard.css?v=1.13.2">
-<script src="/shop.js"></script>
+<script src="/game-sync.js?v=1.14.0"></script>
+<script src="/app.js?v=1.14.0"></script>
+<script src="/dashboard.js?v=1.14.0"></script>
+<script src="/accounts.js?v=1.14.0"></script>
+<link rel="stylesheet" href="/shop.css?v=1.14.0">
+<link rel="stylesheet" href="/dashboard.css?v=1.14.0">
+<script src="/shop.js?v=1.14.0"></script>
 </body>
 </html>
