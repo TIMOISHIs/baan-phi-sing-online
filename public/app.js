@@ -15,8 +15,10 @@ let ambientEnabled=localStorage.getItem("bpsAmbientV14")==="1" || localStorage.g
 let ambientVolume=Math.max(0,Math.min(3,Number(localStorage.getItem("bpsAmbientVolV14")??localStorage.getItem("bpsAmbientVolV13")??0.24)));
 const storedVolume=(key,fallback,max=3)=>{const value=Number(localStorage.getItem(key)??fallback);return Number.isFinite(value)?Math.max(0,Math.min(max,value)):fallback};
 let masterVolume=storedVolume("bpsMasterVolV185",1.5),sfxVolume=storedVolume("bpsSfxVolV185",0.8);
-let ambientTrack=localStorage.getItem("bpsAmbientTrackV14")||"haunted";
-const TRACK_NAMES={haunted:"บ้านร้าง",candle:"พิธีเทียนดับ",redrain:"คืนฝนแดง",lofi_midnight:"Lo-Fi · เที่ยงคืน",lofi_lantern:"Lo-Fi · โคมผี",lofi_rain:"Lo-Fi · ฝนหลอน"};
+const TRACK_NAMES={lofi_midnight:"Lo-Fi · เที่ยงคืน",lofi_lantern:"Lo-Fi · โคมผี",lofi_rain:"Lo-Fi · ฝนหลอน"};
+const previousAmbientTrack=localStorage.getItem("bpsAmbientTrackV14");
+let ambientTrack=TRACK_NAMES[previousAmbientTrack]?previousAmbientTrack:"lofi_midnight";
+if(ambientTrack!==previousAmbientTrack)localStorage.setItem("bpsAmbientTrackV14",ambientTrack);
 const PLAYER_META={
   1:{label:"P1",name:"แดงอิฐ"},2:{label:"P2",name:"ฟ้าน้ำมนต์"},3:{label:"P3",name:"ทองธูป"},4:{label:"P4",name:"ม่วงคุณไสย"},
   5:{label:"P5",name:"เขียวตะเคียน"},6:{label:"P6",name:"ชมพูเครื่องเซ่น"}
@@ -120,37 +122,6 @@ function tone(freq,duration=1.2,volume=0.025,type="sine",when=0,target=ambientMa
   g.gain.exponentialRampToValueAtTime(0.0001,now+duration);
   o.connect(f).connect(g).connect(target);o.start(now);o.stop(now+duration+0.05);
 }
-function loopPhrase(notes,stepMs,vol=0.022,type="triangle"){
-  let i=0;
-  const tick=()=>{
-    if(!ambientEnabled)return;
-    const n=notes[i%notes.length];i++;
-    if(n) tone(n,Math.max(.55,stepMs/1000*.82),vol,type);
-    trackTimers.push(setTimeout(tick,stepMs));
-  };
-  tick();
-}
-function addDrone(freqs,level=0.05){
-  const ctx=ensureAudio();if(!ctx||!ambientMaster)return;
-  const bus=ctx.createGain(),filter=ctx.createBiquadFilter();bus.gain.value=level;filter.type="lowpass";filter.frequency.value=220;bus.connect(filter).connect(ambientMaster);
-  trackNodes.push(bus,filter);
-  freqs.forEach((freq,i)=>{
-    const o=ctx.createOscillator(),g=ctx.createGain(),lfo=ctx.createOscillator(),lg=ctx.createGain();
-    o.type=i%2?"triangle":"sine";o.frequency.value=freq;g.gain.value=i?0.25:0.38;lfo.frequency.value=.025+i*.012;lg.gain.value=.6+i*.25;
-    lfo.connect(lg).connect(o.detune);o.connect(g).connect(bus);o.start();lfo.start();trackNodes.push(o,g,lfo,lg);
-  });
-}
-function addWind(freq=430,level=.1){
-  const ctx=ensureAudio();if(!ctx||!ambientMaster)return;
-  const src=makeNoiseSource(ctx,8),filter=ctx.createBiquadFilter(),gain=ctx.createGain();filter.type="bandpass";filter.frequency.value=freq;filter.Q.value=.45;gain.gain.value=level;
-  src.connect(filter).connect(gain).connect(ambientMaster);src.start();trackNodes.push(src,filter,gain);
-}
-function scheduleHaunt(){
-  if(!ambientEnabled||ambientTrack!=="haunted")return;
-  const choices=[174.61,196,207.65,233.08,261.63],freq=choices[Math.floor(Math.random()*choices.length)]*(Math.random()<.18?.5:1);
-  tone(freq,5+Math.random()*2,.018+Math.random()*.014,Math.random()<.5?"sine":"triangle");
-  trackTimers.push(setTimeout(scheduleHaunt,6000+Math.random()*8000));
-}
 // Original synthesized loops: one cancellable beat timer and a private audio bus per track.
 const LOFI_TRACKS={
   lofi_midnight:{bpm:74,roots:[110,87.31,98,82.41],melody:[0,null,7,3,null,10,7,null,0,null,3,7,null,2,null,7],swing:.14},
@@ -191,18 +162,7 @@ function startSelectedTrack(){
   clearTrack();
   if(!ambientEnabled)return;
   ensureAudio();
-  if(LOFI_TRACKS[ambientTrack]){startLofiTrack(ambientTrack);return;}
-  if(ambientTrack==="haunted"){
-    addDrone([43.65,65.41],.05);addWind(430,.11);scheduleHaunt();
-  }else if(ambientTrack==="candle"){
-    addDrone([55,82.41],.045);addWind(760,.045);
-    loopPhrase([220,261.63,293.66,261.63,233.08,196,220,null],1150,.025,"triangle");
-    loopPhrase([110,null,null,123.47,null,null,98,null],2300,.018,"sine");
-  }else{
-    addDrone([46.25,69.3],.05);addWind(1150,.085);
-    loopPhrase([185,220,207.65,164.81,185,246.94,220,null],820,.021,"triangle");
-    loopPhrase([92.5,null,82.41,null,103.83,null,92.5,null],1640,.02,"sine");
-  }
+  startLofiTrack(ambientTrack);
 }
 async function startAmbient(){
   const ctx=ensureAudio();if(!ctx){toast("Browser นี้ไม่รองรับ Web Audio");return;}

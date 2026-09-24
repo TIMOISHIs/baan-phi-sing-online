@@ -1,11 +1,10 @@
 'use strict';
 (()=>{
- const shopButton=document.querySelector('#shopBtn'),bag=document.createElement('button'),wallet=document.createElement('p');
+ const shopButton=document.querySelector('#shopBtn'),bag=document.createElement('button'),wallet=document.querySelector('#accountWallet');
  bag.id='bagBtn';bag.className='shop-button';bag.textContent='🎒 กระเป๋า';bag.setAttribute('aria-label','เปิดกระเป๋า');shopButton.after(bag);
- wallet.className='account-wallet';wallet.setAttribute('role','status');document.querySelector('#accountProfile').append(wallet);
  let data=null,mode='shop',category='characters',buying=false;
  async function api(path,body){const r=await fetch(path,{method:body?'POST':'GET',credentials:'same-origin',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw Error(d.error||'โหลดข้อมูลไม่ได้');return d}
- async function refresh(){data=await api('/api/account/shop');window.shopOwnership=data.enabled?data.owned:null;shopButton.textContent=data.enabled?'ร้านค้า':'ร้านค้า · เร็ว ๆ นี้';wallet.textContent=data.enabled?'เงินบาท '+data.baht.toLocaleString('th-TH')+' บาท':'ร้านค้าและกระเป๋า · เร็ว ๆ นี้';return data}
+ async function refresh(){data=await api('/api/account/shop');window.shopOwnership=data.enabled?data.owned:null;shopButton.querySelector('small').textContent=data.enabled?'':'เร็ว ๆ นี้';wallet.textContent=data.enabled?'เงินบาท '+data.baht.toLocaleString('th-TH')+' บาท':'เงินบาท — บาท';return data}
  function paint(){
   const box=document.createElement('div'),tabs=document.createElement('div'),grid=document.createElement('div');tabs.className='shop-tabs';grid.className='shop-grid';
   const balance=document.createElement('p');balance.textContent='เงินบาท '+data.baht.toLocaleString('th-TH')+' บาท';box.append(balance,tabs,grid);

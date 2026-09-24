@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Friends Update V1.14.0</title>
-<link rel="stylesheet" href="/styles.css">
+<title>บ้านผีสิง — Lobby Update V1.14.1</title>
+<link rel="stylesheet" href="/styles.css?v=1.14.1">
 </head>
 <body>
 <dialog id="logDetailDialog" class="log-detail-dialog" aria-labelledby="logDetailTitle">
@@ -42,11 +42,13 @@
 </dialog>
 <section id="home" class="screen active account-home">
  <div class="lobby-atmosphere" aria-hidden="true"></div>
- <div class="lobby-topbar"><span class="lobby-brand">บ้านผีสิง <small>THE HAUNTED HOUSE</small></span><nav aria-label="เมนูหลัก"><button id="lobbyStatsBtn">♧ สถิติ</button><button id="lobbyRulesBtn">▤ กติกา</button><button id="lobbySoundBtn">⚙ ตั้งค่า</button></nav></div>
+ <div class="lobby-smoke" aria-hidden="true"></div><div class="lobby-ghost-shadow" aria-hidden="true"></div>
+ <div class="lobby-topbar"><span class="lobby-brand">บ้านผีสิง <small>THE HAUNTED HOUSE</small></span><div class="lobby-top-actions"><div class="lobby-currencies" aria-label="สกุลเงิน"><span id="accountWallet" class="account-wallet" role="status">เงินบาท — บาท</span><span class="lobby-gold">ทอง 0 กรัม</span></div><nav aria-label="เมนูหลัก"><button id="lobbyStatsBtn">♧ สถิติ</button><button id="lobbyRulesBtn">▤ กติกา</button><button id="lobbySoundBtn">⚙ ตั้งค่า</button></nav></div></div>
+ <div class="lobby-stage">
  <div id="accountProfile" class="account-profile hidden"><img data-account-avatar alt=""><div class="account-identity"><small>ผู้มาเยือน</small><h2 data-account-name></h2><b data-account-level></b><progress id="accountXP" value="0" max="100" aria-label="EXP ไปเลเวลถัดไป"></progress><small id="accountXPText"></small><details><summary>ข้อมูลโปรไฟล์</summary><small id="accountID"></small><p>เล่นจบ <b id="accountGames"></b> · อันดับ 1 <b id="accountWins"></b></p><button id="accountStats">ดูสถิติ</button><button id="accountEdit">แก้ไขโปรไฟล์</button><button id="accountLogout">ออกจากระบบ</button></details></div></div>
-
+ <div class="lobby-primary">
   <div class="hero">
-    <div class="eyebrow">ONLINE FRIENDS BUILD V1.14.0</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.14.1</div>
     <h1>บ้านผีสิง</h1>
     <p>แสงเทียนยังไม่ดับ… คืนนี้ใครจะกลับออกมา</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
@@ -57,7 +59,7 @@
     <form id="createForm" class="card-panel">
       <small>HOST A NIGHT</small><h2>สร้างห้อง</h2>
       <label>ชื่อ<input id="createName" value="ติม" maxlength="18"></label>
-      <button class="primary">เริ่มคืนใหม่ · สร้างห้อง</button>
+      <button class="primary">เริ่มเกม · สร้างห้อง</button>
     </form>
     <form id="joinForm" class="card-panel">
       <h2>เข้าห้องเพื่อน</h2>
@@ -66,6 +68,8 @@
       <button class="secondary">เข้าห้องเพื่อน</button>
     </form>
   </div>
+ </div>
+ </div>
 <div class="lobby-footer"><nav class="lobby-nav" aria-label="เมนู Lobby"><button id="shopBtn" class="shop-button"><span aria-hidden="true">♜</span> ร้านค้า <small>เร็ว ๆ นี้</small></button><button id="charactersBtn" class="shop-button"><span aria-hidden="true">♟</span> ตัวละคร</button><button id="friendsBtn" class="shop-button" type="button"><span aria-hidden="true">♧</span> เพื่อน <b id="friendNotice" class="friend-notice hidden">0</b></button></nav><span>เล่นกับเพื่อน 2–6 คน</span></div>
 </section>
 
@@ -265,9 +269,6 @@
   <button id="ambientToggle" class="ambient-toggle">🎵 เปิดเพลง</button>
   <label class="ambient-track"><span>TRACK</span>
     <select id="ambientTrack">
-      <option value="haunted">บ้านร้าง</option>
-      <option value="candle">พิธีเทียนดับ</option>
-      <option value="redrain">คืนฝนแดง</option>
       <option value="lofi_midnight">Lo-Fi · เที่ยงคืน</option>
       <option value="lofi_lantern">Lo-Fi · โคมผี</option>
       <option value="lofi_rain">Lo-Fi · ฝนหลอน</option>
@@ -333,11 +334,11 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/game-sync.js?v=1.14.0"></script>
-<script src="/app.js?v=1.14.0"></script>
+<script src="/app.js?v=1.14.1"></script>
 <script src="/dashboard.js?v=1.14.0"></script>
 <script src="/accounts.js?v=1.14.0"></script>
-<link rel="stylesheet" href="/shop.css?v=1.14.0">
+<link rel="stylesheet" href="/shop.css?v=1.14.1">
 <link rel="stylesheet" href="/dashboard.css?v=1.14.0">
-<script src="/shop.js?v=1.14.0"></script>
+<script src="/shop.js?v=1.14.1"></script>
 </body>
 </html>
