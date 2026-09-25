@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Lobby Update V1.14.1</title>
+<title>บ้านผีสิง — Login & Room Update V1.14.2</title>
 <link rel="stylesheet" href="/styles.css?v=1.14.1">
+<link rel="stylesheet" href="/room.css?v=1.14.2">
 </head>
 <body>
 <dialog id="logDetailDialog" class="log-detail-dialog" aria-labelledby="logDetailTitle">
@@ -48,7 +49,7 @@
  <div id="accountProfile" class="account-profile hidden"><img data-account-avatar alt=""><div class="account-identity"><small>ผู้มาเยือน</small><h2 data-account-name></h2><b data-account-level></b><progress id="accountXP" value="0" max="100" aria-label="EXP ไปเลเวลถัดไป"></progress><small id="accountXPText"></small><details><summary>ข้อมูลโปรไฟล์</summary><small id="accountID"></small><p>เล่นจบ <b id="accountGames"></b> · อันดับ 1 <b id="accountWins"></b></p><button id="accountStats">ดูสถิติ</button><button id="accountEdit">แก้ไขโปรไฟล์</button><button id="accountLogout">ออกจากระบบ</button></details></div></div>
  <div class="lobby-primary">
   <div class="hero">
-    <div class="eyebrow">ONLINE FRIENDS BUILD V1.14.1</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.14.2</div>
     <h1>บ้านผีสิง</h1>
     <p>แสงเทียนยังไม่ดับ… คืนนี้ใครจะกลับออกมา</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
@@ -73,21 +74,26 @@
 <div class="lobby-footer"><nav class="lobby-nav" aria-label="เมนู Lobby"><button id="shopBtn" class="shop-button"><span aria-hidden="true">♜</span> ร้านค้า <small>เร็ว ๆ นี้</small></button><button id="charactersBtn" class="shop-button"><span aria-hidden="true">♟</span> ตัวละคร</button><button id="friendsBtn" class="shop-button" type="button"><span aria-hidden="true">♧</span> เพื่อน <b id="friendNotice" class="friend-notice hidden">0</b></button></nav><span>เล่นกับเพื่อน 2–6 คน</span></div>
 </section>
 
-<section id="lobby" class="screen">
-  <div class="lobby-wrap">
-    <div class="eyebrow">WAITING ROOM</div>
-    <h1>Room <span id="roomCode">—</span></h1>
-    <div class="lobby-start-controls">
-      <button id="startBtn" class="primary start-game-btn">Host เริ่มเกม</button>
-      <p id="hostNote" class="muted" role="status"></p>
-    </div>
-    <p class="muted">ส่งรหัสนี้ให้เพื่อนเข้าห้องได้สูงสุด 6 คนใน V1.14.0</p>
-    <div class="room-code-tools">
-      <button id="copyCodeBtn" class="secondary">📋 Copy Room Code</button>
-      <button id="lobbyHelpBtn" class="secondary">? วิธีเล่น</button>
-      <button id="lobbyLeaveBtn" class="leave-tool">↩ ออกจากห้อง</button>
-    </div>
-    <div id="lobbyPlayers" class="lobby-players"></div>
+<section id="lobby" class="screen room-screen">
+  <div class="room-shell">
+    <header class="room-header">
+      <div class="room-code-heading"><h1>Room <span id="roomCode">—</span></h1><button id="copyCodeBtn" class="secondary" aria-label="คัดลอกรหัสห้อง">คัดลอกรหัส</button></div>
+      <nav class="room-tools" aria-label="เมนูห้อง">
+        <span id="roomWallet">เงินบาท — บาท</span><span class="room-gold">ทอง 0 กรัม</span>
+        <button id="roomStatsBtn">♧ สถิติ</button><button id="lobbyHelpBtn">▤ กติกา</button><button id="roomSoundBtn">⚙ ตั้งค่า</button>
+        <button id="lobbyLeaveBtn" class="leave-tool">↩ ออกจากห้อง</button>
+      </nav>
+    </header>
+    <div id="lobbyPlayers" class="lobby-players" aria-label="ผู้เล่นในห้อง"></div>
+    <footer class="room-footer">
+      <div class="room-setup-buttons">
+        <button id="openCharacterBtn"><b>เลือกตัวละคร</b><small>เลือกหรือสุ่ม แล้วกดยืนยันตัวละคร</small></button>
+        <button id="openPlaytestBtn"><b>Playtest Settings</b><small>ตั้งค่าห้องก่อนเริ่มเกม</small></button>
+      </div>
+      <div class="room-ready-controls"><p id="hostNote" role="status"></p><button id="readyBtn" class="ready-button">เตรียมพร้อม</button><button id="startBtn" class="primary start-game-btn">เริ่มเกม</button></div>
+    </footer>
+  </div>
+  <dialog id="roomCharacterDialog" class="room-dialog" aria-label="เลือกตัวละคร"><button class="room-dialog-close" aria-label="ปิดหน้าต่างเลือกตัวละคร">✕</button>
     <div class="character-select">
       <div class="character-select-head">
         <div><h3>เลือกตัวละคร</h3><p class="muted">เลือกเองหรือสุ่มได้เรื่อย ๆ จนกว่าจะกด “ยืนยันตัวละคร”</p></div>
@@ -99,10 +105,12 @@
         <div class="character-confirm-actions">
           <button id="releaseCharBtn" class="secondary">↩ เปลี่ยนตัวละคร</button>
           <button id="confirmCharBtn" class="primary">✓ ยืนยันตัวละคร</button>
-          <button id="readyBtn" class="ready-button">Ready</button>
+
         </div>
       </div>
     </div>
+  </dialog>
+  <dialog id="roomSettingsDialog" class="room-dialog room-settings-dialog" aria-label="Playtest Settings"><button class="room-dialog-close" aria-label="ปิดหน้าต่างตั้งค่าห้อง">✕</button>
     <section id="playtestSettings" class="playtest-settings">
       <div class="settings-heading">
         <div><h3>Playtest Settings</h3><p>Host ปรับได้ก่อนกดเริ่มเกม • Recommended = ค่าเริ่มต้นที่เราล็อกไว้</p></div>
@@ -136,9 +144,7 @@
         </label>
       </div>
       <div id="settingsSummary" class="settings-summary"></div>
-    </section>
-
-  </div>
+    </section>  </dialog>
 </section>
 
 <section id="game" class="screen">
@@ -334,7 +340,7 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/game-sync.js?v=1.14.0"></script>
-<script src="/app.js?v=1.14.1"></script>
+<script src="/app.js?v=1.14.2"></script>
 <script src="/dashboard.js?v=1.14.0"></script>
 <script src="/accounts.js?v=1.14.0"></script>
 <link rel="stylesheet" href="/shop.css?v=1.14.1">

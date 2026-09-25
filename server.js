@@ -1497,9 +1497,10 @@ io.on("connection", socket=>{
   socket.on("startGame", ()=>{
     const room=rooms.get(socket.data.roomCode);
     if(!room || !checkHost(socket,room)) return;
+    if(room.phase!=="lobby")return fail(socket,"เริ่มเกมได้เฉพาะในห้องรอ");
     if(room.players.length<1) return fail(socket,"ต้องมีผู้เล่นอย่างน้อย 1 คน");
     if(room.players.some(p=>!p.socketId)) return fail(socket,"มีผู้เล่น Offline อยู่ — รอให้กลับเข้าห้องก่อนเริ่ม");
-    const pending=room.players.filter(p=>!p.characterConfirmed || !p.characterKey || !p.ready);
+    const pending=room.players.filter(p=>!p.characterConfirmed || !p.characterKey || (p.id!==room.hostId && !p.ready));
     if(pending.length) return fail(socket,`ยังเริ่มไม่ได้: ${pending.map(p=>p.name).join(", ")} ยังยืนยันตัวละคร/Ready ไม่ครบ`);
     room.phase="ghostSelect";room.ghostSelection={locked:false,selectedId:null,seq:0};addLog(room,"ทุกคนพร้อมแล้ว → เข้าสู่การสุ่มผี");emitRoom(room);
   });
