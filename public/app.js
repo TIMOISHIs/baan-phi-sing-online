@@ -411,7 +411,8 @@ $("#stayBtn").onclick=()=>socket.emit("stayInRoom");
 $("#escapeBtn").onclick=()=>socket.emit("escapeRoom");
 $("#rollBtn").onclick=()=>socket.emit(state?.game?.rescue?"rescueRoll":"roll");
 $("#rollFocusBtn").onclick=()=>{
-  if(rollRequestPending||!state?.game||!isMyTurn())return;const mode=$("#rollFocus")?.dataset.mode;rollRequestPending=true;hideRollFocus();ensureAudio();
+  if(rollRequestPending||!state?.game||(!isMyTurn()&&state.game.rescue?.playerId!==myId()))return;const mode=$("#rollFocus")?.dataset.mode;rollRequestPending=true;hideRollFocus();ensureAudio();
+  if(mode==="rescue"){socket.emit("rescueRoll");return}
   if(mode==="ritual"&&ritualRollSelection){const pick=ritualRollSelection;ritualRollSelection=null;socket.emit("ritual",{uid:pick.uid});return}
   if(mode==="escape"){socket.emit("escapeRoom");return}
   socket.emit("roll");
@@ -793,11 +794,14 @@ function armRitualRoll(card,rule){
 }
 function updateRollFocus(){
   const box=$("#rollFocus"),btn=$("#rollFocusBtn"),hint=$("#rollFocusHint"),kick=$("#rollFocusKicker"),cancel=$("#rollFocusCancel");
-  if(!box||!state||state.phase!=="game"||!mine||!isMyTurn()||turnTransitionActive||diceAnimating||rollRequestPending||!$("#modal").classList.contains("hidden")){hideRollFocus();return}
+  if(!box||!state||state.phase!=="game"||!mine||(!isMyTurn()&&state.game?.rescue?.playerId!==myId())||turnTransitionActive||diceAnimating||rollRequestPending||!$("#modal").classList.contains("hidden")){hideRollFocus();return}
   const g=state.game,mp=mePublic();
-  if(eventRevealOpen||g.curseResolving||mp?.dead||g.pendingRoomEffect||g.pendingRitual||g.sanityDecision||g.mustMove||g.moveOptional){hideRollFocus();return}
+  if(eventRevealOpen||g.curseResolving||mp?.dead||g.pendingRoomEffect||g.pendingRitual||(!g.rescue&&(g.sanityDecision||g.mustMove||g.moveOptional))){hideRollFocus();return}
   let mode=null;
-  if(ritualRollSelection){
+  if(g.rescue){
+    if(g.rescue.playerId!==myId()||g.rescue.phase!=="roll"){hideRollFocus();return}
+    mode="rescue";kick.textContent="RESCUE";btn.textContent="🎲 ทอยเดินหนี";hint.textContent="หมอธรรมช่วยปลดแล้ว • ทอยเพื่อเลือกห้อง";cancel.classList.add("hidden");box.classList.remove("ritual-armed");
+  }else if(ritualRollSelection){
     const room=mp?.pos!=null?roomAt(mp.pos):null;
     if(!g.moved||g.actions<2||!room?.boss){ritualRollSelection=null;hideRollFocus();return}
     mode="ritual";kick.textContent="RITUAL ROLL";btn.textContent=`🎲 ทอยทำพิธี`;hint.textContent=`${ritualRollSelection.name} • ต้อง ${ritualRollSelection.ruleLabel}`;cancel.classList.remove("hidden");box.classList.add("ritual-armed");
@@ -806,7 +810,7 @@ function updateRollFocus(){
   }else if(!g.rolled){
     mode="move";kick.textContent="YOUR ROLL";btn.textContent="🎲 ทอยเพื่อเดิน";hint.textContent="ทอย 2 ลูก แล้วค่อยคำนวณ Fear / สติ";cancel.classList.add("hidden");box.classList.remove("ritual-armed");
   }
-  if(!mode||mode!=="ritual"){hideRollFocus();return}
+  if(!mode){hideRollFocus();return}
   box.dataset.mode=mode;btn.disabled=false;box.classList.remove("hidden");
 }
 let lastPendingRitualId=null;
@@ -830,6 +834,8 @@ function openLogDetail(entry){
 $("#logDetailClose").onclick=()=>$("#logDetailDialog").close();
 function pawnMarkup(p){
   const seat=playerSeat(p),label=`${PLAYER_META[seat]?.label||""} · ${PLAYER_META[seat]?.name||""}`;
+  const portrait=p.char?.art;
+  if(portrait)return `<span data-pawn-seat="${seat}" class="pawn pawn-portrait ${movingSeats.has(seat)?"pawn-in-transit":""} pcolor-${seat} ${p.dead?"pawn-dead":""}" role="img" aria-label="${roomEscape(label)}" title="${roomEscape(label)}"><img src="${roomEscape(portrait)}" alt="" draggable="false"></span>`;
   return `<span data-pawn-seat="${seat}" class="pawn pawn-person ${movingSeats.has(seat)?"pawn-in-transit":""} pcolor-${seat} ${p.dead?"pawn-dead":""}" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 32 40" aria-hidden="true"><circle cx="16" cy="8" r="6"/><path d="M10 16 Q16 13 22 16 L28 28 Q29 31 25 31 H23 L25 37 H7 L9 31 H7 Q3 31 4 28Z"/></svg></span>`;
 }
 function renderGame(){
@@ -863,7 +869,7 @@ function renderGame(){
     const pawns=state.players.map(p=>p.pos===i?pawnMarkup(p):"").join("");
     b.innerHTML=`<div class="room-top"><div><b>${r.boss?"👻 ":""}${r.name}</b><small>${r.type}</small></div><span class="fear-badge">${r.fear}</span></div><div class="room-art">${artMarkup(r.art,"room-art-img",r.name)|| (r.boss?"BOSS":"ROOM")}</div><div class="room-bottom">${r.effectText?`<span>${r.effectText.split("•")[0]}</span>`:"<span>คลิกเพื่อดู Effect</span>"}<div class="pawns">${pawns}</div></div>`;
     b.onclick=()=>{if(g.rescue){if(g.rescue.playerId===myId()&&g.rescue.phase==="move"&&!g.curseResolving&&!g.pendingRoomEffect&&!diceAnimating&&!movingSeats.size)socket.emit("rescueMove",{index:i});return;}
-      if(isMyTurn()&&!g.sanityDecision&&(g.mustMove||g.moveOptional)&&g.legal.includes(i)&&!g.curseResolving&&!eventRevealOpen&&!movingSeats.size) socket.emit("move",{index:i});
+      if(isMyTurn()&&(g.sanityDecision||g.mustMove||g.moveOptional)&&(g.sanityDecision?g.movementPreview?.legal||[]:g.legal).includes(i)&&!g.curseResolving&&!g.pendingRoomEffect&&!g.pendingRitual&&!turnTransitionActive&&!diceAnimating&&!eventRevealOpen&&!movingSeats.size) socket.emit("move",{index:i});
       else openRoomInfo(r,i);
     };
     $("#board").appendChild(b);
@@ -875,8 +881,8 @@ function renderGame(){
   else if(g.pendingRitual)$("#message").textContent=g.pendingRitual.playerId===myId()?"กำลังทำพิธี — เลือก Modifier แล้วค่อยดูผล":"กำลังรอผู้เล่น Resolve พิธี";
   else if(g.escapeRequired)$("#message").textContent=`ติดอยู่ในห้องพิเศษ — ใช้ 1 ธูปทอยหนี (${g.escapeRule?.label||"ตามเงื่อนไขห้อง"})`;
   else if(!g.rolled)$("#message").textContent="ถึงเทิร์นคุณ — ทอยเต๋า 2 ลูก หรือเลือกใช้สกิลที่ใช้แทนการเดิน";
-  else if(g.sanityDecision)$("#message").textContent=`เต๋า ${g.lastDice?.total??"?"} • Fear ${g.moveFear??"?"} → สติ ${g.sanity} • ห้องกรอบเขียว ${(g.movementPreview?.legal||[]).length} ห้องเข้าได้ตอนนี้ — ปรับสติหรือยืนยันก่อนเดิน`;
-  else if(g.mustMove)$("#message").textContent=`สติ ${g.sanity} • เดินได้ไม่เกิน ${g.movementRange} ห้อง — เลือกปลายทางกรอบเขียว`;
+  else if(g.sanityDecision)$("#message").textContent=`สติ ${g.sanity} • เลือกห้องที่สว่างเพื่อเดินได้ทันที หรือใช้การ์ดสติก่อนเดิน • เข้าได้ ${(g.movementPreview?.legal||[]).length} ห้อง`;
+  else if(g.mustMove)$("#message").textContent=`สติ ${g.sanity} • เดินได้ไม่เกิน ${g.movementRange} ห้อง — เลือกปลายทางที่ไฮไลท์`;
   else if(g.moveOptional)$("#message").textContent=`สติ ${g.sanity} • เดินได้ไม่เกิน ${g.movementRange} ห้อง — เลือกปลายทาง หรืออยู่ห้องเดิม`;
   else $("#message").textContent=`ใช้ธูปได้ ${g.actions} ดอก — จั่ว / สวมใส่ / Trade / ทำพิธี / Skill`;
 
@@ -909,10 +915,11 @@ function renderGame(){
   const ritualLocked=!!g.pendingRitual;
   const deadSelfRevive=isMyTurn()&&mp?.dead&&mine?.char?.skillType==="self_revive";
   const canAct=!g.rescue&&isMyTurn()&&(!mp?.dead||deadSelfRevive)&&!g.pendingRoomEffect&&!ritualLocked&&!g.curseResolving&&!eventRevealOpen&&!turnTransitionActive&&!diceAnimating&&!movingSeats.size;
-  $("#finishSanityBtn").style.display=(isMyTurn()&&g.sanityDecision)?"inline-block":"none";
+  $("#finishSanityBtn").style.display="none";
   $("#finishSanityBtn").disabled=!isMyTurn()||!g.sanityDecision;
-  $("#stayBtn").style.display=g.moveOptional?"inline-block":"none";
-  $("#stayBtn").disabled=!canAct||!g.moveOptional;
+  const mayStay=g.moveOptional||(g.sanityDecision&&(!(g.movementPreview?.legal||[]).length||state.settings?.forcedMovement===false));
+  $("#stayBtn").style.display=mayStay?"inline-block":"none";
+  $("#stayBtn").disabled=!canAct||!mayStay;
   $("#escapeBtn").style.display=g.escapeRequired?"inline-block":"none";
   $("#escapeBtn").disabled=!canAct||!g.escapeRequired||g.actions<1;
   $("#rollBtn").disabled=g.rescue?!(g.rescue.playerId===myId()&&g.rescue.phase==="roll"&&!g.curseResolving&&!g.pendingRoomEffect&&!diceAnimating&&!turnTransitionActive):(!canAct||g.escapeRequired||g.rolled);
@@ -1089,10 +1096,10 @@ function renderTurnGuide({ap,mp,g,myRoom,pendingMine,canAct}){
   if(pendingMine){set("Resolve Room Effect ก่อน","Effect ของห้องยังทำงานไม่เสร็จ เลือกการ์ด/ผลลัพธ์ในหน้าต่างที่เปิดอยู่",2);return}
   if(g.pendingRitual){set("กำลังเทียบผลพิธี",g.pendingRitual.playerId===myId()?`เต๋าดิบ ${g.pendingRitual.dice.total} • ของสวมใส่ปรับได้ ±${g.pendingRitual.attackMax} • เลือก Modifier แล้ว Confirm`:`รอ ${g.pendingRitual.playerName} เลือก Modifier`,2);return}
   if(g.escapeRequired){set("หนีห้องก่อน",`ใช้ปุ่ม “ทอยหนีห้อง” ครั้งละ 1 ธูป • เงื่อนไข: ${g.escapeRule?.label||"ตามการ์ดห้อง"}`,0);return}
-  if(g.sanityDecision){set("จะปรับค่าสติไหม?",`สติฐาน ${g.sanityBase} • โบนัสที่ใช้แล้ว +${g.sanityBonus||0} • การ์ดเรียกสติกำลังเรืองแสง เลือกเพิ่ม/ลดตามหน้าการ์ดได้ ใบละ 1 ธูป แล้วกด “เดินต่อด้วยค่าสตินี้”`,1);return}
+  if(g.sanityDecision){set("เลือกห้องเพื่อเดิน",`สติ ${g.sanity} • กดห้องที่สว่างได้เลย หรือใช้การ์ดเพิ่ม/ลดสติก่อนเดิน ใบละ 1 ธูป แล้วห้องที่เดินได้จะอัปเดตทันที`,1);return}
   if(!g.rolled){set("ทอยเต๋าเพื่อเดิน","กดทอยเต๋า 2 ลูกก่อน หรือถ้าตัวละครมีสกิลแทนการเดินสามารถเลือกใช้สกิลได้",0);return}
-  if(g.mustMove){set("เลือกห้องกรอบเขียว",`สติ ${g.sanity} • เลือกปลายทางกรอบเขียวได้ไม่เกิน ${g.movementRange} ห้อง`,1);return}
-  if(g.moveOptional){set("เดินหรืออยู่ห้องเดิม",`สติ ${g.sanity} • เลือกห้องกรอบเขียว หรือกด “อยู่ห้องเดิม” ก่อนใช้ธูป`,1);return}
+  if(g.mustMove){set("เลือกห้องที่ไฮไลท์",`สติ ${g.sanity} • เลือกปลายทางที่ไฮไลท์ได้ไม่เกิน ${g.movementRange} ห้อง`,1);return}
+  if(g.moveOptional){set("เดินหรืออยู่ห้องเดิม",`สติ ${g.sanity} • เลือกห้องที่ไฮไลท์ หรือกด “อยู่ห้องเดิม” ก่อนใช้ธูป`,1);return}
   if(g.actions<=0){set("ธูปหมดแล้ว","ไม่มี Action เหลือ กดส่งเทิร์นให้เพื่อนได้เลย",3);return}
   if(myRoom?.boss && !(document.querySelector("#ritualBtn")?.disabled)){set("พร้อมลองปราบผี","มีเครื่องเซ่นที่ผีต้องการและธูปพอ — จะทำพิธีเลย หรือจัดของก่อนก็ได้",2);return}
   const canSacAgain=state.settings?.sacrificeDraw==="perIncense"||!g.sacDrawn;

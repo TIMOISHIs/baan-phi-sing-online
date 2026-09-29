@@ -1604,7 +1604,13 @@ io.on("connection", socket=>{
     const room=rooms.get(socket.data.roomCode); if(!room) return;
     const p=checkTurn(socket,room); if(!p) return;
     const g=room.game, i=Number(index);
-    if(g.sanityDecision || !(g.mustMove||g.moveOptional) || !g.legal.includes(i)) return fail(socket,"เดินไปห้องนี้ไม่ได้");
+    // Commit the current sanity and movement atomically when a legal room is clicked.
+    // Validate first: an invalid or stale click must not close the card window.
+    if(g.sanityDecision){
+      if(!g.rolled||g.moved||!movementOptions(room,p).legal.includes(i))return fail(socket,"เดินไปห้องนี้ไม่ได้");
+      finalizeMovementOptions(room,p);
+    }
+    if(!(g.mustMove||g.moveOptional) || !g.legal.includes(i)) return fail(socket,"เดินไปห้องนี้ไม่ได้");
     const route=movementOptions(room,p).paths[i];
     if(!route)return fail(socket,"เส้นทางนี้เดินไม่ได้แล้ว");
     g.lastMove={seq:(g.lastMove?.seq||0)+1,playerId:p.id,path:route};
@@ -1619,6 +1625,12 @@ io.on("connection", socket=>{
     const room=rooms.get(socket.data.roomCode); if(!room) return;
     const p=checkTurn(socket,room); if(!p) return;
     const g=room.game;
+    if(g.sanityDecision){
+      const options=movementOptions(room,p);
+      if(options.legal.length&&room.settings.forcedMovement)return fail(socket,"ต้องเลือกห้องที่เดินได้");
+      finalizeMovementOptions(room,p);
+      if(g.moved){addLog(room,`${p.name} อยู่ห้องเดิม เพราะไม่มีเส้นทางที่เดินได้`);emitRoom(room);return;}
+    }
     if(!g.moveOptional) return fail(socket,"ตอนนี้เลือกอยู่ห้องเดิมไม่ได้");
     g.moveOptional=false; g.moved=true; g.legal=[];
     addLog(room,`${p.name} เลือกอยู่ ${roomAt(room,p.pos).name} ต่อ (Optional Movement)`);
