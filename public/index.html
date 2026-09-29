@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>บ้านผีสิง — Login, Room & Friends Drawer V1.14.5</title>
-<link rel="stylesheet" href="/styles.css?v=1.14.5">
-<link rel="stylesheet" href="/room.css?v=1.14.5">
+<title>บ้านผีสิง — Login, Room & Friends Drawer V1.14.6</title>
+<link rel="stylesheet" href="/styles.css?v=1.14.6">
+<link rel="stylesheet" href="/room.css?v=1.14.6">
 </head>
 <body>
 <dialog id="logDetailDialog" class="log-detail-dialog" aria-labelledby="logDetailTitle">
@@ -14,9 +14,9 @@
 </dialog>
 <button id="settingsBtn" class="settings-gear" aria-label="ตั้งค่าเสียง" title="ตั้งค่าเสียง">⚙</button>
 <dialog id="soundSettings" class="sound-settings" aria-labelledby="soundSettingsTitle">
-  <div class="sound-settings-header"><h2 id="soundSettingsTitle">⚙ ตั้งค่าเสียง</h2><button id="settingsClose" aria-label="ปิดตั้งค่า">✕</button></div>
+  <div class="sound-settings-header"><h2 id="soundSettingsTitle">⚙ ตั้งค่า</h2><button id="settingsClose" aria-label="ปิดตั้งค่า">✕</button></div>
   <p>ปรับระดับเสียงได้ถึง 300% · จำค่าบนอุปกรณ์นี้</p>
-  <label for="masterVolume">เสียงรวม <output id="masterVolumeValue">150%</output></label>
+  <label for="gameFontSize">ขนาดตัวหนังสือบนกระดาน <output id="gameFontValue">100%</output></label><input id="gameFontSize" type="range" min="80" max="140" step="10" value="100"><small>ปรับเฉพาะเครื่องนี้ · ชื่อห้อง คำอธิบาย และค่า Fear</small><button id="resetGameFont" type="button">คืนขนาดปกติ</button><label for="masterVolume">เสียงรวม <output id="masterVolumeValue">150%</output></label>
   <input id="masterVolume" type="range" min="0" max="300" step="5" value="150">
   <label for="musicVolume">เพลงบรรยากาศ <output id="musicVolumeValue">24%</output></label>
   <input id="musicVolume" type="range" min="0" max="300" value="24">
@@ -47,12 +47,12 @@
 <section id="home" class="screen active account-home">
  <div class="lobby-atmosphere" aria-hidden="true"></div>
  <div class="lobby-smoke" aria-hidden="true"></div><div class="lobby-ghost-shadow" aria-hidden="true"></div>
- <div class="lobby-topbar"><span class="lobby-brand">บ้านผีสิง <small>THE HAUNTED HOUSE</small></span><div class="lobby-top-actions"><div class="lobby-currencies" aria-label="สกุลเงิน"><span id="accountWallet" class="account-wallet" role="status">เงินบาท — บาท</span><span class="lobby-gold">ทอง 0 กรัม</span></div><nav aria-label="เมนูหลัก"><button id="lobbyStatsBtn">♧ สถิติ</button><button id="lobbyRulesBtn">▤ กติกา</button><button id="lobbySoundBtn">⚙ ตั้งค่า</button></nav></div></div>
+ <div class="lobby-topbar"><span class="lobby-brand">บ้านผีสิง <small>THE HAUNTED HOUSE</small></span><div class="lobby-top-actions"><div class="lobby-currencies" aria-label="สกุลเงิน"><span id="accountWallet" class="account-wallet" role="status">เงินบาท — บาท</span><span class="lobby-gold">ทอง 0 กรัม</span></div><nav aria-label="เมนูหลัก"><button id="lobbyStatsBtn">♧ สถิติ</button><button id="lobbyRulesBtn">▤ กติกา</button><button id="lobbySoundBtn">⚙ ตั้งค่า</button><button id="lobbyLogoutBtn">ออกจากระบบ</button></nav></div></div>
  <div class="lobby-stage">
  <div id="accountProfile" class="account-profile hidden"><img data-account-avatar alt=""><div class="account-identity"><small>ผู้มาเยือน</small><h2 data-account-name></h2><b data-account-level></b><progress id="accountXP" value="0" max="100" aria-label="EXP ไปเลเวลถัดไป"></progress><small id="accountXPText"></small><details><summary>ข้อมูลโปรไฟล์</summary><small id="accountID"></small><p>เล่นจบ <b id="accountGames"></b> · อันดับ 1 <b id="accountWins"></b></p><button id="accountStats">ดูสถิติ</button><button id="accountEdit">แก้ไขโปรไฟล์</button><button id="accountLogout">ออกจากระบบ</button></details></div></div>
  <div class="lobby-primary">
   <div class="hero">
-    <div class="eyebrow">ONLINE FRIENDS BUILD V1.14.5</div>
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.14.6</div>
     <h1 class="game-logo"><img src="/assets/ui/haunted-logo.png" alt="บ้านผีสิง"></h1>
     <p>แสงเทียนยังไม่ดับ… คืนนี้ใครจะกลับออกมา</p>
     <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
@@ -343,13 +343,13 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/game-sync.js?v=1.14.0"></script>
-<script src="/app.js?v=1.14.5"></script>
+<script src="/app.js?v=1.14.6"></script>
 <script src="/dashboard.js?v=1.14.0"></script>
-<script src="/accounts.js?v=1.14.5"></script>
+<script src="/accounts.js?v=1.14.6"></script>
 <link rel="stylesheet" href="/shop.css?v=1.14.1">
 <link rel="stylesheet" href="/dashboard.css?v=1.14.0">
-<link rel="stylesheet" href="/pregame-theme.css?v=1.14.5">
+<link rel="stylesheet" href="/pregame-theme.css?v=1.14.6">
 <script src="/shop.js?v=1.14.1"></script>
-<script src="/pregame-ui.js?v=1.14.5"></script>
+<script src="/pregame-ui.js?v=1.14.6"></script>
 </body>
 </html>
