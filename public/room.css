@@ -59,3 +59,12 @@ body:has(#lobby.active) .account-chip{display:none}
 #lobby .char-pick.taken{opacity:.45}
 #lobby .char-pick:has(.char-taken-label){opacity:.45}
 #lobby .mini-char-foot p,#lobby .mini-char-foot small{color:#55584e}
+
+/* v1.14.3: make room for the persistent friends drawer without covering seats. */
+#lobby.active{transition:width .22s ease}
+.friends-drawer-open #lobby.active{width:calc(100% - min(360px,88vw))}
+#lobby #roomFriendsBtn{position:fixed;z-index:99;right:0;top:50%;transform:translateY(-50%);width:56px;height:66px;min-height:66px;padding:7px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:13px 0 0 13px;background:#14251fef;border:1px solid #aa925e;border-right:0;box-shadow:0 7px 30px #0008;font-size:11px;color:#eadbb9}
+.friends-drawer-open #lobby #roomFriendsBtn{right:min(360px,88vw)}#lobby #roomFriendsBtn .friend-notice{top:2px;right:3px}
+body.friends-drawer-open #lobby #roomFriendsBtn{display:none}
+@media(max-width:900px){.friends-drawer-open #lobby.active{width:100%}#lobby #roomFriendsBtn{top:auto;bottom:92px;transform:none}}
+@media(prefers-reduced-motion:reduce){#lobby.active{transition:none}}

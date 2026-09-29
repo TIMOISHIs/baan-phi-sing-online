@@ -53,9 +53,9 @@
  }
  function fillFriendSection(selector,items,empty,make){const box=q(selector);box.replaceChildren();if(!items.length){const p=document.createElement('small');p.className='friend-empty';p.textContent=empty;box.append(p);return}for(const item of items)box.append(make(item))}
  function renderFriends(){
-  q('#friendCode').textContent=profile?.id||'—';q('#friendCount').textContent=friendData.friends.length;q('#friendIncomingCount').textContent=friendData.incoming.length;q('#friendSentCount').textContent=friendData.sent.length;
-  q('#friendNotice').textContent=String(friendData.incoming.length);q('#friendNotice').classList.toggle('hidden',!friendData.incoming.length);
-  fillFriendSection('#friendList',friendData.friends,'ยังไม่มีเพื่อนที่เพิ่มไว้',p=>friendCard(p,{online:true}));
+  q('#friendCode').textContent=profile?.id||'—';q('#friendCount').textContent=friendData.friends.length;q('#friendOnlineCount').textContent=friendData.friends.filter(p=>p.online).length;q('#friendOfflineCount').textContent=friendData.friends.filter(p=>!p.online).length;q('#friendIncomingCount').textContent=friendData.incoming.length;q('#friendSentCount').textContent=friendData.sent.length;
+  q('#friendNotice').textContent=String(friendData.incoming.length);q('#friendNotice').classList.toggle('hidden',!friendData.incoming.length);q('#roomFriendNotice').textContent=String(friendData.incoming.length);q('#roomFriendNotice').classList.toggle('hidden',!friendData.incoming.length);
+  fillFriendSection('#friendOnlineList',friendData.friends.filter(p=>p.online),'ไม่มีเพื่อนออนไลน์',p=>friendCard(p,{online:true}));fillFriendSection('#friendOfflineList',friendData.friends.filter(p=>!p.online),'ไม่มีเพื่อนออฟไลน์',p=>friendCard(p,{online:false}));fillFriendSection('#friendList',friendData.friends,'ยังไม่มีเพื่อนที่เพิ่มไว้',p=>friendCard(p,{online:true}));
   fillFriendSection('#friendIncoming',friendData.incoming,'ไม่มีคำขอใหม่',p=>friendCard(p,{controls:[{label:'ยอมรับ',primary:true,run:()=>friendAction(`/api/friends/requests/${encodeURIComponent(p.requestId)}/accept`,'POST')},{label:'ปฏิเสธ',run:()=>friendAction(`/api/friends/requests/${encodeURIComponent(p.requestId)}`,'DELETE')}]}));
   fillFriendSection('#friendSent',friendData.sent,'ยังไม่มีคำขอที่รอตอบรับ',p=>friendCard(p,{controls:[{label:'ยกเลิก',run:()=>friendAction(`/api/friends/requests/${encodeURIComponent(p.requestId)}`,'DELETE')}]}));
  }
@@ -70,8 +70,9 @@
     const card=friendCard(item,{controls:[{label,primary:true,run:async()=>{try{await friendAction('/api/friends/requests','POST',{userId:item.id});await searchFriends(query)}catch(e){q('#friendsFeedback').textContent=e.message}},}]});const button=card.querySelector('.friend-actions button');button.disabled=disabled;box.append(card)}
   }catch(e){q('#friendsFeedback').textContent=e.status===503?'ระบบเพื่อนยังไม่พร้อม กรุณาติดตั้งไฟล์ Supabase migration ก่อน':e.message}
  }
- q('#friendsBtn').onclick=async()=>{if(!profile){toast('เข้าสู่ระบบด้วย Google ก่อนเพิ่มเพื่อน');return}q('#friendsDialog').showModal();q('#friendsFeedback').textContent='กำลังโหลดรายชื่อเพื่อน…';await loadFriends();q('#friendSearchInput').focus()};
- q('#friendsClose').onclick=()=>q('#friendsDialog').close();q('#friendsDialog').addEventListener('click',e=>{if(e.target===q('#friendsDialog'))q('#friendsDialog').close()});
+ const drawer=q('#friendsDialog');async function toggleFriends(){if(!profile){toast('เข้าสู่ระบบด้วย Google ก่อนดูเพื่อน');return}if(drawer.open){if(drawer.close)drawer.close();else drawer.removeAttribute('open');document.body.classList.remove('friends-drawer-open');return}if(drawer.show)drawer.show();else drawer.setAttribute('open','');document.body.classList.add('friends-drawer-open');q('#friendsFeedback').textContent='กำลังโหลดรายชื่อเพื่อน…';await loadFriends();}
+ q('#friendsBtn').onclick=toggleFriends;q('#roomFriendsBtn').onclick=toggleFriends;
+ q('#friendsClose').onclick=()=>{drawer.close();document.body.classList.remove('friends-drawer-open')};drawer.addEventListener('close',()=>document.body.classList.remove('friends-drawer-open'));document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drawer.open){drawer.close();document.body.classList.remove('friends-drawer-open')}});
  q('#copyFriendCode').onclick=async()=>{try{await navigator.clipboard.writeText(profile.id);q('#friendsFeedback').textContent='คัดลอกรหัสผู้เล่นแล้ว'}catch{q('#friendsFeedback').textContent='เลือกและคัดลอกรหัสผู้เล่นด้วยตนเองได้'}};
  q('#friendSearchForm').onsubmit=e=>{e.preventDefault();searchFriends(q('#friendSearchInput').value)};
  setInterval(()=>{if(q('#friendsDialog').open)loadFriends(true)},20000);
