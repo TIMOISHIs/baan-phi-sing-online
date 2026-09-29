@@ -1,0 +1,14 @@
+[
+  {
+    "path": "public/index.html",
+    "existed": true
+  },
+  {
+    "path": "public/dashboard.js",
+    "existed": true
+  },
+  {
+    "path": "public/dashboard.css",
+    "existed": true
+  }
+]

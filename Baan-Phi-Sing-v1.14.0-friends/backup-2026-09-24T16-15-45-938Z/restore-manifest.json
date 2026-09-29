@@ -1,0 +1,62 @@
+[
+  {
+    "path": "server.js",
+    "existed": true
+  },
+  {
+    "path": "package.json",
+    "existed": true
+  },
+  {
+    "path": "package-lock.json",
+    "existed": true
+  },
+  {
+    "path": "lib/accounts.cjs",
+    "existed": true
+  },
+  {
+    "path": "public/accounts.js",
+    "existed": true
+  },
+  {
+    "path": "public/index.html",
+    "existed": true
+  },
+  {
+    "path": "public/styles.css",
+    "existed": true
+  },
+  {
+    "path": "public/shop.js",
+    "existed": true
+  },
+  {
+    "path": "public/dashboard.js",
+    "existed": true
+  },
+  {
+    "path": "shop-account-test.cjs",
+    "existed": true
+  },
+  {
+    "path": "shop-dom-test.cjs",
+    "existed": true
+  },
+  {
+    "path": "friends-test.cjs",
+    "existed": false
+  },
+  {
+    "path": "friends-sql-test.cjs",
+    "existed": false
+  },
+  {
+    "path": "friends-ui-test.cjs",
+    "existed": false
+  },
+  {
+    "path": "supabase/v1.14.0-friends.sql",
+    "existed": false
+  }
+]

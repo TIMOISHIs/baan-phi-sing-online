@@ -3,7 +3,7 @@ const serverClock=GameSync.createClock(),diceGate=GameSync.createDiceGate();
 function syncClock(){const sent=performance.now();socket.emit("clockSync",reply=>serverClock.observe(reply?.serverNow,performance.now()-sent,true))}
 function receiveDice(e){if(e?.roomCode&&state?.code&&e.roomCode!==state.code)return;if(diceGate.accept(e,serverClock.now())){rollRequestPending=false;showDiceFx(e)}}
 const $=s=>document.querySelector(s);
-const show=id=>{if(id!=="lobby")document.querySelectorAll(".room-dialog[open]").forEach(d=>d.close());["home","lobby","game","result"].forEach(x=>$("#"+x).classList.toggle("active",x===id));};
+const show=id=>["home","lobby","game","result"].forEach(x=>$("#"+x).classList.toggle("active",x===id));
 const tokenKey="bpsSessionTokenV09",roomKey="bpsRoomCodeV13",legacyRoomKey="bpsRoomCodeV09";
 const makeToken=()=>globalThis.crypto?.randomUUID?.().replaceAll("-","")||`${Date.now()}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
 let sessionToken=localStorage.getItem(tokenKey)||makeToken();
@@ -15,10 +15,8 @@ let ambientEnabled=localStorage.getItem("bpsAmbientV14")==="1" || localStorage.g
 let ambientVolume=Math.max(0,Math.min(3,Number(localStorage.getItem("bpsAmbientVolV14")??localStorage.getItem("bpsAmbientVolV13")??0.24)));
 const storedVolume=(key,fallback,max=3)=>{const value=Number(localStorage.getItem(key)??fallback);return Number.isFinite(value)?Math.max(0,Math.min(max,value)):fallback};
 let masterVolume=storedVolume("bpsMasterVolV185",1.5),sfxVolume=storedVolume("bpsSfxVolV185",0.8);
-const TRACK_NAMES={lofi_midnight:"Lo-Fi · เที่ยงคืน",lofi_lantern:"Lo-Fi · โคมผี",lofi_rain:"Lo-Fi · ฝนหลอน"};
-const previousAmbientTrack=localStorage.getItem("bpsAmbientTrackV14");
-let ambientTrack=TRACK_NAMES[previousAmbientTrack]?previousAmbientTrack:"lofi_midnight";
-if(ambientTrack!==previousAmbientTrack)localStorage.setItem("bpsAmbientTrackV14",ambientTrack);
+let ambientTrack=localStorage.getItem("bpsAmbientTrackV14")||"haunted";
+const TRACK_NAMES={haunted:"บ้านร้าง",candle:"พิธีเทียนดับ",redrain:"คืนฝนแดง",lofi_midnight:"Lo-Fi · เที่ยงคืน",lofi_lantern:"Lo-Fi · โคมผี",lofi_rain:"Lo-Fi · ฝนหลอน"};
 const PLAYER_META={
   1:{label:"P1",name:"แดงอิฐ"},2:{label:"P2",name:"ฟ้าน้ำมนต์"},3:{label:"P3",name:"ทองธูป"},4:{label:"P4",name:"ม่วงคุณไสย"},
   5:{label:"P5",name:"เขียวตะเคียน"},6:{label:"P6",name:"ชมพูเครื่องเซ่น"}
@@ -122,6 +120,37 @@ function tone(freq,duration=1.2,volume=0.025,type="sine",when=0,target=ambientMa
   g.gain.exponentialRampToValueAtTime(0.0001,now+duration);
   o.connect(f).connect(g).connect(target);o.start(now);o.stop(now+duration+0.05);
 }
+function loopPhrase(notes,stepMs,vol=0.022,type="triangle"){
+  let i=0;
+  const tick=()=>{
+    if(!ambientEnabled)return;
+    const n=notes[i%notes.length];i++;
+    if(n) tone(n,Math.max(.55,stepMs/1000*.82),vol,type);
+    trackTimers.push(setTimeout(tick,stepMs));
+  };
+  tick();
+}
+function addDrone(freqs,level=0.05){
+  const ctx=ensureAudio();if(!ctx||!ambientMaster)return;
+  const bus=ctx.createGain(),filter=ctx.createBiquadFilter();bus.gain.value=level;filter.type="lowpass";filter.frequency.value=220;bus.connect(filter).connect(ambientMaster);
+  trackNodes.push(bus,filter);
+  freqs.forEach((freq,i)=>{
+    const o=ctx.createOscillator(),g=ctx.createGain(),lfo=ctx.createOscillator(),lg=ctx.createGain();
+    o.type=i%2?"triangle":"sine";o.frequency.value=freq;g.gain.value=i?0.25:0.38;lfo.frequency.value=.025+i*.012;lg.gain.value=.6+i*.25;
+    lfo.connect(lg).connect(o.detune);o.connect(g).connect(bus);o.start();lfo.start();trackNodes.push(o,g,lfo,lg);
+  });
+}
+function addWind(freq=430,level=.1){
+  const ctx=ensureAudio();if(!ctx||!ambientMaster)return;
+  const src=makeNoiseSource(ctx,8),filter=ctx.createBiquadFilter(),gain=ctx.createGain();filter.type="bandpass";filter.frequency.value=freq;filter.Q.value=.45;gain.gain.value=level;
+  src.connect(filter).connect(gain).connect(ambientMaster);src.start();trackNodes.push(src,filter,gain);
+}
+function scheduleHaunt(){
+  if(!ambientEnabled||ambientTrack!=="haunted")return;
+  const choices=[174.61,196,207.65,233.08,261.63],freq=choices[Math.floor(Math.random()*choices.length)]*(Math.random()<.18?.5:1);
+  tone(freq,5+Math.random()*2,.018+Math.random()*.014,Math.random()<.5?"sine":"triangle");
+  trackTimers.push(setTimeout(scheduleHaunt,6000+Math.random()*8000));
+}
 // Original synthesized loops: one cancellable beat timer and a private audio bus per track.
 const LOFI_TRACKS={
   lofi_midnight:{bpm:74,roots:[110,87.31,98,82.41],melody:[0,null,7,3,null,10,7,null,0,null,3,7,null,2,null,7],swing:.14},
@@ -162,7 +191,18 @@ function startSelectedTrack(){
   clearTrack();
   if(!ambientEnabled)return;
   ensureAudio();
-  startLofiTrack(ambientTrack);
+  if(LOFI_TRACKS[ambientTrack]){startLofiTrack(ambientTrack);return;}
+  if(ambientTrack==="haunted"){
+    addDrone([43.65,65.41],.05);addWind(430,.11);scheduleHaunt();
+  }else if(ambientTrack==="candle"){
+    addDrone([55,82.41],.045);addWind(760,.045);
+    loopPhrase([220,261.63,293.66,261.63,233.08,196,220,null],1150,.025,"triangle");
+    loopPhrase([110,null,null,123.47,null,null,98,null],2300,.018,"sine");
+  }else{
+    addDrone([46.25,69.3],.05);addWind(1150,.085);
+    loopPhrase([185,220,207.65,164.81,185,246.94,220,null],820,.021,"triangle");
+    loopPhrase([92.5,null,82.41,null,103.83,null,92.5,null],1640,.02,"sine");
+  }
 }
 async function startAmbient(){
   const ctx=ensureAudio();if(!ctx){toast("Browser นี้ไม่รองรับ Web Audio");return;}
@@ -195,7 +235,7 @@ function setSoundVolume(channel,value){
   else{sfxVolume=level;localStorage.setItem("bpsSfxVolV185",String(level));sfxMaster?.gain.setTargetAtTime(level,audioCtx.currentTime,.05)}
   updateAmbientUI();
 }
-function closeSoundSettings(){ $("#soundSettings").close();(document.querySelector("#lobby.active #roomSoundBtn")||document.querySelector("body.has-account #home.active #lobbySoundBtn")||$("#settingsBtn")).focus(); }
+function closeSoundSettings(){ $("#soundSettings").close();$("#settingsBtn").focus(); }
 $("#settingsBtn").onclick=()=>{ensureAudio();syncSoundSettings();$("#soundSettings").showModal()};
 $("#settingsClose").onclick=closeSoundSettings;
 $("#settingsMusicToggle").onclick=toggleAmbient;
@@ -387,7 +427,7 @@ $("#joinForm").addEventListener("submit",e=>{e.preventDefault();socket.emit("joi
 $("#startBtn").onclick=()=>socket.emit("startGame");
 $("#copyCodeBtn").onclick=async()=>{try{await navigator.clipboard.writeText(state.code);toast(`Copy ${state.code} แล้ว`)}catch{toast(`Room Code: ${state.code}`)}};
 $("#randomCharBtn").onclick=()=>runCharacterRandom();
-$("#confirmCharBtn").onclick=()=>{roomConfirmPending=true;socket.emit("confirmCharacter");};
+$("#confirmCharBtn").onclick=()=>socket.emit("confirmCharacter");
 $("#releaseCharBtn").onclick=()=>socket.emit("releaseCharacter");
 $("#readyBtn").onclick=()=>{const me=state?.players?.find(p=>p.id===myId());socket.emit("setReady",{ready:!me?.ready});};
 $("#settingDuplicates").onchange=e=>socket.emit("updateSettings",{key:"allowDuplicateCharacters",value:e.target.value});
@@ -473,7 +513,7 @@ socket.on("state",s=>{
   if(diceAnimating&&state?.phase==="game"&&s?.phase==="game"){queuedState=s;return;}
   applyIncomingState(s);
 });
-socket.on("privateState",p=>{if(diceAnimating&&state?.phase==="game"){queuedPrivateState=p;return;}const oldPreview=mine?.characterPreviewKey||null;const previousMine=mine;mine=p;queueGainedCards(previousMine,p);persistSession();render();if(state?.phase==="lobby"&&p?.characterPreviewKey&&p.characterPreviewKey!==oldPreview)playCharacterRevealSound();});
+socket.on("privateState",p=>{if(diceAnimating&&state?.phase==="game"){queuedPrivateState=p;return;}const oldPreview=mine?.characterPreviewKey||null;const previousMine=mine;mine=p;queueGainedCards(previousMine,p);persistSession();render();if(state?.phase==="lobby"&&p?.characterPreviewKey&&p.characterPreviewKey!==oldPreview)setTimeout(()=>showCharacterPreviewReveal(p.characterPreviewKey),120);});
 socket.on("chatMessage",msg=>appendChatMessage(msg));
 socket.on("ghostRandomStarted",()=>{if(state?.phase==="ghostSelect")setTimeout(runGhostCycleAnimation,80)});
 socket.on("ghostReveal",e=>{if(e?.ghost)revealFinalGhost(e.ghost)});
@@ -543,18 +583,21 @@ function runCharacterRandom(){
   charRandomAnimating=true;renderLobby();const keys=eligible.map(c=>c.key),delays=[65,65,65,65,70,70,75,75,85,95,110,125,145,170,210,260];let step=0;
   const flash=()=>{document.querySelectorAll(".char-pick").forEach(el=>el.classList.remove("random-flash"));const key=keys[step%keys.length],t=document.querySelector(`.char-pick[data-char-key="${key}"]`);if(t)t.classList.add("random-flash");if(step<delays.length-1){const d=delays[step];step++;setTimeout(flash,d)}else setTimeout(()=>{document.querySelectorAll(".char-pick").forEach(el=>el.classList.remove("random-flash"));charRandomAnimating=false;socket.emit("selectCharacter",{key:"random"})},300)};flash();
 }
-function roomEscape(value){const node=document.createElement("span");node.textContent=value??"";return node.innerHTML;}
 function renderLobbySeats(){
   const grid=$("#lobbyPlayers");grid.innerHTML="";grid.classList.add("v183-seat-grid");
   const me=state.players.find(p=>p.id===myId());
   for(let seat=1;seat<=6;seat++){
-    const p=state.players.find(x=>playerSeat(x)===seat),meta=PLAYER_META[seat],slot=document.createElement("button");
+    const p=state.players.find(x=>playerSeat(x)===seat),meta=PLAYER_META[seat]||PLAYER_META[1],slot=document.createElement("button");
     slot.type="button";slot.className=`lobby-seat-slot pcolor-${seat} ${p?"occupied":"empty"} ${p?.id===myId()?"mine":""}`;
-    const chosen=p?.characterConfirmed?state.characters?.find(c=>c.key===p.characterKey):null;
-    const art=chosen?artMarkup(chosen.art,"room-character-art",roomEscape(chosen.name)):'<span class="room-seat-placeholder">'+(p?'…':'+')+'</span>';
-    const status=!p?'รอผู้เล่น':!p.connected?'ออฟไลน์':!chosen?'กำลังเลือกตัวละคร':p.id===state.hostId?'โฮสต์':p.ready?'✓ พร้อมแล้ว':'รอเตรียมพร้อม';
-    slot.innerHTML=`<div class="room-seat-art">${art}</div><div class="room-player-name">${p?roomEscape(p.name):'ที่นั่งว่าง'}</div><div class="room-seat-info"><div class="lobby-seat-top"><span class="lobby-seat-number">${meta.label}</span><span>${chosen?roomEscape(chosen.role):meta.name}</span></div><b>${chosen?roomEscape(chosen.name):p?'เลือกตัวละคร':'เข้าร่วมห้องได้'}</b><small class="${p?.ready?'room-is-ready':''}">${p?.id===myId()?'คุณ · ':''}${status}</small></div>`;
-    slot.disabled=!!p||!!me?.ready||state.phase!=="lobby";if(!p)slot.onclick=()=>socket.emit("changeSeat",{seat});grid.appendChild(slot);
+    if(p){
+      const chosen=state.characters?.find(c=>c.key===p.characterKey);let status="กำลังเลือกตัวละคร";if(p.characterConfirmed&&chosen)status=`${chosen.name} · ${p.ready?"✓ Ready":"ยืนยันแล้ว"}`;
+      slot.innerHTML=`<div class="lobby-seat-top"><span class="lobby-seat-number">${meta.label}</span><small>${meta.name}</small></div><b>${p.id===state.hostId?"👑 ":""}${p.name}${p.connected?"":" · Offline"}</b><small>${p.id===myId()?"คุณ · ":""}${status}</small>`;
+      slot.disabled=true;
+    }else{
+      slot.innerHTML=`<div class="lobby-seat-top"><span class="lobby-seat-number">${meta.label}</span><small>${meta.name}</small></div><b>ที่นั่งว่าง</b><small>${me?.ready?"Unready ก่อนย้ายที่นั่ง":"คลิกเพื่อย้ายมานั่งช่องนี้"}</small>`;
+      slot.disabled=!!me?.ready;slot.onclick=()=>socket.emit("changeSeat",{seat});
+    }
+    grid.appendChild(slot);
   }
 }
 
@@ -562,9 +605,9 @@ function renderLobby(){
   $("#roomCode").textContent=state.code;renderLobbySeats();
   const me=state.players.find(p=>p.id===myId()),previewKey=mine?.characterPreviewKey||null,taken=new Set(state.settings?.allowDuplicateCharacters?[]:state.players.filter(p=>p.id!==myId()&&p.characterConfirmed&&p.characterKey).map(p=>p.characterKey));$("#characterGrid").innerHTML="";
   (state.characters||[]).forEach(c=>{const locked=window.shopOwnership&&!window.shopOwnership.includes(c.key),isPreview=previewKey===c.key,isConfirmed=me?.characterConfirmed&&me?.characterKey===c.key,isTaken=taken.has(c.key),b=document.createElement("button");b.dataset.charKey=c.key;b.className="char-pick "+(isPreview?"selected preview ":"")+(isConfirmed?"confirmed ":"")+(isTaken?"taken ":"");b.disabled=locked||isTaken||!!me?.ready||!!me?.characterConfirmed||charRandomAnimating;b.innerHTML=`${locked?'<span class="char-taken-label">ปลดล็อกที่ร้านค้า</span>':""}${isTaken?'<span class="char-taken-label">ถูกเลือกแล้ว</span>':""}${isConfirmed?'<span class="char-confirmed-label">✓ ยืนยันแล้ว</span>':""}<div class="mini-character-card char-theme-${c.key}"><div class="mini-char-head"><span class="incense-badge">🕯3</span><div><b>${c.name}</b><small>${c.role}</small></div><span class="hp-badge">♥ ${c.hp}</span></div><div class="char-pick-art">${artMarkup(c.art,"character-art-img",c.name)||`<span>${c.name}</span><small>CHARACTER ART</small>`}</div><div class="mini-char-foot"><b>ใช้ธูป 3 ดอก</b><p>${c.skill.replace(/^ใช้ธูป 3 ดอก:\s*/,"")}</p><small>Equip ${c.slots} ช่อง</small></div></div>`;b.onclick=()=>{if(!charRandomAnimating)socket.emit("selectCharacter",{key:c.key})};$("#characterGrid").appendChild(b)});
-  const preview=characterByKey(previewKey),confirmed=characterByKey(me?.characterKey);if(me?.characterConfirmed&&$("#roomCharacterDialog").open&&roomConfirmPending){$("#roomCharacterDialog").close();roomConfirmPending=false;}if(state.phase!=="lobby")document.querySelectorAll(".room-dialog[open]").forEach(d=>d.close());if(me?.ready&&confirmed)$("#charSelectionStatus").innerHTML=`🔒 <b>${confirmed.name}</b> พร้อมแล้ว`;else if(me?.characterConfirmed&&confirmed)$("#charSelectionStatus").innerHTML=`✓ ยืนยัน <b>${confirmed.name}</b> แล้ว${isHost()?" · รอผู้เล่นเตรียมพร้อม":" · กดเตรียมพร้อมเมื่อพร้อม"}`;else if(preview)$("#charSelectionStatus").innerHTML=`กำลังดู <b>${preview.name}</b> · สุ่มใหม่ได้จนกว่าจะยืนยัน`;else $("#charSelectionStatus").textContent="เลือกเองหรือกดสุ่มตัวละครได้";
-  $("#randomCharBtn").disabled=!!me?.ready||!!me?.characterConfirmed||charRandomAnimating;$("#randomCharBtn").textContent=charRandomAnimating?"🎲 กำลังสุ่ม...":"🎲 สุ่มตัวละคร";$("#confirmCharBtn").disabled=!previewKey||!!me?.characterConfirmed||!!me?.ready||charRandomAnimating;$("#releaseCharBtn").disabled=(!previewKey&&!me?.characterConfirmed)||!!me?.ready||charRandomAnimating;$("#readyBtn").disabled=(!me?.characterConfirmed&&!me?.ready)||charRandomAnimating;$("#readyBtn").classList.toggle("ready-active",!!me?.ready);$("#readyBtn").textContent=me?.ready?"✓ พร้อมแล้ว · ยกเลิก":"เตรียมพร้อม";$("#readyBtn").style.display=isHost()?"none":"inline-block";
-  const joined=state.players.filter(p=>p.connected),readyPlayers=joined.filter(p=>p.characterConfirmed&&p.characterKey&&(p.id===state.hostId||p.ready)),readySummary=$("#readySummary");if(readySummary){readySummary.querySelector("b").textContent=`พร้อม ${readyPlayers.length}/${joined.length}`;readySummary.querySelector(".ready-dots").innerHTML="";for(let i=0;i<6;i++){const dot=document.createElement("i");dot.className="ready-dot "+(i<readyPlayers.length?"is-ready":"");dot.title=i<joined.length?(i<readyPlayers.length?"พร้อมแล้ว":"ยังไม่พร้อม"):"ที่นั่งว่าง";readySummary.querySelector(".ready-dots").appendChild(dot)}}const allReady=state.players.length>0&&state.players.every(p=>p.connected&&p.characterConfirmed&&p.characterKey&&(p.id===state.hostId||p.ready));$("#startBtn").style.display=isHost()?"inline-block":"none";$("#startBtn").disabled=!isHost()||!allReady||state.phase!=="lobby";const pending=state.players.filter(p=>!p.connected||!p.characterConfirmed||!p.characterKey||(p.id!==state.hostId&&!p.ready));$("#hostNote").textContent=isHost()?(allReady?"ทุกคนพร้อมแล้ว ✦ Host เริ่มเกมได้":`รอ: ${pending.map(p=>p.name).join(", ")} ยืนยันตัวละคร และผู้เล่นอื่นกดเตรียมพร้อม`):(me?.ready?"พร้อมแล้ว · รอ Host เริ่มเกม":"เลือกตัวละคร → ยืนยัน → เตรียมพร้อม");
+  const preview=characterByKey(previewKey),confirmed=characterByKey(me?.characterKey);if(me?.ready&&confirmed)$("#charSelectionStatus").innerHTML=`🔒 <b>${confirmed.name}</b> พร้อมแล้ว`;else if(me?.characterConfirmed&&confirmed)$("#charSelectionStatus").innerHTML=`✓ ยืนยัน <b>${confirmed.name}</b> แล้ว · กด Ready เมื่อพร้อม`;else if(preview)$("#charSelectionStatus").innerHTML=`กำลังดู <b>${preview.name}</b> · สุ่มใหม่ได้จนกว่าจะยืนยัน`;else $("#charSelectionStatus").textContent="เลือกเองหรือกดสุ่มตัวละครได้";
+  $("#randomCharBtn").disabled=!!me?.ready||!!me?.characterConfirmed||charRandomAnimating;$("#randomCharBtn").textContent=charRandomAnimating?"🎲 กำลังสุ่ม...":"🎲 สุ่มตัวละคร";$("#confirmCharBtn").disabled=!previewKey||!!me?.characterConfirmed||!!me?.ready||charRandomAnimating;$("#releaseCharBtn").disabled=(!previewKey&&!me?.characterConfirmed)||!!me?.ready||charRandomAnimating;$("#readyBtn").disabled=(!me?.characterConfirmed&&!me?.ready)||charRandomAnimating;$("#readyBtn").classList.toggle("ready-active",!!me?.ready);$("#readyBtn").textContent=me?.ready?"✓ Ready แล้ว · กดเพื่อ Unready":"Ready";
+  const allReady=state.players.length>0&&state.players.every(p=>p.connected&&p.characterConfirmed&&p.characterKey&&p.ready);$("#startBtn").style.display=isHost()?"inline-block":"none";$("#startBtn").disabled=isHost()?!allReady:true;const pending=state.players.filter(p=>!p.connected||!p.characterConfirmed||!p.characterKey||!p.ready);$("#hostNote").textContent=isHost()?(allReady?"ทุกคนพร้อมแล้ว ✦ Host เริ่มเกมได้":`รอ: ${pending.map(p=>p.name).join(", ")} ยืนยันตัวละคร + Ready ให้ครบ`):(me?.ready?"พร้อมแล้ว · รอ Host เริ่มเกม":"เลือกตัวละคร → ยืนยัน → Ready");
   const st=state.settings||{};$("#settingDuplicates").value=String(st.allowDuplicateCharacters===true);$("#settingForced").value=String(st.forcedMovement!==false);$("#settingSacDraw").value=st.sacrificeDraw||"onePerTurn";$("#settingFailedSac").value=st.failedSacrifice||"bottom";$("#settingBreak").value=st.equipmentBreak||"one";["#settingDuplicates","#settingForced","#settingSacDraw","#settingFailedSac","#settingBreak"].forEach(id=>$(id).disabled=!isHost());$("#playtestSettings").classList.toggle("read-only",!isHost());$("#settingsSummary").textContent=settingsText(st);
 }
 function settingsText(st=state?.settings||{}){
@@ -1266,13 +1309,3 @@ $("#amuletDock").classList.toggle("collapsed",localStorage.getItem("bpsAmuletCol
 $("#amuletDockToggle").onclick=()=>{const d=$("#amuletDock");d.classList.toggle("collapsed");localStorage.setItem("bpsAmuletCollapsedV16",d.classList.contains("collapsed")?"1":"0")};
 setChatCollapsed(localStorage.getItem("bpsChatCollapsedV15")!=="0");
 updateAmbientUI();
-
-// Room-only dialogs and controls. Existing Lobby account actions remain the source of truth.
-let roomConfirmPending=false;
-$("#openCharacterBtn").onclick=()=>{if(state?.phase!=="lobby")return;roomConfirmPending=false;$("#roomCharacterDialog").showModal();};
-$("#openPlaytestBtn").onclick=()=>{if(state?.phase==="lobby")$("#roomSettingsDialog").showModal();};
-document.querySelectorAll(".room-dialog").forEach(dialog=>{dialog.querySelector(".room-dialog-close").onclick=()=>dialog.close();dialog.addEventListener("click",e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});});
-$("#roomStatsBtn").onclick=()=>$("#lobbyStatsBtn").click();
-$("#roomSoundBtn").onclick=()=>$("#settingsBtn").click();
-const syncRoomWallet=()=>{$("#roomWallet").textContent=$("#accountWallet").textContent;};
-new MutationObserver(syncRoomWallet).observe($("#accountWallet"),{childList:true,subtree:true,characterData:true});syncRoomWallet();

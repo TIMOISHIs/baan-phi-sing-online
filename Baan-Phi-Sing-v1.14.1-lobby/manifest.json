@@ -1,0 +1,46 @@
+{
+  "version": "1.14.1",
+  "base": "1.14.0",
+  "files": [
+    {
+      "path": "public/index.html",
+      "base": "f6cb5991b258daebb58398e27689727d7a5fbf0bb1dc334dba1736756c419642",
+      "next": "64e8bf8e54c1c6dbbb4f1acc4921df570b8535801a990a831433edd30c9ac070"
+    },
+    {
+      "path": "public/app.js",
+      "base": "347e4c3565e606673b30ff7b67f02f5ee8c1d87503eb2b4d53fc2bb711279288",
+      "next": "748d3458685be523f2df65408610a7afb053ab0e33b1caa614144f0d00ea31d7"
+    },
+    {
+      "path": "public/shop.js",
+      "base": "fd5cc26cc987012eb8e1255084e6ad4e9095f503cf06e484c1354a16be1d41cd",
+      "next": "f5d7d5a624ba002ffdb5fbc8a960351624df913130f8287504e303c7c3d00b6c"
+    },
+    {
+      "path": "public/shop.css",
+      "base": "522c52ef1181757101af013c3b0e1cfc938c1e387e80500092b653afcafd8b5e",
+      "next": "4d4b1542b3268e3b3825b95e187b1b69112b6b2ef25891afcc90cd72856e32ef"
+    },
+    {
+      "path": "public/styles.css",
+      "base": "f87289b4c9a4af594c48e6f22ebd3b8e99ade3ecb8ebf3f6f51d6e7afc1cf0b6",
+      "next": "336171667ab628102ac5aa6385e8bae288d781922b1c6eb0509c9a17847146ae"
+    },
+    {
+      "path": "shop-dom-test.cjs",
+      "base": "168bf40e7b01ea52f88a95c2d38d4b04bb878d7f15a43e12ad6fecef9ab855e7",
+      "next": "a318a2d71bb98d9b4a29c123306eb12dc36a2a93be19715bcadc735917545fdd"
+    },
+    {
+      "path": "package.json",
+      "base": "9c6c3c705f67297b559fb43dc18e7fa7c01729e1826b82d84405b9d2b17de9b9",
+      "next": "a6a8dfe86dd279b18243441dfee74b83c97408a128b6f9d62b1542f86e376457"
+    },
+    {
+      "path": "package-lock.json",
+      "base": "b44a52bff64da508a64aae763732435b7848e06713e670a41272a0985ca68ef8",
+      "next": "9292ca8effc04747a71d7e407d1c4c2e52529c878000141b0f5674666f3c0091"
+    }
+  ]
+}

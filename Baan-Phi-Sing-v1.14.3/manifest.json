@@ -1,0 +1,26 @@
+{
+  "public/index.html": {
+    "before": "ce74516541f71dd945dc8d7bab25d32372259b3cc3b564236888236be291bc4a",
+    "after": "c82c267577437b9cb17eb427b1992eefe6c280b605cae7f8fd0f209f0e6021fa"
+  },
+  "public/accounts.js": {
+    "before": "e15ff3c4dd80c0458807bc99794e3ec39f5dda22b52950a84440ec643dea66c4",
+    "after": "6ce7fe717aad710ec7499addca12e5df014dbdcd4c0eeb6c90f8d535c37f7b1c"
+  },
+  "public/styles.css": {
+    "before": "336171667ab628102ac5aa6385e8bae288d781922b1c6eb0509c9a17847146ae",
+    "after": "1510b4c5c01053fd312903f11cd88c7b04d6acc2e34f8a55da5ad2b1f3a22c03"
+  },
+  "public/room.css": {
+    "before": "f62eee5a830919fe6801710de2a94c0782a7cc9d2a4abac90f5f507f75f88e9a",
+    "after": "52fd191dba80793d7592a46c46e42057a1e8405d4516b0aa5e4187cded1cdcf9"
+  },
+  "package.json": {
+    "before": "94a936913f027041de2b8dd7fc5390c6e7959b470b989c4377860b1b0fec246a",
+    "after": "51f1a596351f166af62ae840f1bfa4549435cb0f458266ecc874d2943ef0886c"
+  },
+  "package-lock.json": {
+    "before": "f041f51ac014325b3001e1150d19bdde95ec2d2fd750c29f24cef0fadd231e4e",
+    "after": "3e2e6bae778ff46c17fb65e1db116acd6871a8b54a3c4a8fd64ec7bf8c8a91d4"
+  }
+}

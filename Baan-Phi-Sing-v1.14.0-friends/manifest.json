@@ -1,0 +1,81 @@
+{
+  "version": "1.14.0",
+  "base": "1.13.2",
+  "files": [
+    {
+      "path": "server.js",
+      "base": "59b7be97bbe0c07eaa11c0ba83749d0ec5bbbf6451ff46d4b5f5227d3af28aa9",
+      "next": "b0e0b8b0ac11cff426337575b9156c3e539c7efa00ffda84178d207a51c80066"
+    },
+    {
+      "path": "package.json",
+      "base": "2b6ad2e58b8c6934eae37f073b8a6074cf18555547b5301dcb50aa1bcf6a5d4b",
+      "next": "9c6c3c705f67297b559fb43dc18e7fa7c01729e1826b82d84405b9d2b17de9b9"
+    },
+    {
+      "path": "package-lock.json",
+      "base": "72b1e9b9d1f9308c44168558e7e256d60a2aa593b646a05cc3127a069acfbc07",
+      "next": "b44a52bff64da508a64aae763732435b7848e06713e670a41272a0985ca68ef8"
+    },
+    {
+      "path": "lib/accounts.cjs",
+      "base": "f6ddfad040aa58355d9e202a2d39f3bbe98ca9a5eaac791ccd8e9aa2b28cee21",
+      "next": "b45f11c66b108dd9dff8c2e9875b941b07c9a79ba5fb69ee9c66d6678f4151dd"
+    },
+    {
+      "path": "public/accounts.js",
+      "base": "a4dca8a04b228c227a93a7a811386f0913d4c2cd65ec2a7174123adb7540fa01",
+      "next": "e15ff3c4dd80c0458807bc99794e3ec39f5dda22b52950a84440ec643dea66c4"
+    },
+    {
+      "path": "public/index.html",
+      "base": "039d5bf19739cf889bb03499bcccec33b62a21cd17703a957b8ebb1c179400c9",
+      "next": "f6cb5991b258daebb58398e27689727d7a5fbf0bb1dc334dba1736756c419642"
+    },
+    {
+      "path": "public/styles.css",
+      "base": "6896e6bfa8d2d888a88aac869be0618f3c3484e772dc3dc6b1b18392bc0759e8",
+      "next": "f87289b4c9a4af594c48e6f22ebd3b8e99ade3ecb8ebf3f6f51d6e7afc1cf0b6"
+    },
+    {
+      "path": "public/shop.js",
+      "base": "c515ae52d033cd20f207eb62a4b105bfb10281176127f7e0103bc65ba514a3cd",
+      "next": "fd5cc26cc987012eb8e1255084e6ad4e9095f503cf06e484c1354a16be1d41cd"
+    },
+    {
+      "path": "public/dashboard.js",
+      "base": "1629331bbb6426a55ee381beb0c2589bcde5d36259335bf3a756d8105aa0e954",
+      "next": "919c914ecb2c4a0de3e816e5e728543c422f1816339393c721abf99ac5a98bad"
+    },
+    {
+      "path": "shop-account-test.cjs",
+      "base": "075a48fe23f971eb7e2af9e3339178c3b4ecf10215893d87320388f79728861d",
+      "next": "9355b9b53c71d16ff1e2206a4585c4b06e2c3d6d1b03dd00ba5e13812f5f366a"
+    },
+    {
+      "path": "shop-dom-test.cjs",
+      "base": "42a483793fa75c6e7239dd1266852e79cefda86d350701b6b8d0635778a98ab6",
+      "next": "168bf40e7b01ea52f88a95c2d38d4b04bb878d7f15a43e12ad6fecef9ab855e7"
+    },
+    {
+      "path": "friends-test.cjs",
+      "base": null,
+      "next": "8b3046462359d7e8266e576d657eaeec32d86fcd117dbfce3e47a086db8d6002"
+    },
+    {
+      "path": "friends-sql-test.cjs",
+      "base": null,
+      "next": "d0dc8748c9275d5d9a760314ffb9df25d4d748775a00db8a75ba40c46bfbdf01"
+    },
+    {
+      "path": "friends-ui-test.cjs",
+      "base": null,
+      "next": "f3670c48cd153fa7ba084e218c385c4db4d4ff0c73ff64ccc43fc08524b50274"
+    },
+    {
+      "path": "supabase/v1.14.0-friends.sql",
+      "base": null,
+      "next": "4a2ae6e08816684f56b5af7eb02d05389ffdff436e9add651c9d244b0c884044"
+    }
+  ]
+}

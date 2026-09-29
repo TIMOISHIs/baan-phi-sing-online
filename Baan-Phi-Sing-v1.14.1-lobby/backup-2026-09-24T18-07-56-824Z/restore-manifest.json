@@ -1,0 +1,34 @@
+[
+  {
+    "path": "public/index.html",
+    "existed": true
+  },
+  {
+    "path": "public/app.js",
+    "existed": true
+  },
+  {
+    "path": "public/shop.js",
+    "existed": true
+  },
+  {
+    "path": "public/shop.css",
+    "existed": true
+  },
+  {
+    "path": "public/styles.css",
+    "existed": true
+  },
+  {
+    "path": "shop-dom-test.cjs",
+    "existed": true
+  },
+  {
+    "path": "package.json",
+    "existed": true
+  },
+  {
+    "path": "package-lock.json",
+    "existed": true
+  }
+]

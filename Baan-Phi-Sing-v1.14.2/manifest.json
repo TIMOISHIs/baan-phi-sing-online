@@ -1,0 +1,26 @@
+{
+  "public/index.html": {
+    "before": "64e8bf8e54c1c6dbbb4f1acc4921df570b8535801a990a831433edd30c9ac070",
+    "after": "ce74516541f71dd945dc8d7bab25d32372259b3cc3b564236888236be291bc4a"
+  },
+  "public/app.js": {
+    "before": "748d3458685be523f2df65408610a7afb053ab0e33b1caa614144f0d00ea31d7",
+    "after": "25784645fe14143aa8758f04cb05aa015ed0f9dc86ba042b40bc39ec2e778cd1"
+  },
+  "public/room.css": {
+    "before": null,
+    "after": "f62eee5a830919fe6801710de2a94c0782a7cc9d2a4abac90f5f507f75f88e9a"
+  },
+  "server.js": {
+    "before": "b0e0b8b0ac11cff426337575b9156c3e539c7efa00ffda84178d207a51c80066",
+    "after": "e51f7785c1055a9aab1b1fa169df93752157751337506008bcc4a526134efada"
+  },
+  "package.json": {
+    "before": "a6a8dfe86dd279b18243441dfee74b83c97408a128b6f9d62b1542f86e376457",
+    "after": "94a936913f027041de2b8dd7fc5390c6e7959b470b989c4377860b1b0fec246a"
+  },
+  "package-lock.json": {
+    "before": "9292ca8effc04747a71d7e407d1c4c2e52529c878000141b0f5674666f3c0091",
+    "after": "f041f51ac014325b3001e1150d19bdde95ec2d2fd750c29f24cef0fadd231e4e"
+  }
+}

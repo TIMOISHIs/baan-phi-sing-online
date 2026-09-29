@@ -1,0 +1,86 @@
+{
+  "public/index.html": {
+    "before": "c82c267577437b9cb17eb427b1992eefe6c280b605cae7f8fd0f209f0e6021fa",
+    "after": "1539307801a269a8d09af54130a138a67f05d4b1b5c2ed77df8f5750c13197d9"
+  },
+  "public/app.js": {
+    "before": "25784645fe14143aa8758f04cb05aa015ed0f9dc86ba042b40bc39ec2e778cd1",
+    "after": "7cc8b9410824793a1e578324ff0292b098b4b20fb39a327b91fb91aa332e9a4a"
+  },
+  "public/pregame-theme.css": {
+    "before": null,
+    "after": "eeb7715437c9c7665f4e6a1484fea73c4b6ac53d82aad4c82da3d3ea99cfe12a"
+  },
+  "public/pregame-ui.js": {
+    "before": null,
+    "after": "63528eeb27ae2e8faf13066b889d4f6a29c4c784242d8e5265cf61c110b158b8"
+  },
+  "package.json": {
+    "before": "51f1a596351f166af62ae840f1bfa4549435cb0f458266ecc874d2943ef0886c",
+    "after": "5e82bb26edbb7b4c103aa57b162df9b8bc0e03bc1f011ae25e17595228a5e935"
+  },
+  "package-lock.json": {
+    "before": "3e2e6bae778ff46c17fb65e1db116acd6871a8b54a3c4a8fd64ec7bf8c8a91d4",
+    "after": "16e853006c6c9020960b29562de000f967423e057437b25a9b3f8f533ace786a"
+  },
+  "public/assets/ui/FONT-LICENSE.txt": {
+    "before": null,
+    "after": "18aabf190848725e2576eefb5c29ba06aac1029d02132252a7f312eac2e50cf3"
+  },
+  "public/assets/ui/create-room-art.png": {
+    "before": null,
+    "after": "43144368db98e5651e7cba940ec9554ad0a5241cc5aab2912cc848d4a65ac767"
+  },
+  "public/assets/ui/join-room-art.png": {
+    "before": null,
+    "after": "2f91219d2236c7667691ab8652b9522253e443cb4d50f082413f108b0752e91a"
+  },
+  "public/assets/ui/noto-sans-thai-latin-400-normal.woff2": {
+    "before": null,
+    "after": "563ebff16a85473add86acba298cf71031ea08b0a4fb84fd2b9b1a63f38c7ae4"
+  },
+  "public/assets/ui/haunted-hall-v2.png": {
+    "before": null,
+    "after": "faf361dbc3cbb378328c562ee2e8b8193a717d609ae30ef5793f673aff40f0e6"
+  },
+  "public/assets/ui/create-room-art.webp": {
+    "before": null,
+    "after": "82485ba70bf04f2b1686ca504fc2da8ee5823a76489452817f9fdd47408ab48b"
+  },
+  "public/assets/ui/noto-sans-thai-latin-900-normal.woff2": {
+    "before": null,
+    "after": "9b67a7ca3a207b0e3a67536eb3f15fe6e15053e4409c7626cc661ef04b92fbfd"
+  },
+  "public/assets/ui/haunted-hall.webp": {
+    "before": null,
+    "after": "da3dd693f0d004c7b8c6ba966f2167d82cd04dc2004c9dc84c6ac7f74b4d565a"
+  },
+  "public/assets/ui/noto-sans-thai-latin-700-normal.woff2": {
+    "before": null,
+    "after": "f02a3fe30be452f54cc3104e4bc744f882b6a98c0ef4bcfffe0dbb6badef1b04"
+  },
+  "public/assets/ui/noto-sans-thai-thai-700-normal.woff2": {
+    "before": null,
+    "after": "4c3b0f69c6dd052391ac28a6563d47ec91df07cb3362f0a270ea15e27f3da906"
+  },
+  "public/assets/ui/haunted-logo.png": {
+    "before": null,
+    "after": "b457acf75b9721e226a96c22fe3b6ccfa56f79e1daca53c8d12266e2b580c75d"
+  },
+  "public/assets/ui/haunted-hall-v2.webp": {
+    "before": null,
+    "after": "da3dd693f0d004c7b8c6ba966f2167d82cd04dc2004c9dc84c6ac7f74b4d565a"
+  },
+  "public/assets/ui/join-room-art.webp": {
+    "before": null,
+    "after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "public/assets/ui/noto-sans-thai-thai-900-normal.woff2": {
+    "before": null,
+    "after": "b11e34f1731c017a3b6ae2ca651ba9861641c9d749bc1d787cedf2f5da20e8c9"
+  },
+  "public/assets/ui/noto-sans-thai-thai-400-normal.woff2": {
+    "before": null,
+    "after": "d37e3553a42f53795a6e9f58871b3e7be665c1b72642fc3d42f0512849f7a9c0"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "version": "1.13.1",
+  "base": "1.13.0",
+  "files": [
+    {
+      "path": "public/index.html",
+      "base": "9617532c88e6cf98c28c85e6881e2bf4f3bb032d2e2561772d343cf4c973760f",
+      "next": "9d4cb2f3380a728313b371abdf475629e2b4c1125a02865399d30592c5f5f9ab"
+    },
+    {
+      "path": "public/dashboard.js",
+      "base": "41a8f9883d8e7b5329b73ed882f12e0c2218991c5ab24b7973a727f61b5899b3",
+      "next": "a78a02e9033fe1cdcc9fe0cf221807cbe3eebdff3239e90f01daee413095c3ee"
+    },
+    {
+      "path": "public/dashboard.css",
+      "base": "2d48e1056bcaab9d3bafba4ffea9daa4ddedf3bc96ed1c444e92d8f53a5c8180",
+      "next": "7fe62148ecd962f33dadbdb66ac97e6724c03b59719ed13e40f1b9e8e2ca95c9"
+    }
+  ]
+}
