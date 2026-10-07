@@ -1,0 +1,26 @@
+{
+  "public/index.html": {
+    "before": "1539307801a269a8d09af54130a138a67f05d4b1b5c2ed77df8f5750c13197d9",
+    "after": "1f603f315234274ba5d499b7bc694155ec45b4ea4c9d9854b628349789f817ab"
+  },
+  "public/pregame-theme.css": {
+    "before": "eeb7715437c9c7665f4e6a1484fea73c4b6ac53d82aad4c82da3d3ea99cfe12a",
+    "after": "a34c0f2e56b7449527575885c5441b0dce595c43ff357b11b04a40ad2dea1aca"
+  },
+  "public/pregame-ui.js": {
+    "before": "63528eeb27ae2e8faf13066b889d4f6a29c4c784242d8e5265cf61c110b158b8",
+    "after": "4cfc6aec50126c515b848a4f7641509a605d907b7844694449d5b720fc1bbb06"
+  },
+  "public/app.js": {
+    "before": "7cc8b9410824793a1e578324ff0292b098b4b20fb39a327b91fb91aa332e9a4a",
+    "after": "7cc8b9410824793a1e578324ff0292b098b4b20fb39a327b91fb91aa332e9a4a"
+  },
+  "package.json": {
+    "before": "5e82bb26edbb7b4c103aa57b162df9b8bc0e03bc1f011ae25e17595228a5e935",
+    "after": "5fbecad492ff911b082f6c4efe4e71f95aeee7bd1cf116ba6756942a30f2a3af"
+  },
+  "package-lock.json": {
+    "before": "16e853006c6c9020960b29562de000f967423e057437b25a9b3f8f533ace786a",
+    "after": "e0fa8ab077c5e0792f87b8618e3752db5346316571d9583ca2999838b21a3c4c"
+  }
+}

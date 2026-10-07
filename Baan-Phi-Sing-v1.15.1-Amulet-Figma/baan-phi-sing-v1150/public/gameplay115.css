@@ -1,0 +1,27 @@
+/* Square board and separate far-right action rail. */
+#game .bps-table{grid-template-columns:clamp(174px,14vw,252px) minmax(0,1fr) clamp(180px,14vw,250px) 88px}
+#game .bps-action-rail{padding:10px 7px;border-left:1px solid #564453;background:#17141b;min-width:0;height:100%;grid-column:4;grid-row:1}
+#game .bps-board-cluster{grid-template-columns:minmax(0,1fr) var(--deck-width);width:min(100cqw,calc(100cqh + var(--deck-width) + var(--cluster-gap)));height:min(100cqh,calc(100cqw - var(--deck-width) - var(--cluster-gap)))}
+#rollBtn,#finishSanityBtn{display:none!important}
+#game .room{position:relative!important;overflow:hidden}
+#game .room .room-top{position:absolute!important;top:7px!important;left:4px!important;right:4px!important;bottom:auto!important;inset:7px 4px auto!important;margin:0!important;width:auto!important;padding:0 28px!important;align-items:flex-start;z-index:3;pointer-events:none}
+#game .room-top b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.15;overflow:hidden;font-size:calc(clamp(11px,.85vw,16px) * var(--board-font-scale,1))!important}
+#game .room-top small{display:none}
+#game .room-top .fear-badge{top:-2px!important;right:0!important;transform:none!important;width:25px;height:25px;font-size:calc(13px * var(--board-font-scale,1))!important}
+#game .room .room-bottom{position:absolute!important;inset:0!important;width:100%!important;height:100%;padding:0!important;margin:0;pointer-events:none}
+#game .room .room-bottom>span{position:absolute;left:6%;top:52%;transform:translateY(-50%);width:88%;max-height:40%;font-size:calc(clamp(10px,.75vw,13px) * var(--board-font-scale,1))!important;line-height:1.2;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#game .room .pawns{position:absolute;bottom:5px;left:4px;right:4px;justify-content:center;gap:3px;flex-wrap:wrap}
+#game .room.illegal .room-art{filter:brightness(.28)!important}
+#game .room.illegal .room-top,#game .room.illegal .room-bottom>span{opacity:.45}
+#game .room.legal{filter:brightness(1.15);z-index:5}
+#game .room .pawn-portrait,.walking-pawn .pawn-portrait{width:28px;height:28px;flex:0 0 28px;padding:0;border:2px solid var(--pcolor);border-radius:50%;overflow:hidden;background:#17121d;box-shadow:0 2px 5px #000b}
+.pawn-portrait img{width:100%;height:100%;object-fit:cover;object-position:50% 24%;display:block}
+.pawn-portrait.pawn-dead{filter:grayscale(1);opacity:.6}
+#game .bps-draw-deck.draw-ready{animation:deck-ready-pulse 1.6s ease-in-out infinite;border-color:#ffe392!important}
+@keyframes deck-ready-pulse{0%,100%{box-shadow:0 0 5px #ffd55a80,inset 0 0 8px #ffd55a30}50%{box-shadow:0 0 20px #ffd55ae0,inset 0 0 18px #ffd55a70}}
+.my-turn-notice{position:fixed;left:50%;top:32%;transform:translate(-50%,-50%);z-index:79;pointer-events:none;padding:18px 32px;text-align:center;border:1px solid #ecd292;border-radius:16px;background:#17151df0;box-shadow:0 12px 60px #000b;animation:turn-notice-pulse 2s ease-in-out infinite;max-width:85vw}
+.my-turn-notice b{display:block;color:#ffe4a4;font-size:clamp(22px,3vw,38px)}.my-turn-notice small{display:block;color:#d5cfbe;font-size:12px}
+@keyframes turn-notice-pulse{50%{box-shadow:0 0 32px #dcb96380;filter:brightness(1.2)}}
+@media(prefers-reduced-motion:reduce){#game .bps-draw-deck.draw-ready,.my-turn-notice{animation:none;box-shadow:0 0 12px #ffd55a99}}
+@media(max-width:1100px){#game .bps-table{grid-template-columns:170px minmax(0,1fr) 76px}#game .bps-action-rail{grid-column:3}#game .bps-spirit{grid-column:1/-1}#game .room .pawn-portrait{width:24px;height:24px;flex-basis:24px}}
+@media(max-width:620px){#game .bps-action-rail{height:auto;display:flex;flex-direction:row}#game .bps-action-grid{display:flex;flex:1;flex-wrap:wrap}#game .room .room-top{padding:0 20px!important}#game .room-top .fear-badge{width:18px;height:18px}}

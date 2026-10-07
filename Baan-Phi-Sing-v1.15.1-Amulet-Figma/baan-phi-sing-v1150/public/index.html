@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>บ้านผีสิง — Login, Room & Friends Drawer V1.15.0</title>
+<link rel="stylesheet" href="/styles.css?v=1.15.0">
+<link rel="stylesheet" href="/room.css?v=1.15.0">
+</head>
+<body>
+<dialog id="logDetailDialog" class="log-detail-dialog" aria-labelledby="logDetailTitle">
+  <div class="sound-settings-header"><h2 id="logDetailTitle">รายละเอียด Game Log</h2><button id="logDetailClose" aria-label="ปิดรายละเอียด Game Log">✕</button></div>
+  <div id="logDetailBody"></div>
+</dialog>
+<button id="settingsBtn" class="settings-gear" aria-label="ตั้งค่าเสียง" title="ตั้งค่าเสียง">⚙</button>
+<dialog id="soundSettings" class="sound-settings" aria-labelledby="soundSettingsTitle">
+  <div class="sound-settings-header"><h2 id="soundSettingsTitle">⚙ ตั้งค่า</h2><button id="settingsClose" aria-label="ปิดตั้งค่า">✕</button></div>
+  <p>ปรับระดับเสียงได้ถึง 300% · จำค่าบนอุปกรณ์นี้</p>
+  <label for="gameFontSize">ขนาดตัวหนังสือบนกระดาน <output id="gameFontValue">100%</output></label><input id="gameFontSize" type="range" min="80" max="140" step="10" value="100"><small>ปรับเฉพาะเครื่องนี้ · ชื่อห้อง คำอธิบาย และค่า Fear</small><button id="resetGameFont" type="button">คืนขนาดปกติ</button><label for="masterVolume">เสียงรวม <output id="masterVolumeValue">150%</output></label>
+  <input id="masterVolume" type="range" min="0" max="300" step="5" value="150">
+  <label for="musicVolume">เพลงบรรยากาศ <output id="musicVolumeValue">24%</output></label>
+  <input id="musicVolume" type="range" min="0" max="300" value="24">
+  <label for="sfxVolume">เสียงเอฟเฟกต์ <output id="sfxVolumeValue">80%</output></label>
+  <input id="sfxVolume" type="range" min="0" max="300" step="5" value="80">
+  <div class="sound-settings-actions"><button id="settingsMusicToggle" class="secondary">เปิดเพลง</button><button id="settingsTestSound" class="secondary">ลองเสียงเอฟเฟกต์</button></div>
+</dialog>
+<div id="toast" class="toast hidden"></div>
+
+<button id="accountChip" class="account-chip hidden" aria-label="ดูโปรไฟล์และสถิติ"><img data-account-avatar alt=""><span data-account-name></span><b data-account-level></b></button>
+<dialog id="profileEditor" class="profile-editor" aria-labelledby="profileEditorTitle">
+ <form id="profileForm"><small>YOUR FIRST NIGHT</small><h2 id="profileEditorTitle">สร้างตัวตนของคุณ</h2><p>เลือกชื่อและใบหน้าที่จะพาเข้าไปในบ้าน</p>
+ <label for="profileName">ชื่อในเกม</label><input id="profileName" minlength="2" maxlength="18" required autocomplete="nickname" placeholder="ชื่อที่เพื่อนจะเห็น">
+ <fieldset><legend>เลือกรูปโปรไฟล์</legend><div id="avatarOptions" class="avatar-options"></div></fieldset>
+ <p id="profileError" role="alert"></p><button id="profileSave" class="primary">บันทึกโปรไฟล์</button><button id="profileCancel" type="button" class="secondary">ยกเลิก</button></form>
+</dialog>
+<dialog id="friendsDialog" class="friends-dialog" aria-labelledby="friendsTitle">
+ <div class="friends-heading"><div><small>YOUR NIGHT WATCH</small><h2 id="friendsTitle">เพื่อน</h2></div><button id="friendsClose" type="button" aria-label="ปิดหน้าต่างเพื่อน">×</button></div>
+ <details class="friend-add-block"><summary>+ เพิ่มเพื่อน</summary>
+ <div class="friend-code-row"><span><small>รหัสผู้เล่นของคุณ</small><code id="friendCode"></code></span><button id="copyFriendCode" type="button" class="secondary">คัดลอกรหัส</button></div>
+ <form id="friendSearchForm" class="friend-search"><label for="friendSearchInput">ค้นหาจากชื่อในเกมหรือ Player ID</label><div><input id="friendSearchInput" minlength="2" maxlength="64" autocomplete="off" placeholder="พิมพ์ชื่อหรือวางรหัสผู้เล่น"><button class="primary" type="submit">ค้นหา</button></div></form>
+ <div id="friendSearchResults" class="friend-list"></div>
+ </details>
+ <p id="friendsFeedback" class="friends-feedback" role="status"></p>
+ <div class="friends-groups"><details open><summary>ออนไลน์ (<span id="friendOnlineCount">0</span>)</summary><div id="friendOnlineList" class="friend-list"></div></details><details open><summary>ออฟไลน์ (<span id="friendOfflineCount">0</span>)</summary><div id="friendOfflineList" class="friend-list"></div></details><details><summary>คำขอที่ได้รับ <span id="friendIncomingCount">0</span></summary><div id="friendIncoming" class="friend-list"></div></details><details><summary>ส่งคำขอแล้ว <span id="friendSentCount">0</span></summary><div id="friendSent" class="friend-list"></div></details></div>
+ <span id="friendCount" class="hidden">0</span><div id="friendList" class="friend-list hidden"></div>
+</dialog>
+<section id="home" class="screen active account-home">
+ <div class="lobby-atmosphere" aria-hidden="true"></div>
+ <div class="lobby-smoke" aria-hidden="true"></div><div class="lobby-ghost-shadow" aria-hidden="true"></div>
+ <div class="lobby-topbar"><span class="lobby-brand">บ้านผีสิง <small>THE HAUNTED HOUSE</small></span><div class="lobby-top-actions"><div class="lobby-currencies" aria-label="สกุลเงิน"><span id="accountWallet" class="account-wallet" role="status">เงินบาท — บาท</span><span class="lobby-gold">ทอง 0 กรัม</span></div><nav aria-label="เมนูหลัก"><button id="lobbyStatsBtn">♧ สถิติ</button><button id="lobbyRulesBtn">▤ กติกา</button><button id="lobbySoundBtn">⚙ ตั้งค่า</button><button id="lobbyLogoutBtn">ออกจากระบบ</button></nav></div></div>
+ <div class="lobby-stage">
+ <div id="accountProfile" class="account-profile hidden"><img data-account-avatar alt=""><div class="account-identity"><small>ผู้มาเยือน</small><h2 data-account-name></h2><b data-account-level></b><progress id="accountXP" value="0" max="100" aria-label="EXP ไปเลเวลถัดไป"></progress><small id="accountXPText"></small><details><summary>ข้อมูลโปรไฟล์</summary><small id="accountID"></small><p>เล่นจบ <b id="accountGames"></b> · อันดับ 1 <b id="accountWins"></b></p><button id="accountStats">ดูสถิติ</button><button id="accountEdit">แก้ไขโปรไฟล์</button><button id="accountLogout">ออกจากระบบ</button></details></div></div>
+ <div class="lobby-primary">
+  <div class="hero">
+    <div class="eyebrow">ONLINE FRIENDS BUILD V1.15.0</div>
+    <h1 class="game-logo"><img src="/assets/ui/haunted-logo.png" alt="บ้านผีสิง"></h1>
+    <p>แสงเทียนยังไม่ดับ… คืนนี้ใครจะกลับออกมา</p>
+    <button id="homeHelpBtn" class="help-link">ดูวิธีเล่นแบบ 60 วินาที</button>
+  </div>
+  <div id="accountSignIn" class="account-signin hidden"><p>เข้าบ้านด้วย Google แล้วเก็บทุกค่ำคืนเป็นประสบการณ์</p><button id="googleSignIn" class="google-signin" disabled><b>G</b> เข้าสู่ระบบด้วย Google</button><small>ครั้งแรกเลือกชื่อในเกมและรูปโปรไฟล์ได้เลย</small></div>
+  <p id="accountStatus" class="account-status" role="status">กำลังเชื่อมต่อ…</p>
+  <div class="join-grid hidden">
+    <form id="createForm" class="card-panel">
+      <small>HOST A NIGHT</small><h2>สร้างห้อง</h2>
+      <label>ชื่อ<input id="createName" value="ติม" maxlength="18"></label>
+      <button class="primary">เริ่มเกม · สร้างห้อง</button>
+    </form>
+    <form id="joinForm" class="card-panel">
+      <h2>เข้าห้องเพื่อน</h2>
+      <label>ชื่อ<input id="joinName" placeholder="ชื่อผู้เล่น" maxlength="18"></label>
+      <label>Room Code<input id="joinCode" placeholder="ABCDE" maxlength="5"></label>
+      <button class="secondary">เข้าห้องเพื่อน</button>
+    </form>
+  </div>
+ </div>
+ </div>
+<div class="lobby-footer"><nav class="lobby-nav" aria-label="เมนู Lobby"><button id="shopBtn" class="shop-button"><span aria-hidden="true">♜</span> ร้านค้า <small>เร็ว ๆ นี้</small></button><button id="charactersBtn" class="shop-button"><span aria-hidden="true">♟</span> ตัวละคร</button><button id="friendsBtn" class="shop-button" type="button"><span aria-hidden="true">♧</span> เพื่อน <b id="friendNotice" class="friend-notice hidden">0</b></button></nav><span>เล่นกับเพื่อน 2–6 คน</span></div>
+</section>
+
+<section id="lobby" class="screen room-screen">
+  <div class="room-shell">
+    <header class="room-header">
+      <div class="room-code-heading"><h1>Room <span id="roomCode">—</span></h1><button id="copyCodeBtn" class="secondary" aria-label="คัดลอกรหัสห้อง">คัดลอกรหัส</button></div>
+      <nav class="room-tools" aria-label="เมนูห้อง">
+        <span id="roomWallet">เงินบาท — บาท</span><span class="room-gold">ทอง 0 กรัม</span>
+        <button id="roomStatsBtn">♧ สถิติ</button><button id="lobbyHelpBtn">▤ กติกา</button><button id="roomSoundBtn">⚙ ตั้งค่า</button>
+        <button id="lobbyLeaveBtn" class="leave-tool">↩ ออกจากห้อง</button><button id="roomFriendsBtn" type="button" class="room-friends-toggle">♧ เพื่อน <b id="roomFriendNotice" class="friend-notice hidden">0</b></button>
+      </nav>
+    </header>
+    <div id="lobbyPlayers" class="lobby-players" aria-label="ผู้เล่นในห้อง"></div>
+    <footer class="room-footer">
+      <div class="room-setup-buttons">
+        <button id="openCharacterBtn"><b>เลือกตัวละคร</b><small>เลือกหรือสุ่ม แล้วกดยืนยันตัวละคร</small></button>
+        <button id="openPlaytestBtn"><b>Playtest Settings</b><small>ตั้งค่าห้องก่อนเริ่มเกม</small></button>
+      </div>
+      <div class="room-ready-controls"><div id="readySummary" class="ready-summary" aria-live="polite"><span class="ready-dots" aria-hidden="true"></span><b>พร้อม 0/0</b></div><p id="hostNote" role="status"></p><button id="readyBtn" class="ready-button">เตรียมพร้อม</button><button id="startBtn" class="primary start-game-btn">เริ่มเกม</button></div>
+    </footer>
+  </div>
+  <dialog id="roomCharacterDialog" class="room-dialog" aria-label="เลือกตัวละคร"><button class="room-dialog-close" aria-label="ปิดหน้าต่างเลือกตัวละคร">✕</button>
+    <div class="character-select">
+      <div class="character-select-head">
+        <div><h3>เลือกตัวละคร</h3><p class="muted">เลือกเองหรือสุ่มได้เรื่อย ๆ จนกว่าจะกด “ยืนยันตัวละคร”</p></div>
+        <button id="randomCharBtn" class="secondary">🎲 สุ่มตัวละคร</button>
+      </div>
+      <div id="characterGrid" class="character-grid"></div>
+      <div class="character-confirm-bar">
+        <div id="charSelectionStatus" class="char-selection-status">เลือกตัวละคร 1 ใบเพื่อดู Preview</div>
+        <div class="character-confirm-actions">
+          <button id="releaseCharBtn" class="secondary">↩ เปลี่ยนตัวละคร</button>
+          <button id="confirmCharBtn" class="primary">✓ ยืนยันตัวละคร</button>
+
+        </div>
+      </div>
+    </div>
+  </dialog>
+  <dialog id="roomSettingsDialog" class="room-dialog room-settings-dialog" aria-label="Playtest Settings"><button class="room-dialog-close" aria-label="ปิดหน้าต่างตั้งค่าห้อง">✕</button>
+    <section id="playtestSettings" class="playtest-settings">
+      <div class="settings-heading">
+        <div><h3>Playtest Settings</h3><p>Host ปรับได้ก่อนกดเริ่มเกม • Recommended = ค่าเริ่มต้นที่เราล็อกไว้</p></div>
+        <span class="beta-badge">V1.0</span>
+      </div>
+      <div class="settings-grid">
+        <label><span>ตัวละครซ้ำในห้อง</span><select id="settingDuplicates"><option value="true">อนุญาตให้เลือกซ้ำ</option><option value="false">ไม่อนุญาตให้เลือกซ้ำ</option></select></label>
+        <label><span>Movement</span>
+          <select id="settingForced">
+            <option value="true">บังคับเดิน (Recommended)</option>
+            <option value="false">เลือกเดินหรืออยู่ห้องเดิม</option>
+          </select>
+        </label>
+        <label><span>Sacrifice Draw</span>
+          <select id="settingSacDraw">
+            <option value="onePerTurn">สูงสุด 1 ครั้ง/เทิร์น (Recommended)</option>
+            <option value="perIncense">จั่วได้ตามธูปที่เหลือ</option>
+          </select>
+        </label>
+        <label><span>ตีผีพลาด — เครื่องเซ่น</span>
+          <select id="settingFailedSac">
+            <option value="bottom">กลับใต้กอง (Recommended)</option>
+            <option value="remove">ออกจากเกม</option>
+          </select>
+        </label>
+        <label><span>ตีผีพลาด — ของสวมใส่</span>
+          <select id="settingBreak">
+            <option value="one">แตก 1 ชิ้น (Recommended)</option>
+            <option value="all">แตกทั้งหมด</option>
+          </select>
+        </label>
+      </div>
+      <div id="settingsSummary" class="settings-summary"></div>
+    </section>  </dialog>
+</section>
+
+<section id="game" class="screen">
+  <header class="hud">
+    <div class="turn-title">
+      <div id="turnEnergyRing" class="turn-energy-ring" aria-label="เวลาของเทิร์น"><i></i></div>
+      <div><small>TURN</small><b id="turnPlayer">—</b></div>
+    </div>
+    <div class="hud-stat">❤️ <b id="hp">—</b><small>HP</small></div>
+    <div class="hud-stat">🕯 <b id="actions">—</b><small>ธูป</small></div>
+    <div class="hud-stat">💰 <b id="score">—</b><small>เงิน</small></div>
+    <div class="hud-stat">♡ <b id="supportScore">0</b><small>ซัพพอร์ต</small></div>
+    <div class="hud-stat">🧠 <b id="sanity">—</b><small>สติ</small></div>
+    <div class="hud-stat">👻 <b id="curse">—</b><small>Curse</small></div>
+    <span id="connectionState" class="connection-state online">● Online</span>
+    <button id="audioBtn" class="hud-tool audio-tool">🎵 บรรยากาศ</button>
+    <button id="roomRulesBtn" class="hud-tool">▦ ห้อง</button>
+    <button id="helpBtn" class="hud-tool">? วิธีเล่น</button>
+    <button id="statsBtn" class="hud-tool">📊 Playtest</button>
+    <button id="gameLeaveBtn" class="leave-tool hud-leave">↩ ออกห้อง</button>
+  </header>
+
+  <div class="table">
+    <aside class="rail">
+      <div class="panel">
+        <h3>ผู้เล่น</h3>
+        <div id="playerList"></div>
+      </div>
+      <div class="panel log-panel">
+        <h3>Game Log</h3>
+        <div id="log"></div>
+      </div>
+    </aside>
+
+    <main class="board-zone">
+      <div class="board-top">
+        <div><h3>บ้านผีสิง</h3><small>โต๊ะกลาง · Online Friends Build</small></div>
+        <div class="board-controls">
+          <button id="stayBtn" class="stay-button" style="display:none">อยู่ห้องเดิม</button>
+          <button id="escapeBtn" class="escape-button roll-legacy" style="display:none">🚪 ทอยหนีห้อง · 1🕯</button>
+          <button id="rollBtn" class="primary roll-legacy">🎲 ทอยเต๋า</button>
+          <button id="finishSanityBtn" class="sanity-finish" style="display:none">🧠 เดินต่อด้วยค่าสตินี้</button>
+        </div>
+      </div>
+      <div id="board" class="board"></div>
+      <div id="message" class="message">รอข้อมูล...</div>
+      <div class="actions-row">
+        <div class="action-cluster">
+          <button id="drawAmu" class="action-bubble">✦ <span>จั่ว Amulet</span><small>1🕯</small></button>
+          <button id="drawSac" class="action-bubble">◆ <span>จั่วเครื่องเซ่น</span><small>1🕯</small></button>
+          <button id="tradeBtn" class="action-bubble">🤝 <span>Trade</span><small>ฟรี 1 ครั้ง</small></button>
+          <button id="ritualBtn" class="action-bubble">👻 <span>ทำพิธี</span><small>2🕯</small></button>
+          <button id="skillBtn" class="action-bubble">✨ <span>Skill</span><small>3🕯</small></button>
+        </div>
+        <div class="turn-end-zone">
+          <button id="endBtn" class="end-turn-bubble"><small>TURN</small><b>END</b><span>→</span></button>
+        </div>
+      </div>
+      <section class="my-zone">
+        <article id="characterCard" class="character character-readable" role="button" tabindex="0" aria-label="อ่านการ์ดตัวละคร">
+          <small>CHARACTER · คลิกเพื่ออ่าน</small><h2 id="charName">—</h2><p id="charRole">—</p>
+          <div id="charArt" class="char-art">CHARACTER ART</div><p id="charSkill"></p>
+          <div id="equipStats" class="equip-stats"></div>
+        </article>
+        <div class="inventory">
+          <div class="inventory-head">
+            <div><h3>พื้นที่ของฉัน</h3><small id="myRoom">—</small></div>
+            <div class="my-seat-wrap"><span id="myPawnColor" class="my-pawn-color pcolor-1">P1</span><small id="myPawnLabel">สีของฉัน</small></div>
+          </div>
+          <div class="equip-row"><span>สวมใส่</span><div id="equip"></div></div>
+          <div class="hand-title">เครื่องเซ่น <span id="limits">—</span></div><div id="sacHand" class="hand"></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="boss-column">
+      <article class="ghost-card">
+        <div id="ghostHealth" class="ghost-health" role="progressbar" aria-label="พลังผีคงเหลือ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><div id="ghostHealthFill"></div></div><small id="ghostHealthLabel"></small><div class="ghost-head"><span>▦</span><div><small>GHOST</small><h2 id="ghostName">—</h2></div><b id="ghostFear">Fear —</b></div>
+        <div id="ghostArt" class="ghost-art">GHOST</div>
+        <div class="passive"><b>Curse</b><p id="ghostCurse">—</p></div>
+        <small>พิธีที่ยังต้องทำ</small><div id="bossSlots" class="slots"></div>
+        <div id="ghostRules" class="dice-rules"></div>
+        <button id="bossHelpBtn" class="boss-help">ดูวิธีตีผีใบนี้</button>
+      </article>
+      <div class="deck-card">AMULET DECK<small>ของขลัง / คาถา / Event / ช่วยเหลือ / เรียกสติ</small><b id="amuDeckCount" class="deck-count">—</b></div>
+      <div class="deck-card">SACRIFICE DECK<small>ทุกสีอยู่กองเดียวกัน</small><b id="sacDeckCount" class="deck-count">—</b></div>
+      <div id="turnGuide" class="turn-guide turn-guide-side">
+        <div class="guide-kicker">ตอนนี้ทำอะไร?</div>
+        <div id="guideTitle" class="guide-title">รอเกมเริ่ม</div>
+        <div id="guideText" class="guide-text"></div>
+        <div id="guideSteps" class="guide-steps"></div>
+      </div>
+    </aside>
+  </div>
+
+  <section id="amuletDock" class="amulet-dock">
+    <button id="amuletDockToggle" class="amulet-dock-head">
+      <span>✦ AMULET HAND</span><b id="amuletCount">0/5</b><small>คลิกเพื่อย่อ/ขยาย</small>
+    </button>
+    <div id="amuHand" class="hand amulet-screen-hand"></div>
+  </section>
+
+  <aside id="chatDock" class="chat-dock collapsed">
+    <button id="chatToggle" class="chat-head"><span>💬 ห้องแชท</span><b id="chatUnread" class="chat-unread hidden">0</b><small id="chatChevron">▲</small></button>
+    <div class="chat-body">
+      <div id="chatMessages" class="chat-messages"></div>
+      <form id="chatForm" class="chat-form"><input id="chatInput" maxlength="180" autocomplete="off" placeholder="พิมพ์คุยกับเพื่อน..."><button type="submit">ส่ง</button></form>
+    </div>
+  </aside>
+
+</section>
+
+<section id="result" class="screen">
+  <div class="result-wrap">
+    <div id="resultEyebrow" class="eyebrow">GHOST DEFEATED</div><h1 id="resultTitle">ปราบผีสำเร็จ</h1>
+    <p id="resultText" class="muted">คะแนนจากเงิน + เครื่องเซ่นบนมือ + คะแนนซัพพอร์ต</p>
+    <div id="results"></div>
+    <div id="resultStats" class="result-stats"></div>
+    <button id="downloadReportBtn" class="secondary report-download">⬇️ Export Playtest JSON</button>
+    <div class="result-actions">
+      <button id="resultHomeBtn" class="secondary">↩ ออกจากห้อง</button>
+      <button id="resultNewRoomBtn" class="primary">＋ สร้างห้องใหม่ทันที</button>
+    </div>
+  </div>
+</section>
+
+<div id="ambientDock" class="ambient-dock">
+  <button id="ambientToggle" class="ambient-toggle">🎵 เปิดเพลง</button>
+  <label class="ambient-track"><span>TRACK</span>
+    <select id="ambientTrack">
+      <option value="lofi_midnight">Lo-Fi · เที่ยงคืน</option>
+      <option value="lofi_lantern">Lo-Fi · โคมผี</option>
+      <option value="lofi_rain">Lo-Fi · ฝนหลอน</option>
+    </select>
+  </label>
+  <label class="ambient-volume"><span>VOL</span><input id="ambientVolume" type="range" min="0" max="300" value="24"></label>
+</div>
+
+<div id="hpFx" class="hp-fx hidden">
+  <div id="hpFxCard" class="hp-fx-card">
+    <div id="hpFxIcon" class="hp-fx-icon"></div>
+    <b id="hpFxValue">HP -1</b>
+    <span id="hpFxReason">—</span>
+  </div>
+</div>
+<div id="moveFx" class="move-fx hidden"><span id="moveFxPawn">P1</span><b id="moveFxText">เดินไป ห้อง...</b></div>
+<div id="turnFx" class="turn-fx hidden">
+  <div id="turnFxSeat" class="turn-fx-seat pcolor-1">P1</div>
+  <div class="turn-fx-copy"><small>TURN PASSES TO</small><b id="turnFxText">ถึงตา P2</b><em id="turnFxChar">—</em></div>
+</div>
+
+<div id="cardRevealFx" class="card-reveal-fx hidden" role="dialog" aria-labelledby="cardRevealName">
+  <div id="cardRevealCard" class="card-reveal-card">
+    <small id="cardRevealZone">DRAW</small>
+    <div class="card-reveal-art">✦</div>
+    <h2 id="cardRevealName">—</h2>
+    <p id="cardRevealMeta">—</p>
+    <span id="cardRevealPlayer">—</span>
+    <button id="cardRevealClose" class="primary hidden">อ่านแล้ว · ปิดการ์ด</button>
+  </div>
+</div>
+
+
+<div id="rollFocus" class="roll-focus hidden">
+  <div class="roll-focus-shade"></div>
+  <div class="roll-focus-content">
+    <small id="rollFocusKicker">YOUR ROLL</small>
+    <button id="rollFocusBtn" class="roll-focus-btn">🎲 ทอยเพื่อเดิน</button>
+    <span id="rollFocusHint">เต๋า 2 ลูกกำลังรอคุณ</span>
+    <button id="rollFocusCancel" class="roll-focus-cancel hidden">ยกเลิก</button>
+  </div>
+</div>
+
+<div id="diceFx" class="dice-fx hidden">
+  <div class="dice-fx-card">
+    <small id="diceFxKind">ROLL</small>
+    <div class="dice-pair"><div class="dice-scene"><div id="dieA" class="dice-cube" role="img" aria-label="ลูกเต๋า"></div></div><div class="dice-scene"><div id="dieB" class="dice-cube" role="img" aria-label="ลูกเต๋า"></div></div></div>
+    <b id="diceFxTotal">รวม 2</b><span id="diceFxPlayer"></span>
+  </div>
+</div>
+<div id="ritualFx" class="ritual-fx hidden">
+  <div id="ritualFxCard" class="ritual-fx-card">
+    <small>RITUAL</small><h2 id="ritualFxTitle">—</h2>
+    <div id="ritualFxDice" class="ritual-fx-dice">—</div><p id="ritualFxText">—</p>
+  </div>
+</div>
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-head"><h3 id="modalTitle"></h3><button id="closeModal">ปิด</button></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/game-sync.js?v=1.14.0"></script>
+<script src="/app.js?v=1.15.0"></script>
+<script src="/dashboard.js?v=1.15.0"></script>
+<script src="/accounts.js?v=1.15.0"></script>
+<link rel="stylesheet" href="/shop.css?v=1.14.1">
+<link rel="stylesheet" href="/dashboard.css?v=1.14.0">
+<link rel="stylesheet" href="/pregame-theme.css?v=1.15.0">
+<script src="/shop.js?v=1.14.1"></script>
+<script src="/pregame-ui.js?v=1.15.0"></script>
+<link rel="stylesheet" href="/gameplay115.css?v=1.15.0">
+<script src="/gameplay115.js?v=1.15.0"></script>
+</body>
+</html>
