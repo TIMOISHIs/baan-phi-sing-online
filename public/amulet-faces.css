@@ -1,0 +1,141 @@
+/* Exported Figma faces include their frame, icons and copy. Never crop them. */
+.amulet-face {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1478 / 2178;
+  background: transparent;
+}
+.amulet-face .amulet-face-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+#game #amuletDock .amulet-card:has(.amulet-face) {
+  width: 98px !important;
+  height: 145px !important;
+  top: -4px;
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+  overflow: visible;
+}
+#game #amuletDock .amulet-card:focus-visible {
+  outline: 2px solid #e5d5af;
+  outline-offset: 3px;
+}
+.figma-amulet-detail:has(>.amulet-face) {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "card" "condition" "stats";
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.modal-card:has(.amulet-detail .amulet-face) { width: min(470px, 94vw); }
+.figma-amulet-detail>.amulet-face {
+  grid-area: card;
+  width: 100%;
+  height: min(60dvh, 530px);
+}
+.card-reveal-fx .reveal-amulet:has(.amulet-face) {
+  width: min(420px, 92vw);
+  max-height: calc(100dvh - 24px);
+}
+.card-reveal-fx .reveal-amulet .card-reveal-art:has(.amulet-face) {
+  height: min(58dvh, 510px) !important;
+  max-height: none;
+  padding: 0;
+  background: transparent;
+}
+.card-flight.amulet-flight {
+  height: 177px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+#game .bps-equip-zone .equip:has(img[src*="/amulets/faces/"]) {
+  padding: 2px;
+}
+#game .bps-equip-zone .equip img[src*="/amulets/faces/"] {
+  flex: 1;
+  width: 100%;
+  height: 0;
+  min-height: 0;
+  object-fit: contain;
+}
+.modal-option:has(img[src*="/amulets/faces/"]) {
+  display: grid;
+  grid-template-columns: minmax(80px, 120px) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 16px;
+}
+.modal-option img[src*="/amulets/faces/"] {
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  width: 100%;
+  height: 176px;
+  max-height: none;
+  object-fit: contain;
+  background: transparent;
+}
+.modal-option:has(img[src*="/amulets/faces/"])>:not(img) {
+  grid-column: 2;
+  overflow-wrap: anywhere;
+}
+.peek-card-choice img[src*="/amulets/faces/"] {
+  width: 100%;
+  height: 260px;
+  max-height: none;
+  object-fit: contain;
+  background: transparent;
+}
+.amulet-choice-thumbnail {
+  display: block;
+  flex: 0 0 64px;
+  width: 64px;
+  height: 96px;
+  object-fit: contain;
+}
+.bps-gallery article:has(.amulet-face) { min-width: 0; }
+.bps-gallery .amulet-face { height: 250px; }
+.bps-gallery .amulet-face img { height: 100%; }
+.log-card-art[src*="/amulets/faces/"] {
+  display: block;
+  width: min(300px, 100%);
+  height: 360px;
+  max-height: 60dvh;
+  object-fit: contain;
+  background: transparent;
+}
+@media(min-width:1600px) {
+  #game #amuletDock .amulet-card:has(.amulet-face) {
+    width: 118px !important;
+    height: 174px !important;
+  }
+}
+@media(max-width:620px) {
+  .figma-amulet-detail:has(>.amulet-face) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "card" "condition" "stats";
+  }
+  .figma-amulet-detail>.amulet-face { height: min(52dvh, 420px); }
+  .modal-option:has(img[src*="/amulets/faces/"]) {
+    grid-template-columns: 80px minmax(0, 1fr);
+    column-gap: 10px;
+  }
+  .modal-option img[src*="/amulets/faces/"] { height: 120px; }
+  .peek-card-choice img[src*="/amulets/faces/"] { height: 200px; }
+}

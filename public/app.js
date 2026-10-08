@@ -49,6 +49,10 @@ function amuletEffectText(c){
   return cond?`${base} • เมื่อทอยได้ ${cond}`:base;
 }
 function renderAmuletFace(c,{compact=false}={}){
+  if(c?.art?.startsWith("/assets/amulets/faces/")){
+    const label=[c.id,c.name,amuletTypeLabel(c),amuletEffectText(c)].filter(Boolean).join(" · ");
+    return `<div class="amulet-face ${compact?"compact":""}" data-card-id="${escapeHtml(c.id||"")}"><img class="amulet-face-img" src="${escapeHtml(c.art)}" alt="${escapeHtml(label)}" decoding="async" draggable="false"></div>`;
+  }
   const cat=amuletTypeLabel(c),effect=amuletEffectText(c);
   return `<div class="figma-amulet-card figma-amulet-${escapeHtml(c?.type||"card")} ${compact?"compact":""}" data-card-id="${escapeHtml(c?.id||"")}">
     <div class="figma-amulet-top"><span>${escapeHtml(c?.id||"")}</span><i>${escapeHtml(amuletCategoryIcon(c))}</i></div>
@@ -683,7 +687,9 @@ function finishCardFlight(){
   if(!owned){pendingHandCards.delete(e.card?.uid);seenRevealCards.delete(e.card?.uid);return;}
   const destination=e.playerId===myId()?$(e.zone==="sacrifice"?"#sacHand":"#amuHand"):document.querySelector(`.player-row.pcolor-${playerSeat(state.players.find(p=>p.id===e.playerId))}`);
   const from=centerOf($("#cardRevealCard")),to=centerOf(destination);if(!from||!to){pendingHandCards.delete(e.card?.uid);seenRevealCards.delete(e.card?.uid);return;}
-  const flyer=document.createElement("div");flyer.className="card-flight";flyer.innerHTML=artMarkup(e.card.art,"card-art-img",e.card.name)||"✦";
+  const flyer=document.createElement("div");flyer.className="card-flight";
+  if(e.zone==="amulet")flyer.classList.add("amulet-flight");
+  flyer.innerHTML=e.zone==="amulet"?renderAmuletFace(e.card):artMarkup(e.card.art,"card-art-img",e.card.name)||"✦";
   Object.assign(flyer.style,{left:`${from.x-60}px`,top:`${from.y-85}px`});document.body.appendChild(flyer);motionObjects.add(flyer);
   trackAnimation(flyer,[{transform:"scale(1.7)",opacity:1},{transform:`translate(${to.x-from.x}px,${to.y-from.y}px) scale(.65) rotate(4deg)`,opacity:.9}],700).finally(()=>{flyer.remove();motionObjects.delete(flyer);pendingHandCards.delete(e.card?.uid);seenRevealCards.delete(e.card?.uid);renderPrivate()});
 }
@@ -999,6 +1005,7 @@ function renderPrivate(){
     b.className=`game-card amulet-card amu-type-${c.type} ${state?.game?.sanityDecision&&c.type==="sanity"&&isMyTurn()?"sanity-ready":""} ${react?"negative-ready":""}`;
     b.style.setProperty("--fan-x",`${offset*fanStep}px`);b.style.setProperty("--fan-rot",`${offset*6.5}deg`);b.style.setProperty("--fan-y",`${Math.abs(offset)*5}px`);b.style.zIndex=String(20+i);
     b.innerHTML=renderAmuletFace(c,{compact:true});
+    b.setAttribute("aria-label",`${c.name} · ${amuletEffectText(c)}`);
     if(pendingHandCards.has(c.uid))b.style.visibility="hidden";b.onclick=()=>openAmuletCard(c);$("#amuHand").appendChild(b)
   });
   $("#sacHand").innerHTML="";
@@ -1208,7 +1215,7 @@ function renderPendingRoomEffect(pending){
   else if(pending.type==="discardAmuletOverflow"){
     const need=Math.max(1,Number(pending.count)||1);
     const help=document.createElement("p");help.className="muted";help.textContent=`มือ Amulet เกิน 5 ใบ — เลือกทิ้ง ${need} ใบลงกองทิ้ง`;box.appendChild(help);
-    (pending.options||mine.amu||[]).forEach(c=>{const lab=document.createElement("label");lab.className="trade-card-check overflow-choice";lab.innerHTML=`<input type="checkbox" value="${c.uid}"><span>${c.name}<small style="display:block;color:#9c978c">${c.desc||c.effect||c.category||c.type||"Amulet"}${c.uid===pending.newUid?` • ${pending.newLabel||"ใบที่เพิ่งจั่ว"}`:""}</small></span>`;box.appendChild(lab)});
+    (pending.options||mine.amu||[]).forEach(c=>{const lab=document.createElement("label");lab.className="trade-card-check overflow-choice";lab.innerHTML=`<input type="checkbox" value="${c.uid}">${artMarkup(c.art,"amulet-choice-thumbnail",c.name)}<span>${c.name}<small style="display:block;color:#9c978c">${c.desc||c.effect||c.category||c.type||"Amulet"}${c.uid===pending.newUid?` • ${pending.newLabel||"ใบที่เพิ่งจั่ว"}`:""}</small></span>`;box.appendChild(lab)});
     const ok=document.createElement("button");ok.className="primary";ok.textContent=`ทิ้ง ${need} ใบ`;ok.onclick=()=>{const ids=[...box.querySelectorAll('input:checked')].map(x=>x.value);if(ids.length!==need){toast(`ต้องเลือก ${need} ใบ`);return;}socket.emit("resolveRoomEffect",{uids:ids});closeModal()};box.appendChild(ok);
   }
 
@@ -1240,7 +1247,7 @@ function renderPendingRoomEffect(pending){
 
   else if(pending.type==="chooseBrokenEquip"){
     const help=document.createElement("p");help.className="muted";help.textContent="เลือกอุปกรณ์ 1 ชิ้นที่หลุด/แตกจาก Event — การ์ดจะลงกองทิ้ง Amulet";box.appendChild(help);
-    (mine.equip||[]).forEach(c=>{const b=document.createElement("button");b.className="modal-option";b.innerHTML=`<b>${c.name}</b><span>${c.desc||""}</span>`;b.onclick=()=>{socket.emit("resolveRoomEffect",{uid:c.uid});closeModal()};box.appendChild(b)});
+    (mine.equip||[]).forEach(c=>{const b=document.createElement("button");b.className="modal-option";b.innerHTML=`${artMarkup(c.art,"option-art",c.name)}<b>${c.name}</b><span>${c.desc||""}</span>`;b.onclick=()=>{socket.emit("resolveRoomEffect",{uid:c.uid});closeModal()};box.appendChild(b)});
   }
 
   else{

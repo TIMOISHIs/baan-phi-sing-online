@@ -3,7 +3,7 @@
  const q=s=>document.querySelector(s),make=(tag,cls,html='')=>{const e=document.createElement(tag);e.className=cls;e.innerHTML=html;return e};
  const hud=q('#game .hud'),table=q('#game .table'),left=q('#game .rail'),center=q('#game .board-zone'),right=q('#game .boss-column');
  hud.className='bps-header';table.className='bps-table';left.className='bps-party';center.className='bps-center';right.className='bps-spirit';
- hud.prepend(make('div','bps-brand','<b>บ้านผีสิง</b><small>v1.15.0</small>'));
+ hud.prepend(make('div','bps-brand','<b>บ้านผีสิง</b><small>v1.15.2</small>'));
  const online=make('span','bps-online');online.id='onlineCount';hud.insertBefore(online,q('#connectionState'));
  const settings=make('button','','⚙');settings.title='ตั้งค่าเสียง';settings.setAttribute('aria-label','ตั้งค่าเสียง');settings.onclick=()=>q('#settingsBtn').click();hud.insertBefore(settings,q('#gameLeaveBtn'));
  const profile=make('button','bps-profile','โปรไฟล์');profile.onclick=()=>q('#accountChip').click();hud.insertBefore(profile,settings);
@@ -33,7 +33,7 @@
  q('#endBtn').parentElement.className='bps-end';q('#endBtn').className='bps-end-button';q('#endBtn').innerHTML='จบเทิร์น →';
  const ap=make('div','bps-ap','ธูปของเทิร์นนี้ <b id="actionPips"></b>');actions.prepend(ap);
  const discardDialog=dialog('กองทิ้ง Amulet','discardDialog'),gallery=make('div','bps-gallery');discardDialog.append(gallery);
- discard.onclick=()=>{gallery.replaceChildren();(state?.game?.amuletDiscard||[]).forEach(c=>{const card=make('article','');if(c.art){const img=document.createElement('img');img.src=c.art;img.alt=c.name;card.append(img)}const n=make('b',''),d=make('p','');n.textContent=c.name;d.textContent=[c.condition,c.desc||c.effect].filter(Boolean).join(' · ');card.append(n,d);gallery.append(card)});if(!gallery.children.length)gallery.textContent='ยังไม่มีการ์ดในกองทิ้ง';discardDialog.showModal()};
+ discard.onclick=()=>{gallery.replaceChildren();(state?.game?.amuletDiscard||[]).forEach(c=>{const card=make('article','');card.innerHTML=renderAmuletFace(c);const n=make('b',''),d=make('p','');n.textContent=c.name;d.textContent=amuletEffectText(c);card.append(n,d);gallery.append(card)});if(!gallery.children.length)gallery.textContent='ยังไม่มีการ์ดในกองทิ้ง';discardDialog.showModal()};
 
  // v1.13 inventory-first layout: personal card is always the local player.
  const profileCard=make('section','bps-own-profile');profileCard.id='ownProfile';profileCard.setAttribute('aria-label','โปรไฟล์ตัวละครของฉัน');profileCard.append(q('#characterCard'),q('.inventory-head'));top.firstElementChild.remove();

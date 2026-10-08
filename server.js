@@ -8,6 +8,7 @@ const {createAccounts}=require("./lib/accounts.cjs");
 const {awards}=require("./lib/progression.cjs");
 
 const CARD_ART = require("./public/assets/cards/manifest.json");
+const AMULET_FACES = require("./public/assets/amulets/faces/manifest.json");
 const artUrl = entry => entry?.file ? `/assets/cards/${entry.file}` : null;
 
 const app = express();
@@ -15,7 +16,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:"1.14.0",amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
+app.get("/health", (_req,res)=>res.status(200).json({ok:true,build:require("./package.json").version,amuletCards:63,sacrificeCards:54,ghosts:9,autoEndAtZero:true}));
 
 const PORT = process.env.PORT || 3000;
 const rooms = new Map();
@@ -226,29 +227,11 @@ AMULETS.forEach(c=>{
   if(!group)return;
   c.art=artUrl(CARD_ART.amulet?.[group]?.[amuCounters[group]++]);
 });
-const AMULET_FIGMA_ART={
-  E01:"equip-mor-knife.png",E02:"equip-mor-knife.png",E03:"equip-mor-knife.png",
-  E04:"equip-red-yantra.png",E05:"equip-red-yantra.png",E06:"equip-red-yantra.png",
-  E07:"equip-diamond-armor.png",E08:"equip-diamond-armor.png",E09:"equip-diamond-armor.png",
-  E10:"equip-sacred-sword.png",E11:"equip-sacred-sword.png",E12:"equip-sacred-sword.png",
-  S01:"spell-scroll.png",S02:"spell-scroll-alt.png",S03:"spell-grandpa.png",S04:"spell-grandpa-alt.png",
-  S05:"spell-scroll.png",S06:"spell-scroll-alt.png",S07:"spell-charm-bag.png",S08:"spell-charm-bag.png",S09:"spell-grandpa.png",
-  H01:"help-holy-water-bottle.png",H02:"help-holy-water-bottle.png",H03:"help-holy-water-bottle.png",
-  H04:"help-holy-bowl.png",H05:"help-holy-bowl.png",H06:"help-holy-bowl.png",
-  H07:"help-herbal-bottle.png",H08:"help-herbal-bottle.png",
-  H09:"help-incense-bowl.png",H10:"help-incense-bowl.png",H15:"help-aroma-powder.png",H16:"help-aroma-powder.png",
-  H11:"help-bell.png",H12:"help-bell.png",H17:"help-ya-hom-jar.png",H18:"help-ya-hom-jar.png",
-  H13:"help-defib.png",H14:"help-defib.png",
-  M01:"sanity-grandpa.png",M02:"sanity-grandpa.png",M03:"sanity-grandpa.png",M04:"sanity-grandpa.png",M05:"sanity-grandpa.png",
-  M06:"sanity-monk.png",M07:"sanity-monk.png",M08:"sanity-monk.png",M09:"sanity-monk.png",M10:"sanity-monk.png",
-  M11:"sanity-master.png",M12:"sanity-master.png",
-  V01:"event-yantra-face.png",V02:"event-poke.png",V03:"event-scared.png",V04:"event-phone-note.png",
-  V05:"event-ghost-woman.png",V06:"event-spill.png",V07:"event-lizard.png",V08:"event-treasure.png",
-  V09:"event-red-talisman.png",V10:"event-possessed.png",V11:"event-phone-note.png",V12:"event-defib.png"
-};
 AMULETS.forEach(c=>{
-  const file=AMULET_FIGMA_ART[c.id];
-  if(file)c.art=`/assets/amulets/${file}`;
+  const face=AMULET_FACES[c.id];
+  if(!face)throw new Error(`Missing full Amulet face: ${c.id}`);
+  // All existing hand, reveal, reaction and log payloads already carry art.
+  c.art=`/assets/amulets/faces/${face.file}`;
 });
 const sacCounters={green:0,blue:0,pink:0,black:0};
 SACRIFICES.forEach(c=>{ c.art=artUrl(CARD_ART.sacrifice?.[c.color]?.[sacCounters[c.color]++]); });
@@ -493,6 +476,7 @@ function revealCard(room,p,card,zone,reason="draw"){
     playerId:p?.id||null,
     playerName:p?.name||"ผู้เล่น",
     card:{
+      id:card.id||null,
       uid:card.uid||null,
       name:card.name||"การ์ด",
       type:card.type||null,

@@ -1,0 +1,506 @@
+{
+  "E01": {
+    "file": "E01.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-Equip-E01.png",
+    "sourceSha256": "16dffb247133ae1c4c79da601dd2703f8f42a96b308905a9ff0e09f468729eca",
+    "sha256": "3c07698f1dca27c2e28a468e7ebc3691756cb5329bbdc7cb83ac2f16c1f1de7e"
+  },
+  "E02": {
+    "file": "E02.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-Equip-E02.png",
+    "sourceSha256": "eb365a659e159066514ec71bc2a892238ac3f0bd25f38dacb49035ae382f4963",
+    "sha256": "b0a36bb2e9ae354671f768ee8728c0e6e34f523f7a44912103a008eefa04ec92"
+  },
+  "E03": {
+    "file": "E03.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-Equip-E03.png",
+    "sourceSha256": "e5b3e576a5c750a14878e9a0419f1a5c50efd3ec7893a04246464303cacde12c",
+    "sha256": "dfb426b47c76786a4fc1c29900a44d095375f550c6fd51190934696b6cdf4d18"
+  },
+  "E04": {
+    "file": "E04.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-Equip-E04.png",
+    "sourceSha256": "83e90c8c937d4111b29d404ef40ce3a6537eff898025342886839d6a6292f8f8",
+    "sha256": "a84c2a6e4cd65be22ef705a2d64b75f69686c1a902113c9b417addafaf52a55b"
+  },
+  "E05": {
+    "file": "E05.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-Equip-E05.png",
+    "sourceSha256": "7394bce795dadb329d9a6fefc22758610df42d1c07ee4ea18c9eb5378dd136c1",
+    "sha256": "de1600a031bc9ae214e7024bb3580492d1e43f1a21626d0412f0ebc7fbf4e0b2"
+  },
+  "E06": {
+    "file": "E06.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-Equip-E06.png",
+    "sourceSha256": "f6fac70308c6f75803ff8dffd19b18fe0c07d73b05eb470965be822a62f76267",
+    "sha256": "87299cbd3e984796e40b5f97a3e68e85502558e242c9d1ed21f5516738f4a84c"
+  },
+  "E07": {
+    "file": "E07.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-Equip-E07.png",
+    "sourceSha256": "315cdc1df2665aef7a0ec0ac33119bc6365c47ec83fe022641ebcd4554a483ec",
+    "sha256": "a1a17533757ab05bd055ce5f80b81ee3e44ae2361726f2f5407afce7a4365e5f"
+  },
+  "E08": {
+    "file": "E08.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-Equip-E08.png",
+    "sourceSha256": "09202d845d6969e5ff90c4e7235784f6bd4676c126d6403dd9e0c89c252c8f9c",
+    "sha256": "58b9c869173f2bbeddd4c8c3d4aa128cbcbdcc762a5401b38195403434aee3e7"
+  },
+  "E09": {
+    "file": "E09.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-Equip-E09.png",
+    "sourceSha256": "3f15ecd3c972903c004db8c128cd03526639d33bd2eb1b9f95dab843b8b84ba3",
+    "sha256": "2014156b1902b09a8515ca88f40b51718367e624cd07cb46269f541c77f63284"
+  },
+  "E10": {
+    "file": "E10.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-Equip-E10.png",
+    "sourceSha256": "3f107bddaf071fc8ac6695db027538fb157cc83b0e8a5975a3f981c049868087",
+    "sha256": "c98bfbaea38320dd3f1370084aa00b76be64135607dce5a0da6e2ac5c05500db"
+  },
+  "E11": {
+    "file": "E11.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-Equip-E11.png",
+    "sourceSha256": "7d36a8d67f1eb6374aa3bcb8923a2a1f5a9e879ce8af81651f0cb456aeb30f49",
+    "sha256": "306249d38a8a66546b0f9ec93601a473d6fa1a11128e8945da453ec7c5ad2829"
+  },
+  "E12": {
+    "file": "E12.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-Equip-E12.png",
+    "sourceSha256": "05f23670bb5d7ebdc5e51e75e18ec44331b1a0796b6bbb152dab0d83911b1395",
+    "sha256": "cf239386ea0d1a197e15bab97c7ede21c1aa9a94fb822bf1d4d4326734c037a7"
+  },
+  "H01": {
+    "file": "H01.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H01.png",
+    "sourceSha256": "553d02eb2a89b36ece107ccab1955217b6843729a633eca43d664583dfbee44f",
+    "sha256": "9552780cb7d782f886bc4e30f252fd6b833fe8678cf5fa34953e90483e967d57"
+  },
+  "H02": {
+    "file": "H02.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H02.png",
+    "sourceSha256": "5bb86cb202415d0a3f4be18879443c2dcbe352191db7dad706c087e83cf0e24d",
+    "sha256": "005e938bb062e2565b147bfc257d52c8e7ad36f6677a4fd184267d065914ce6c"
+  },
+  "H03": {
+    "file": "H03.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H03.png",
+    "sourceSha256": "06b271199566613e19c3f1e15b5b424cc3e994bab9ae043f91e436b1c91f8dcd",
+    "sha256": "60995c935ef00ee953ad326b38471e3152300114c4a115fe022c67a3023c2c5e"
+  },
+  "H04": {
+    "file": "H04.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H04.png",
+    "sourceSha256": "08d618c6510efff9dd7b489e967eaa8031fa0935500c31246965fd03bedb60e6",
+    "sha256": "fb2f6e85b90a0d0b4942a08c15eaaa54cb01ed4cedb9fad1b62f7aec9f1f4b53"
+  },
+  "H05": {
+    "file": "H05.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H05.png",
+    "sourceSha256": "7196ad179b78ebb24bdc95f90d3a50b4590abe8a3334e6f1f1e6af7517b936f2",
+    "sha256": "76e109ce615276332c2d753e2fa9606e228c9c905b247a84644521f5d4e41b7b"
+  },
+  "H06": {
+    "file": "H06.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H06.png",
+    "sourceSha256": "eda673debedc922cfe6876e4bb116b7a93ddf87ffeab09574e6fe07dbda93d11",
+    "sha256": "b13e438254a7667ab33b1589c7bc69c2aa78db36669bb89eacc02fec1c6c25b6"
+  },
+  "H07": {
+    "file": "H07.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H07.png",
+    "sourceSha256": "bc706f2e37ee7694691e57be62ac12d16be38d71f078ee0659b3a76fca3bd257",
+    "sha256": "cde8881a3eca665b6dd59421eeb7be34de2bd11c70c1d2f860c5c0575f785794"
+  },
+  "H08": {
+    "file": "H08.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H08.png",
+    "sourceSha256": "76e7968eec1802e49d8787aca8b1d313ef9265d42bbdc0e1559e22dbc0556f82",
+    "sha256": "03fd170b5fc2a0a76d57dcb46993efa041c4c00ca35da52f36141edf2c326be7"
+  },
+  "H09": {
+    "file": "H09.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H09.png",
+    "sourceSha256": "b6807af5b32b119ae7cc0907f58ccdee7eedb1d46dc3cc6bb80d8aec46813a04",
+    "sha256": "fc6d4f27facd1cff0cdbc838b1219aaa6ecf2c6752c47597f65130d18ca0adc2"
+  },
+  "H10": {
+    "file": "H10.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H10.png",
+    "sourceSha256": "a5d8c6fbbd5bbc7169c4cd388828d4cef5de558a9b6e1eef9ef3f0194face81b",
+    "sha256": "4c478dd3eeb7d8d43892bd2eb1562392092aef935c49d7db68cba70eb5b6b276"
+  },
+  "H11": {
+    "file": "H11.webp",
+    "width": 1528,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H11.png",
+    "sourceSha256": "5deb17b27df5cd94b076178197b0fe5d3b26e9d12b204ab42115dd37eb944550",
+    "sha256": "9fe182476d1e9c9a0479573f9e3f91afa93a83623bc51204f4372488d46ad83a"
+  },
+  "H12": {
+    "file": "H12.webp",
+    "width": 1528,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H12.png",
+    "sourceSha256": "48398256759a16033c9c0c4bf8aae1ad57bdad6be37f3c8a431d2385812fc13b",
+    "sha256": "bdfce91961b97a558cef6a13549d9515c355d0111092f41b25fe50a4afd2beaa"
+  },
+  "H13": {
+    "file": "H13.webp",
+    "width": 1570,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H13.png",
+    "sourceSha256": "501640295bf035fbead301795bf2864c6e365f9b0d48e0669d4b34e7526a1716",
+    "sha256": "fcf1a9fb754e08a28881f5b3eaedd506d59de859ea2e024841d3f7d8916c1038"
+  },
+  "H14": {
+    "file": "H14.webp",
+    "width": 1570,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H14.png",
+    "sourceSha256": "0f0f118caf20119a5ec5f04d476149b5fd80e61cc4a1dcba11932f4576bec5d3",
+    "sha256": "866b04ec5857844201f40344941544b8a0a892dda998dbe84396b35f2c7912cb"
+  },
+  "H15": {
+    "file": "H15.webp",
+    "width": 1570,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H15.png",
+    "sourceSha256": "ccf153ea96d8a98fcec331251e0791f7116e57ddd6613253f3c6c062039771b6",
+    "sha256": "8988b19accc216c3135b246fae91311f8c89c3b92271b0acf668e3eaf1c1005c"
+  },
+  "H16": {
+    "file": "H16.webp",
+    "width": 1570,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H16.png",
+    "sourceSha256": "5d8afe3cb0044cd4c89681acaa81926cd604219f771f92ff4d3977b4d4d6c6ae",
+    "sha256": "1b31e6e401d05e221f276fdfa7ed7597f96b83b79515ad508cf591db0d76713e"
+  },
+  "H17": {
+    "file": "H17.webp",
+    "width": 1634,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H17.png",
+    "sourceSha256": "e0bde7ebb64eb96b9220f64640faff7a52c2b6e35a7660697c17b4c270dcbca5",
+    "sha256": "93edaafe8f94b363e9d2fdd0e832829a2569767fc713619db21f1f7e5406e780"
+  },
+  "H18": {
+    "file": "H18.webp",
+    "width": 1634,
+    "height": 2178,
+    "source": "Amulet-ช่วยเหลือ-H18.png",
+    "sourceSha256": "3e64d0582eabd5804eb5f8975d4772c337b8d191194790c0511024e09fb2d418",
+    "sha256": "874998b82ae4d1b2826ff0b27adb9993c2f1ef75977b818b0105712ebdb37584"
+  },
+  "M01": {
+    "file": "M01.webp",
+    "width": 1554,
+    "height": 2178,
+    "source": "Amulet-เรียกสติ-M01.png",
+    "sourceSha256": "57318bd538959563985ff9c44425c7ad0cd13d88227d467085fb6f735f31fdfa",
+    "sha256": "609ff071cce956ebe38e9f6ed6892fd1883ecc414ad8a57c20f3db716ea0c246"
+  },
+  "M02": {
+    "file": "M02.webp",
+    "width": 1554,
+    "height": 2178,
+    "source": "Amulet-เรียกสติ-M02.png",
+    "sourceSha256": "48a7383ec08deae6d5e5fc6a20ad2b44612cc74e5a1056bddfc4eeb099d6c022",
+    "sha256": "c9a481e5c768f179d75d033bfa77edf3b1111bfe22ca34a4776b218187322b97"
+  },
+  "M03": {
+    "file": "M03.webp",
+    "width": 1554,
+    "height": 2178,
+    "source": "Amulet-เรียกสติ-M03.png",
+    "sourceSha256": "afb86490ab8d85d0b1a5b27ff23f1c3ab62373f1c6cd1188ae49e8b86bb99770",
+    "sha256": "a763745d32bf7fd4dfa3b2363ae8e82ec88759496dabb5f787ce63dc7ef19f37"
+  },
+  "M04": {
+    "file": "M04.webp",
+    "width": 1554,
+    "height": 2178,
+    "source": "Amulet-เรียกสติ-M04.png",
+    "sourceSha256": "4d4ecf830624f8a6c701803535d2f44189b7bf2ac3f093fbaf0bb4736d855f9c",
+    "sha256": "c3f14ef78b863937038976a8aba5d3f2867deaac1d96574437091a225e702cfd"
+  },
+  "M05": {
+    "file": "M05.webp",
+    "width": 1554,
+    "height": 2178,
+    "source": "Amulet-เรียกสติ-M05.png",
+    "sourceSha256": "95c6ccfe303691573a9cef58031cb9a2b38f7ce2c5d0a023fa788785e85bdbcf",
+    "sha256": "fefd4729913bfc0bfcb48f77f5e30a280540797ffaa9f5f196caf6a98650e239"
+  },
+  "M06": {
+    "file": "M06.webp",
+    "width": 1554,
+    "height": 2178,
+    "source": "Amulet-เรียกสติ-M06.png",
+    "sourceSha256": "bad6fa43a741495738f845b0003d5a825e890ae5bb628835886eaacefde02feb",
+    "sha256": "e9b1668ba31eaf5f2217ac13fabd1683900fe2d3f0228396a1011ff37ede25e0"
+  },
+  "M07": {
+    "file": "M07.webp",
+    "width": 1554,
+    "height": 2178,
+    "source": "Amulet-เรียกสติ-M07.png",
+    "sourceSha256": "8f278e4f3c771f7bd7824225f5dba2063c90e1435e870b8a8bbf6b5b04e32fc9",
+    "sha256": "e37986acdf080541827ed8a8d856358b9ddbf465ded1323f1e04f3922193a6dd"
+  },
+  "M08": {
+    "file": "M08.webp",
+    "width": 1554,
+    "height": 2178,
+    "source": "Amulet-เรียกสติ-M08.png",
+    "sourceSha256": "cb7ec34cea8f87cb416483af4e22f9ab3f1da5585d865e9527f1372c97e89fd0",
+    "sha256": "691573db753ffe18f1bd93940ac047f3537b080a34572eb9c32777be82017903"
+  },
+  "M09": {
+    "file": "M09.webp",
+    "width": 1554,
+    "height": 2178,
+    "source": "Amulet-เรียกสติ-M09.png",
+    "sourceSha256": "aa9fe2693164fba65086f95e45d86a14a2b5d8e9a3e71144dff794c792f42dc0",
+    "sha256": "e3079d6a165854cd7512aa557b59e14ce3a1ab4d4ed0909c3e2c723415224ce9"
+  },
+  "M10": {
+    "file": "M10.webp",
+    "width": 1554,
+    "height": 2178,
+    "source": "Amulet-เรียกสติ-M10.png",
+    "sourceSha256": "dad042fc79dcccb8d6cbef059307821cf2cac8a6e72b0cea9cc1ccfc883057c5",
+    "sha256": "02dfc90dd0aa00124f636dbb7e9714a1f0ec1c9f58f1a4c7f42b7848877cc793"
+  },
+  "M11": {
+    "file": "M11.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เรียกสติ-M11.png",
+    "sourceSha256": "c9a476c5c0de4e5dcceb1a4aca50401cea8afd6c21ff679bd3b976774e1ab032",
+    "sha256": "7326f8b65e60ba3b452ef171d9f76caccde4f9a4d996257b5936aef17794703e"
+  },
+  "M12": {
+    "file": "M12.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เรียกสติ-M12.png",
+    "sourceSha256": "4d953fdb50f994e910174ac47e3577dea233c76156e720a133807bae4791bd8b",
+    "sha256": "7dd2d5a453a419c590cbf9d2ae9185c4455f1bed25d48069c25be75ab56aa10f"
+  },
+  "S01": {
+    "file": "S01.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-คาถาอาคม-S01.png",
+    "sourceSha256": "0a8d867d2e8d79aacb72b3dc85a80fab107e525c11fb15f43fa163e1e663103f",
+    "sha256": "5155aab6db28930ea3fbbae20fe7787d174935569e8a102cb640310ceb120846"
+  },
+  "S02": {
+    "file": "S02.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-คาถาอาคม-S02.png",
+    "sourceSha256": "fbef745a014a24503094589a350473b0661bfd2c123ae382e3969853fc14a714",
+    "sha256": "0a2395b35499a646646bf14971607e9b55cb2a520e8deb6cb084928078785c06"
+  },
+  "S03": {
+    "file": "S03.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-คาถาอาคม-S03.png",
+    "sourceSha256": "8db936bf12ab569684e5d8faa3cbdbe9bf883efbfbea7baaedf77a6e716f5eaa",
+    "sha256": "1a5198532cf2446d062b4c3f42282fcbfa60c4eaa4e0c71b044998e1f118ff2a"
+  },
+  "S04": {
+    "file": "S04.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-คาถาอาคม-S03-1.png",
+    "sourceSha256": "9c355bb1ce4d0555024c812e05fe482ea28d8347746571fa72c991dddd0c158c",
+    "sha256": "187d229af1dd6080e48cf8e7443536c3ddc4353cd4bb1a0ecaf69333324d52d1"
+  },
+  "S05": {
+    "file": "S05.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-คาถาอาคม-S05.png",
+    "sourceSha256": "9b376865e198a30a8b27caeee447b23ae200340949c6815158cfc4b5c3c4ea49",
+    "sha256": "77ca1ad05bd894e0b1b4ddbde87c09743213d9d0d513f1e68a6ec50451c3b9b3"
+  },
+  "S06": {
+    "file": "S06.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-คาถาอาคม-S06.png",
+    "sourceSha256": "074a046a7f22c39941ec55263b22f28c665c29fa5bc613ca4fbab0723810eb05",
+    "sha256": "08e53d535ba02b0872ad3e931485e2ed7c73f5ccf87cf4abaaef268157ff2373"
+  },
+  "S07": {
+    "file": "S07.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-คาถาอาคม-S07.png",
+    "sourceSha256": "5dd756971af7490cdc58d9174967435bf881b40c06ed404f6085d2c08e6052fa",
+    "sha256": "d01ab4f97a7e184476a3a0cf79c898469d60a9fe2dd6f23dbcdcfa337bb88949"
+  },
+  "S08": {
+    "file": "S08.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-คาถาอาคม-S08.png",
+    "sourceSha256": "7cd6287d5a27fe75ec84a4b6f3516c1c2bb60a5bdddd262f4fce952b8da81cf1",
+    "sha256": "21363844301a13e3a2c2635f3c5f703e4e4cbc4bc4328b35d3c5418670a17646"
+  },
+  "S09": {
+    "file": "S09.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-คาถาอาคม-S09.png",
+    "sourceSha256": "3d98cc989ed770d79637cc532c26130e9388cd07254c830651a9c18b894c0a4b",
+    "sha256": "f1238729b778645f7d125f7c096488ff0328319fba35d74184d80fdcf172a6ea"
+  },
+  "V01": {
+    "file": "V01.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เหตุการณ์-V01.png",
+    "sourceSha256": "23b3a765f19c1783d1bc6d14dfd6471959bddd475d1f2c6243566136df71ad94",
+    "sha256": "1d6ff11669f1355c6e0f87af6821103af9074bee2393ec103933438b8e890e2f"
+  },
+  "V02": {
+    "file": "V02.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เหตุการณ์-V02.png",
+    "sourceSha256": "98a31a942824c17ca858868e9eaef6821c175cbce2cbf243232d6199c4b3cf14",
+    "sha256": "c65be4cd83eb852327cdb7a069e80103e11f3a53cb1fd89a128d62ac669dac7f"
+  },
+  "V03": {
+    "file": "V03.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เหตุการณ์-V03.png",
+    "sourceSha256": "f07b9aba226252efdbb1b6b3011cbb159f11803088f7a8c80a56de60ac57c84e",
+    "sha256": "98a7bed6bb5271659a6b71a908083fae63f16400a98c1f2d447d3f97809fe3a6"
+  },
+  "V04": {
+    "file": "V04.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เหตุการณ์-V04.png",
+    "sourceSha256": "6133b505197262e3b9c1dbf6a2096d70bb2cb1d040843530f6523ae12f6c8409",
+    "sha256": "2a9ee6a7c690aca5fa3938ccb3dfda2e255d4d7c87e0c75398c1269a010ddce9"
+  },
+  "V05": {
+    "file": "V05.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เหตุการณ์-V05.png",
+    "sourceSha256": "9d4caee49c089702081aa3a68fda2e6cb65792af07245400c5263726a1260eb6",
+    "sha256": "23fab52eb194a070d46e6a1628397c0444db43c0bd042f945da5f28bd898943f"
+  },
+  "V06": {
+    "file": "V06.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เหตุการณ์-V06.png",
+    "sourceSha256": "348dab27b59cdb50ebece88dd1d30e20c9a0023809ecdb33b45bcadbbe2aee8d",
+    "sha256": "7e38f8458c13f8fda3afae1324da1fc7ccea6042ad31d826e916215704647955"
+  },
+  "V07": {
+    "file": "V07.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เหตุการณ์-V07.png",
+    "sourceSha256": "61b57f4da48172eca851fd64c3cb8a4c292ef8cd2f6d24588f11ada368534b8a",
+    "sha256": "552328e414bb906776a192910f845e59d6d5767e5903c816271295e24a5034fc"
+  },
+  "V08": {
+    "file": "V08.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เหตุการณ์-V08.png",
+    "sourceSha256": "ef16047aa75d6653f275b66c34d218c2c941455d7b37fadf58ebab17b303f495",
+    "sha256": "4f6d6094ac20886fe6b18ab28ab1fda634da04f85d9bf9227708334d4263c62f"
+  },
+  "V09": {
+    "file": "V09.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เหตุการณ์-V09.png",
+    "sourceSha256": "9f275b0ed143a895150a4832dba8553ba92a796c91c09137746880944fcfc253",
+    "sha256": "ad3b7d011f913555a59f5e55537d1b0d985f3f96f3e6df4bd8f860d6e1120cf1"
+  },
+  "V10": {
+    "file": "V10.webp",
+    "width": 1478,
+    "height": 2202,
+    "source": "Amulet-เหตุการณ์-V10.png",
+    "sourceSha256": "7d9ad0c2a01d2a6b40eca73564dac5a7515ff01740dda1a8427a308347fa166a",
+    "sha256": "3ab2f473cdb4170a071e8c844c15531e0a7ccf428c7257c8c5fd60210f80d8dd"
+  },
+  "V11": {
+    "file": "V11.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เหตุการณ์-V11.png",
+    "sourceSha256": "7e714758ecd989490946a1f6245b9891109c63f917eeeafd55d8c3c6f77286fe",
+    "sha256": "a346b8ca751a77c5954997b1d9d5d593e2c126f2cce5e82d82cda965de01bedc"
+  },
+  "V12": {
+    "file": "V12.webp",
+    "width": 1478,
+    "height": 2178,
+    "source": "Amulet-เหตุการณ์-V12.png",
+    "sourceSha256": "29128f28f3e7a3742a9172ad931d88fd6bbf10dac3d1e1d9e6314afd27783e15",
+    "sha256": "2cdac060ad7945f547f016a1bfd6177f22ccd7e50120a7955e671d7cae68dcb5"
+  }
+}
