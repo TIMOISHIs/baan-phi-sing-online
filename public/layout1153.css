@@ -1,0 +1,43 @@
+/* v1.15.3: map-first layout approved by Tim; inventory remains unchanged. */
+#game .bps-table{grid-template-columns:clamp(174px,14vw,252px) minmax(0,1fr) 88px clamp(180px,14vw,250px)}
+#game .bps-action-rail{grid-column:3!important;grid-row:1!important;border-left:0;padding-top:28px;padding-bottom:50px}
+#game .bps-spirit{grid-column:4;grid-row:1}
+#game .bps-center{position:relative;grid-template-rows:minmax(0,1fr) auto auto!important;padding-top:28px}
+#game .bps-board-heading{position:absolute;top:10px;left:14px;z-index:2}
+#game .bps-board-shell{--deck-width:104px;--cluster-gap:22px}
+#game .bps-decks{gap:20px}
+#game .bps-draw-deck{flex:0 1 150px;min-height:115px;font-size:13px}
+#game .bps-draw-deck .deck-count{font-size:15px}
+#game .bps-draw-deck small{font-size:10px}
+#game .bps-discard{min-height:132px}
+#game .bps-discard b,#game .bps-discard small{font-size:12px}
+#game .bps-discard span{font-size:32px}
+#game #ghostFear{display:none!important}
+#game .ghost-head{display:flex;align-items:center;justify-content:space-between;gap:6px}
+#game .ghost-head>div{min-width:0}
+#game .ghost-head h2{overflow-wrap:anywhere}
+#game .bps-ghost-curse{flex:0 0 auto;background:#72439a;border:0;border-radius:5px;padding:7px 9px;text-align:center;font-size:12px}
+#game .bps-ghost-curse b{font-size:15px}
+#game .bps-ghost-curse small{display:block;font-size:10px}
+#game .bps-spirit .bps-ritual{justify-content:flex-start;gap:5px;min-height:32px;margin:5px 0;flex-wrap:wrap}
+#game .bps-spirit .bps-ritual>b{padding:5px 7px;font-size:9px}
+#game .bps-spirit #bossSlots{gap:3px;flex:1;min-width:0}
+#game .bps-spirit .bps-ritual .slot{width:21px;height:23px;line-height:21px;font-size:18px;flex:0 0 21px}
+@media(max-width:1500px) and (min-width:1101px){
+ #game .bps-board-shell{--deck-width:88px;--cluster-gap:12px}
+ #game .bps-draw-deck{flex-basis:125px;min-height:100px}
+ #game .bps-discard{min-height:100px}
+}
+@media(max-width:1100px){
+ #game .bps-table{grid-template-columns:170px minmax(0,1fr) 76px}
+ #game .bps-spirit{grid-column:1/-1;grid-row:2}
+ #game .bps-center{grid-template-rows:minmax(0,1fr) auto auto!important}
+}
+@media(max-width:620px){
+ #game .bps-board-shell{--deck-width:65px;--cluster-gap:7px}
+ #game .bps-draw-deck{font-size:10px;min-height:90px;flex-basis:100px}
+ #game .bps-draw-deck small{font-size:8px}
+ #game .bps-discard{min-height:90px}
+ #game .bps-discard b,#game .bps-discard small{font-size:9px}
+ #game .bps-action-rail{padding:8px}
+}
