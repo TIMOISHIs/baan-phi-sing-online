@@ -21,9 +21,11 @@
   q('#createName').readOnly=q('#joinName').readOnly=true;
   q('#createName').closest('label').classList.add('hidden');q('#joinName').closest('label').classList.add('hidden');
  }
- function editor(){
+ async function editor(){
+  let available=config.avatars;
+  try{const shop=await api('/api/account/shop');if(shop.enabled)available=available.filter(a=>shop.owned.includes(a.key)||a.key===profile?.avatar_key)}catch{available=available.filter(a=>['mae-mali','doctor','nerd','mor-tham',profile?.avatar_key].includes(a.key))}
   const d=q('#profileEditor');q('#profileName').value=profile?.display_name||'';q('#avatarOptions').replaceChildren();
-  config.avatars.forEach((a,i)=>{const label=document.createElement('label'),input=document.createElement('input'),img=document.createElement('img'),name=document.createElement('span');input.type='radio';input.name='avatar';input.value=a.key;input.checked=profile?profile.avatar_key===a.key:i===0;img.src=a.art;img.alt=a.name;name.textContent=a.name;label.append(input,img,name);q('#avatarOptions').append(label)});
+  available.forEach((a,i)=>{const label=document.createElement('label'),input=document.createElement('input'),img=document.createElement('img'),name=document.createElement('span');input.type='radio';input.name='avatar';input.value=a.key;input.checked=profile?profile.avatar_key===a.key:i===0;img.src=a.art;img.alt=a.name;name.textContent=a.name;label.append(input,img,name);q('#avatarOptions').append(label)});
   q('#profileCancel').hidden=!profile;q('#profileError').textContent='';if(!d.open)d.showModal();
  }
  async function load(){const data=await api('/api/account/me');profile=data.profile;paint();if(!profile)editor();return profile}
@@ -98,5 +100,6 @@
    try{if(await load()){status('ยินดีต้อนรับกลับ');await connect()}}catch(e){if(e.status===401){status('เข้าสู่ระบบเพื่อเก็บเลเวลและสถิติ');paint()}else throw e}
   }catch(e){status(e.message+' · ลองรีเฟรชหน้าอีกครั้ง');q('#googleSignIn').disabled=true}
  }
+ window.refreshAccountProfile=load;
  boot();
 })();
