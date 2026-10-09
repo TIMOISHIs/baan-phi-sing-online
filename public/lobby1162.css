@@ -1,0 +1,54 @@
+/* Lobby only. Keep original background, art pixels and live data. */
+.rpg-quick,.rpg-news{display:none}
+body.has-account #home{--rpg-gold:#b69a62;--rpg-ivory:#e8d6b0;--rpg-line:#8c7147}
+body.has-account #home .night-logo{display:none!important}
+body.has-account #home #accountProfile{left:2.7%;top:4%;width:28%;padding:18px 22px;gap:18px;align-items:center;cursor:pointer;background:linear-gradient(105deg,#241a17e8,#241a1799);border:1px solid var(--rpg-gold);border-radius:2px;box-shadow:inset 0 0 0 5px #241a17,inset 0 0 0 6px #8c71477a}
+body.has-account #home #accountProfile>img{width:clamp(60px,5.4vw,104px);height:clamp(60px,5.4vw,104px);border-color:var(--rpg-gold)}
+body.has-account #home .account-identity h2{margin:0 0 2px;font-size:clamp(20px,1.55vw,30px);color:var(--rpg-ivory);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.has-account #home .account-identity>b{font-size:clamp(13px,1vw,19px);color:var(--rpg-ivory)}
+body.has-account #home #accountXP{appearance:none;height:7px;border:1px solid #8c7147;border-radius:0;background:#171719;width:100%;margin:7px 0 3px}
+body.has-account #home #accountXP::-webkit-progress-bar{background:#171719}
+body.has-account #home #accountXP::-webkit-progress-value{background:#b69a62}
+body.has-account #home #accountXP::-moz-progress-bar{background:#b69a62}
+body.has-account #home #accountXPText{font-size:clamp(9px,.7vw,13px);color:#d6c8ac}
+body.has-account #home .account-identity details{margin-top:5px;color:#c5b189}
+body.has-account #home .account-identity details[open]{top:calc(100% + 8px);padding:18px;border:1px solid #8c7147;box-shadow:0 10px 30px #0008;z-index:10}
+body.has-account #home #accountProfile:before,body.has-account #home .rpg-news:before,body.has-account #home .night-main-button:before{content:'';position:absolute;inset:4px;border:0;border-radius:0;pointer-events:none;background:url('/rpg-corners1162.svg') left top/26px 26px no-repeat,url('/rpg-corners1162.svg') right bottom/26px 26px no-repeat;opacity:.9}
+body.has-account #home .lobby-currencies{top:4.5%;right:20%;gap:0;padding:8px 0;border:1px solid #8c7147;background:#241a17d9;border-radius:3px}
+body.has-account #home .lobby-currencies>span{border:0;border-radius:0;background:none;min-height:0;padding:4px 18px;font-size:clamp(12px,1.05vw,20px);color:var(--rpg-ivory)}
+body.has-account #home .lobby-currencies>span+span{border-left:1px solid #8c7147}
+body.has-account #home .rpg-quick{display:flex;position:absolute;right:2.7%;top:4.5%;gap:10px;z-index:4}
+body.has-account #home .rpg-quick button{position:relative;display:grid;place-items:center;width:clamp(35px,3vw,58px);height:clamp(35px,3vw,58px);padding:10px;border:1px solid #8c7147;border-radius:50%;background:#241a17c9;color:var(--rpg-gold)}
+body.has-account #home .rpg-quick svg{width:100%;height:100%}
+body.has-account #home .rpg-quick button:after{content:attr(data-tip);display:none;position:absolute;top:calc(100% + 10px);right:0;padding:6px 9px;white-space:nowrap;background:#241a17;border:1px solid #8c7147;color:#e8d6b0;font-size:12px;pointer-events:none}
+body.has-account #home .rpg-quick button:hover:after,body.has-account #home .rpg-quick button:focus-visible:after{display:block}
+body.has-account #home .lobby-top-actions nav{left:3.3%;top:29%;width:13%;gap:0}
+body.has-account #home .lobby-top-actions nav button{min-height:clamp(52px,8vh,86px);padding:12px 6px;gap:20px;border-bottom:1px solid #8c71476b;color:var(--rpg-ivory);font-size:clamp(14px,1.2vw,23px)}
+body.has-account #home .lobby-top-actions .pregame-icon{color:var(--rpg-gold);width:clamp(25px,2vw,38px);height:clamp(25px,2vw,38px);flex-shrink:0}
+body.has-account #home .night-character{left:25%;bottom:14%;width:31%;height:67%}
+body.has-account #home .night-character:before{content:'';position:absolute;left:17%;right:17%;bottom:3%;height:6%;border-radius:50%;background:#17171970;filter:blur(12px)}
+body.has-account #home .night-character img{filter:drop-shadow(0 10px 9px #0005);mask-image:radial-gradient(ellipse 51% 49% at 50% 50%,#000 58%,transparent 99%)}
+body.has-account #home .night-character figcaption{display:none}
+body.has-account #home .rpg-news{display:flex;align-items:center;gap:22px;position:absolute;right:4%;top:25%;width:36%;height:13%;min-height:95px;padding:16px 26px;border:1px solid #8c7147;background:linear-gradient(90deg,#241a17f2,#241a17aa),url('/assets/backgrounds1161/Window_Lobby.png') 70% 40%/cover;z-index:2;color:var(--rpg-ivory)}
+body.has-account #home .rpg-news>svg{width:55px;height:55px;flex-shrink:0;color:var(--rpg-gold)}
+body.has-account #home .rpg-news h2{margin:2px 0;font-size:clamp(21px,1.7vw,32px)}
+body.has-account #home .rpg-news p{margin:0;font-size:clamp(11px,.9vw,17px);color:#d1c0a0}
+body.has-account #home .rpg-news small{font-size:10px;color:#c0a475}
+body.has-account #home .rpg-news-tag{position:absolute;right:12px;top:10px;font-size:9px;letter-spacing:1px;color:#c0a475}
+body.has-account #home .night-main-actions{right:4%;top:41%;width:36%;gap:20px}
+body.has-account #home .night-main-button{display:flex;align-items:center;justify-content:flex-start;gap:25px;height:17vh;min-height:105px;padding:20px 32px;border:1px solid #b69a62;border-radius:2px;background:linear-gradient(95deg,#241a17f5,#39251ddc);box-shadow:inset 0 0 0 5px #241a17,inset 0 0 0 6px #8c7147,0 6px 15px #0005;color:var(--rpg-ivory);font-size:clamp(26px,2.65vw,51px);text-shadow:0 2px 2px #0006;letter-spacing:0}
+body.has-account #home .night-main-button>svg{width:clamp(42px,4.5vw,85px);height:clamp(42px,4.5vw,85px);flex-shrink:0;color:#b69a62}
+body.has-account #home .night-main-button>i{margin-left:auto;font-style:normal;font-weight:400;color:#b69a62}
+body.has-account #home .night-main-button.join{height:13vh;min-height:90px;background:linear-gradient(105deg,#e8d6b0,#ceba92);box-shadow:inset 0 0 0 5px #d3bf98,inset 0 0 0 6px #8c7147,0 6px 15px #0004;color:#34251e;font-size:clamp(24px,2.25vw,43px)}
+body.has-account #home .night-main-button.join>svg,body.has-account #home .night-main-button.join>i{color:#735737}
+body.has-account #home .night-main-button:hover{filter:brightness(1.06);transform:none;border-color:#e8d6b0}
+/* No boxes behind bottom menu, including legacy active/hover rules. */
+body.has-account #home .lobby-footer{bottom:0;height:11%;border:0!important;box-shadow:none!important;background:linear-gradient(to top,rgba(0,0,0,.1),rgba(0,0,0,0))!important;align-items:center}
+body.has-account #home .lobby-footer .lobby-nav{width:55%;height:90%;gap:35px;background:none!important;border:0!important;box-shadow:none!important}
+body.has-account #home .lobby-footer .lobby-nav button,body.has-account #home .lobby-footer .lobby-nav button:hover,body.has-account #home .lobby-footer #charactersBtn,body.has-account #home .lobby-footer #friendsBtn[aria-expanded=true]{background:none!important;border:0!important;outline-offset:2px;box-shadow:none!important;border-radius:0;min-height:0;font-size:clamp(13px,1.05vw,20px);color:#e8d6b0;gap:7px;text-shadow:0 2px 4px #000}
+body.has-account #home .lobby-footer .lobby-nav button:before,body.has-account #home .lobby-footer .lobby-nav button:after{display:none!important}
+body.has-account #home .lobby-footer .pregame-icon{color:#b69a62;width:clamp(28px,2.6vw,50px);height:clamp(28px,2.6vw,50px);filter:drop-shadow(0 2px 2px #000)}
+body.has-account #home .lobby-footer button:hover .pregame-icon,body.has-account #home .lobby-footer button:focus-visible .pregame-icon{color:#e8d6b0}
+body.has-account #home #accountStatus{bottom:12%;font-size:10px}
+@media(max-width:1100px){body.has-account #home #accountProfile{width:31%;padding:12px;gap:10px}body.has-account #home .lobby-currencies{right:23%}body.has-account #home .lobby-currencies>span{padding:4px 8px}body.has-account #home .rpg-quick{gap:6px}body.has-account #home .night-main-button{padding:16px;gap:12px}body.has-account #home .rpg-news{padding:12px;gap:12px}body.has-account #home .lobby-top-actions nav{width:18%}}
+@media(max-height:650px){body.has-account #home #accountProfile{top:3%;padding:10px}body.has-account #home .account-identity details{display:block}body.has-account #home .rpg-news{top:25%;min-height:65px}body.has-account #home .rpg-news p{display:none}body.has-account #home .night-main-button{min-height:75px}body.has-account #home .night-main-button.join{min-height:65px}body.has-account #home .night-main-actions{gap:12px}}
