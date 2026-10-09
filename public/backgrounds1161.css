@@ -1,0 +1,19 @@
+/* v1.16.1: user-supplied backgrounds only; preserve screen layout and logic. */
+body:not(.has-account) #home.active {
+  background: #151113 url('/assets/backgrounds1161/Window_Login.png') center / cover no-repeat !important;
+}
+body.has-account #home.active {
+  background: #151113 url('/assets/backgrounds1161/Window_Lobby.png') center / cover no-repeat !important;
+}
+/* The old atmosphere layer contains a different illustration. Keep smoke separately. */
+#home .lobby-atmosphere {
+  background: none !important;
+}
+#lobby.active {
+  background: #151113 url('/assets/backgrounds1161/Window_Room.png') center / cover no-repeat !important;
+}
+/* This is the ghost selection screen, not the player-character dialog. */
+#ghostSelectOverlay {
+  background: #151113 url('/assets/backgrounds1161/Window_Character.png') center / cover no-repeat !important;
+  backdrop-filter: none;
+}
