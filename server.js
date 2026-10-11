@@ -234,6 +234,12 @@ AMULETS.forEach(c=>{
   c.art=`/assets/amulets/faces/${face.file}`;
 });
 const sacCounters={green:0,blue:0,pink:0,black:0};
+// Read-only Lobby catalogue. Use the same definitions and full Figma faces as the deck.
+app.get('/api/cards/amulets',(_req,res)=>{
+  res.set('Cache-Control','public, max-age=300');
+  res.json({cards:AMULETS.map(c=>({id:c.id,name:c.name,category:c.category,type:c.type,
+    art:c.art,desc:c.desc||c.effect||'',condition:c.condition||null}))});
+});
 SACRIFICES.forEach(c=>{ c.art=artUrl(CARD_ART.sacrifice?.[c.color]?.[sacCounters[c.color]++]); });
 
 let nextCardId = 1;

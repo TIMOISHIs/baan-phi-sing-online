@@ -1,0 +1,90 @@
+/* Approved 1920×1080 layouts. All overrides are scoped to Lobby and Ready Room. */
+.mock-card-actions{display:none}
+body.has-account #home.active{height:100dvh!important;min-height:0!important;overflow:hidden!important}
+body.has-account #home #accountProfile{left:3.4%!important;top:3.15%!important;width:23.7%!important;height:13.3%;min-height:0;box-sizing:border-box;padding:1vw!important;gap:.8vw!important;align-items:center!important}
+body.has-account #home #accountProfile>img{width:5vw!important;height:5vw!important;flex-shrink:0}
+body.has-account #home .account-identity h2{font-size:clamp(16px,1.55vw,30px)!important}
+body.has-account #home .account-identity>b{font-size:clamp(12px,1vw,19px)!important}
+body.has-account #home .account-identity details{font-size:clamp(9px,.65vw,13px)!important}
+body.has-account #home .lobby-top-actions nav{left:4%!important;top:21%!important;width:13%!important;gap:0!important}
+body.has-account #home .lobby-top-actions nav button{min-height:6.7vh!important;font-size:clamp(18px,1.65vw,32px)!important;padding:8px 0!important;gap:1.2vw!important}
+body.has-account #home .night-character{left:19%!important;bottom:0!important;width:37%!important;height:77%!important;margin:0!important}
+body.has-account #home .night-character img{object-fit:contain;filter:drop-shadow(0 14px 12px #0008)}
+body.has-account #home .rpg-news{display:none!important}
+body.has-account #home .night-main-actions{display:flex!important;position:absolute!important;left:66.5%!important;right:auto!important;top:25%!important;width:30.2%!important;height:46.8%!important;gap:0!important}
+body.has-account #home .night-main-button{flex:1 1 0!important;width:100%!important;height:50%!important;min-height:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;gap:0!important;filter:drop-shadow(0 6px 8px #0005)}
+body.has-account #home .night-main-button:before{display:none!important}
+.mock-art-button img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
+body.has-account #home .night-main-button>img{display:block!important;transform:scale(1.15)}
+body.has-account #home .night-main-button:hover{transform:translateY(-2px);filter:brightness(1.08) drop-shadow(0 8px 10px #0006)}
+body.has-account #home .mock-card-actions{display:grid;grid-template-columns:1fr 1fr;gap:.5vw;position:absolute;left:67.8%;top:73.2%;width:27.3%;height:6.65%;z-index:3}
+.mock-card-actions button{position:relative;min-width:0;min-height:0;padding:0;border:0;background:none;box-shadow:none;overflow:visible}
+.mock-card-actions img{position:absolute;left:0;top:50%;width:100%;height:auto;transform:translateY(-50%)}
+.mock-card-actions button:hover{filter:brightness(1.13)}
+body.has-account #home .lobby-footer{position:absolute!important;left:57.5%!important;right:6.8%!important;bottom:1.5%!important;width:auto!important;height:5.7%!important;border:0!important;background:none!important;justify-content:stretch!important;overflow:visible!important}
+body.has-account #home .lobby-footer .lobby-nav{width:100%!important;max-width:none!important;height:100%!important;gap:0!important;overflow:visible!important;justify-content:stretch!important}
+body.has-account #home .lobby-footer .lobby-nav button{display:flex!important;flex:1 1 0!important;min-width:0!important;flex-direction:row!important;gap:.65vw!important;height:100%!important;min-height:0!important;padding:0 .8vw!important;font-size:clamp(12px,1vw,20px)!important;white-space:nowrap}
+body.has-account #home .lobby-footer .lobby-nav button+button{border-left:1px solid #b99a6144!important}
+body.has-account #home .lobby-footer .pregame-icon{width:2.6vw!important;height:2.6vw!important;flex-shrink:0}
+/* A shared, aligned top strip with no large background box. */
+body.has-account #home>.night-topbar,#lobby .night-topbar{position:absolute!important;top:2.3%!important;right:2.9%!important;width:40%!important;max-width:none!important;height:5.1%!important;padding:0!important;gap:1.3vw!important;background:none!important;border:0!important;box-shadow:none!important}
+body.has-account #home .night-topbar .lobby-currencies,#lobby .night-topbar .lobby-currencies{flex:1 1 auto!important;gap:1vw!important;min-width:0}
+body.has-account #home .night-topbar .lobby-currencies>span,#lobby .night-topbar .lobby-currencies>span{flex:1 1 0!important;min-width:0!important;padding:.45vh .65vw!important;gap:.55vw!important;font-size:clamp(10px,.87vw,17px)!important;border:1px solid #a58a56!important;border-radius:30px!important;background:#241a17ba!important}
+body.has-account #home .night-topbar .lobby-currencies>span:before,#lobby .night-topbar .lobby-currencies>span:before{width:1.5vw!important;height:1.5vw!important;flex:0 0 1.5vw!important}
+body.has-account #home .night-topbar .rpg-quick,#lobby .night-topbar .rpg-quick{gap:.6vw!important;padding-left:1vw!important}
+body.has-account #home .night-topbar .rpg-quick button,#lobby .night-topbar .rpg-quick button{width:2.5vw!important;height:2.5vw!important;min-width:0!important;min-height:0!important;padding:.55vw!important}
+body.has-account #home .night-topbar .rpg-quick svg,#lobby .night-topbar .rpg-quick svg{width:100%!important;height:100%!important}
+body.has-account #home .friend-edge-toggle{top:9.8%!important}
+/* Ready Room: the seat cards and footer retain their original handlers. */
+#lobby.active{height:100dvh!important;overflow:hidden!important}
+#lobby .room-shell{display:block!important;position:relative;height:100%!important;padding:0!important}
+#lobby .room-header{display:block!important;position:static!important;padding:0!important;border:0!important}
+#lobby .room-header:after{content:'';position:absolute;left:1.85%;right:1.85%;top:8.35%;height:1px;background:#b99a6140;pointer-events:none}
+#lobby .room-code-heading{position:absolute;left:6.9%;top:12.2%;gap:1.6vw!important}
+#lobby .room-code-heading h1{font-family:'BPS Lobby',system-ui,sans-serif;font-size:clamp(30px,3.25vw,63px)!important;letter-spacing:0;line-height:1.2}
+#lobby #copyCodeBtn{font-size:clamp(10px,.7vw,14px)!important;padding:.7vw 1.15vw!important;background:#241a17e0!important;border:1px solid #a58b5b!important;color:#ead7b0;border-radius:4px!important}
+#lobby .room-tools{display:contents!important}
+#lobby #roomStatsBtn,#lobby #lobbyHelpBtn{display:none!important}
+#lobby #lobbyPlayers{position:absolute;left:6.9%;right:6.9%;top:20.9%;width:auto!important;height:53%!important;max-width:none!important;margin:0!important;display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:1.2vw!important;align-items:stretch!important}
+#lobby .lobby-seat-slot{display:grid!important;grid-template-rows:minmax(0,1fr) 3.65vh 10.8vh!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;outline:none!important;overflow:visible!important;padding:0!important}
+#lobby .lobby-seat-slot:before{display:none!important}
+#lobby .room-seat-art{box-sizing:border-box;border:1px solid #b99a6188;background:#11171333;overflow:hidden;min-height:0}
+#lobby .mine .room-seat-art{border-color:var(--pcolor);box-shadow:inset 0 0 0 1px var(--pcolor)}
+#lobby .room-character-art{object-fit:contain!important;background:none!important}
+#lobby .room-seat-placeholder{width:auto!important;height:auto!important;border:0!important;background:none!important;font-size:1.6vw!important;color:#e7d4ae!important}
+#lobby .room-player-name,#lobby .empty .room-player-name{border-bottom:5px solid var(--pcolor);background:#e7d7b0!important;color:#231b14!important;text-align:center!important;font-size:clamp(13px,1.25vw,24px)!important;font-weight:800;line-height:1.2;padding:3px 7px!important}
+#lobby .room-seat-info{display:flex!important;position:relative;align-items:center;text-align:center;padding:.45vh 0 0!important;gap:.25vh!important;background:none!important;border:0!important;overflow:visible!important}
+#lobby .room-seat-info>b{order:0;font-size:clamp(17px,1.7vw,33px)!important;line-height:1.45;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+#lobby .room-seat-info .lobby-seat-top{order:1;font-size:clamp(10px,.68vw,13px)!important;gap:.35vw!important}
+#lobby .room-seat-info small{order:2;font-size:clamp(10px,.68vw,13px)!important;color:#cab889}
+#lobby .lobby-seat-number{height:1.8vh;min-width:1.55vw;font-size:clamp(9px,.6vw,12px)}
+#lobby .room-footer{position:absolute;left:7.15%;right:6.65%;top:79.5%;height:15%;display:block!important}
+#lobby .room-setup-buttons{position:absolute;left:0;top:15%;width:46%;height:65%;display:grid!important;grid-template-columns:1fr 1fr!important;gap:.8vw!important}
+#lobby .room-setup-buttons button{height:100%!important;padding:0!important;background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;min-height:0!important}
+#lobby .room-setup-buttons button:after{display:none!important}
+#lobby .room-setup-buttons button img{transform:scale(1.22)}
+#lobby .room-ready-controls{position:absolute!important;right:0;top:0;width:41%;height:100%;display:block!important;max-width:none!important}
+#lobby #startBtn{position:absolute;right:0;top:0;width:55%!important;height:100%!important;min-height:0!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important;border-radius:0!important;font-size:0!important}
+#lobby #startBtn:disabled{opacity:.48!important;filter:grayscale(.35)}
+#lobby #startBtn img{transform:scale(1.14)}
+#lobby #readyBtn{position:absolute;right:0;top:12%;width:51%!important;height:76%!important;min-height:0!important;font-size:clamp(18px,1.75vw,34px)!important;border-radius:5px!important;background:linear-gradient(#e5cd98,#b48d4f)!important}
+#lobby .ready-summary{position:absolute;left:0;top:22%;width:39%;min-width:0;gap:1.25vh;font-size:clamp(12px,.9vw,18px)}
+#lobby .ready-dots{gap:.75vw}.ready-dot{width:1.12vw;height:1.12vw;box-shadow:none;border-color:#aa8e54;background:#221a18}.ready-dot.is-ready{box-shadow:none;background:#78c897}
+#lobby #hostNote{position:absolute;left:-3%;top:67%;width:45%;max-width:none!important;font-size:clamp(9px,.67vw,13px)!important;line-height:1.5;text-align:center;margin:0!important;overflow-wrap:anywhere}
+/* Full exported Figma faces, with a large, readable detail view. */
+.amulet-library,.amulet-reader{color:#ecdcbd;background:#141411;border:1px solid #a48650;font-family:'BPS Lobby',system-ui,sans-serif;box-shadow:0 25px 90px #000c}
+.amulet-library::backdrop,.amulet-reader::backdrop{background:#050403d9;backdrop-filter:blur(6px)}
+.amulet-library{width:min(1530px,94vw);height:91dvh;max-width:none;max-height:none;padding:0;border-radius:8px}
+.amulet-library-shell{height:100%;display:grid;grid-template-rows:auto auto minmax(0,1fr)}
+.amulet-library header{display:flex;align-items:center;gap:20px;padding:18px 24px;border-bottom:1px solid #8c714755;background:#251d17}.amulet-library header>div{flex:1}.amulet-library small{color:#b69a62;letter-spacing:2px}.amulet-library h2{margin:0;font-size:28px}.amulet-library p{margin:4px 0 0;color:#c5b490;font-size:14px}
+.library-close{width:40px;height:40px;min-height:40px;border:1px solid #9d8456;border-radius:50%;background:#231c16;color:#eddec1;font-size:25px;line-height:1}
+.library-tabs{display:flex;gap:8px;padding:12px 20px;overflow:auto;border-bottom:1px solid #8c714755}.library-tabs button{white-space:nowrap;padding:8px 15px;border:1px solid #6b5a3b;background:#211c16;color:#d8c5a0;border-radius:20px}.library-tabs button[aria-pressed=true]{background:#b69a62;color:#17120e;font-weight:800}
+.library-grid{overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));align-content:start;gap:22px;padding:24px;min-height:0}
+.library-card{padding:0;background:none!important;border:0!important;box-shadow:none!important;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px;color:#d6c5a5;text-align:center}
+.library-card img{display:block;width:100%;height:auto;aspect-ratio:1478/2178;object-fit:contain;transition:transform .15s ease;filter:drop-shadow(0 7px 7px #0006)}.library-card:hover img{transform:translateY(-4px)}.library-card span{font-size:13px}.library-status{grid-column:1/-1;text-align:center;padding:40px}
+.amulet-reader{width:min(720px,94vw);max-width:none;height:94dvh;max-height:none;padding:14px;overflow:hidden;border-radius:8px}
+.amulet-reader[open]{display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:10px}.amulet-reader header{display:flex;justify-content:space-between;align-items:center;gap:12px}.amulet-reader header b{font-size:17px}.amulet-reader>img{width:100%;height:100%;min-height:0;object-fit:contain}.amulet-reader footer{display:flex;align-items:center;justify-content:space-between;gap:10px}.amulet-reader footer button{background:#302318;color:#efddbb;border:1px solid #8c7147;padding:8px 12px}
+.mock-art-button:focus-visible,.library-card:focus-visible{outline:2px solid #f4dd9a!important;outline-offset:5px}
+/* Small screens keep the same composition. Dialogs are allowed internal scroll. */
+@media(max-width:1000px){body.has-account #home>.night-topbar,#lobby .night-topbar{width:47%!important;gap:1vw!important}body.has-account #home #accountProfile{width:28%!important}.library-grid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:14px;padding:16px}}
+@media(prefers-reduced-motion:reduce){.library-card img,body.has-account #home .night-main-button{transition:none}}
