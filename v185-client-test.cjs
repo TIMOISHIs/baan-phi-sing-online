@@ -27,7 +27,19 @@ run(`enqueueCardReveal({zone:'amulet',card:{type:'event',name:'Reset test'}});re
 // Public state may arrive before private hand. The new incoming card must still be selectable.
 run(source.slice(source.indexOf('let lastRoomEffectId='),source.indexOf('function renderPendingRitual(')));
 const choices=[...ctx.mine.amu,{uid:'new',name:'NEW CARD',desc:'NEW RULE'}];ctx.pending={id:'overflow-test',type:'discardAmuletOverflow',count:1,newUid:'new',playerId:'p1',options:choices};
-run('renderPendingRoomEffect(pending)');assert.equal(ctx.modal.children.filter(c=>c.className?.includes('overflow-choice')).length,6);assert.ok(ctx.modal.children.some(c=>c.innerHTML.includes('NEW CARD')&&c.innerHTML.includes('ใบที่เพิ่งจั่ว')));
+// Use DOM semantics for the grouped, accessible discard picker; keep the stale-hand regression.
+const {JSDOM}=require('jsdom'),dom=new JSDOM(''),mockDocument=ctx.document;
+ctx.document=dom.window.document;
+run('renderPendingRoomEffect(pending)');
+assert.equal(ctx.modal.querySelectorAll('.overflow-choice').length,6);
+assert.ok(ctx.modal.textContent.includes('NEW CARD')&&ctx.modal.textContent.includes('ใบที่เพิ่งจั่ว'));
+const discardButton=ctx.modal.querySelector('.overflow-footer button');assert.equal(discardButton.disabled,true);
+const incoming=ctx.modal.querySelector('input[value="new"]');incoming.checked=true;incoming.dispatchEvent(new dom.window.Event('change',{bubbles:true}));
+assert.equal(discardButton.disabled,false);assert.ok(ctx.modal.querySelector('.overflow-count').textContent.includes('1 / 1'));
+let submitted;ctx.socket.emit=(event,payload)=>{submitted={event,payload}};
+discardButton.click();assert.equal(submitted.event,'resolveRoomEffect');assert.equal(submitted.payload.uids.join(','),'new');
+const extra=ctx.modal.querySelector('input[value="old-0"]');extra.checked=true;extra.dispatchEvent(new dom.window.Event('change',{bubbles:true}));assert.equal(discardButton.disabled,true);
+ctx.document=mockDocument;ctx.socket.emit=()=>{};dom.window.close();
 // Settings clamp values, preserve mute and update actual audio gains.
 run(source.slice(source.indexOf('const storedVolume='),source.indexOf('let ambientTrack=')));
 run('let ambientVolume=.24,ambientEnabled=true,audioCtx={currentTime:0},masterGain={gain:{setTargetAtTime(v){this.value=v}}},sfxMaster={gain:{setTargetAtTime(v){this.value=v}}},ambientMaster={gain:{setTargetAtTime(v){this.value=v}}};function ensureAudio(){};function updateAmbientUI(){syncSoundSettings()};function toggleAmbient(){}');

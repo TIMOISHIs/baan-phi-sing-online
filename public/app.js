@@ -1214,9 +1214,26 @@ function renderPendingRoomEffect(pending){
 
   else if(pending.type==="discardAmuletOverflow"){
     const need=Math.max(1,Number(pending.count)||1);
-    const help=document.createElement("p");help.className="muted";help.textContent=`มือ Amulet เกิน 5 ใบ — เลือกทิ้ง ${need} ใบลงกองทิ้ง`;box.appendChild(help);
-    (pending.options||mine.amu||[]).forEach(c=>{const lab=document.createElement("label");lab.className="trade-card-check overflow-choice";lab.innerHTML=`<input type="checkbox" value="${c.uid}">${artMarkup(c.art,"amulet-choice-thumbnail",c.name)}<span>${c.name}<small style="display:block;color:#9c978c">${c.desc||c.effect||c.category||c.type||"Amulet"}${c.uid===pending.newUid?` • ${pending.newLabel||"ใบที่เพิ่งจั่ว"}`:""}</small></span>`;box.appendChild(lab)});
-    const ok=document.createElement("button");ok.className="primary";ok.textContent=`ทิ้ง ${need} ใบ`;ok.onclick=()=>{const ids=[...box.querySelectorAll('input:checked')].map(x=>x.value);if(ids.length!==need){toast(`ต้องเลือก ${need} ใบ`);return;}socket.emit("resolveRoomEffect",{uids:ids});closeModal()};box.appendChild(ok);
+    box.classList.add('overflow-picker');
+    const help=document.createElement("p");help.className="overflow-help";help.textContent=`เลือกการ์ดที่ต้องการทิ้ง ${need} ใบลงกองทิ้ง`;box.appendChild(help);
+    const list=document.createElement('div');list.className='overflow-list';list.setAttribute('role','group');list.setAttribute('aria-label',`เลือก Amulet ที่จะทิ้ง ${need} ใบ`);box.appendChild(list);
+    (pending.options||mine.amu||[]).forEach(c=>{
+      const lab=document.createElement('label');lab.className='trade-card-check overflow-choice';
+      const input=document.createElement('input');input.type='checkbox';input.value=c.uid;
+      const image=document.createElement('img');image.className='amulet-choice-thumbnail';image.alt=c.name;image.src=c.art||'';image.draggable=false;
+      const copy=document.createElement('span');copy.className='overflow-copy';
+      const name=document.createElement('strong');name.textContent=c.name;
+      const effect=document.createElement('small');effect.textContent=c.desc||c.effect||c.category||c.type||'Amulet';
+      copy.append(name,effect);
+      if(c.uid===pending.newUid){const badge=document.createElement('em');badge.className='overflow-new';badge.textContent=pending.newLabel||'ใบที่เพิ่งจั่ว';copy.appendChild(badge);}
+      lab.append(input);if(c.art)lab.appendChild(image);lab.appendChild(copy);list.appendChild(lab);
+    });
+    const footer=document.createElement('div');footer.className='overflow-footer';
+    const count=document.createElement('span');count.className='overflow-count';count.setAttribute('aria-live','polite');
+    const ok=document.createElement("button");ok.className="primary";ok.textContent=`ยืนยันทิ้ง ${need} ใบ`;ok.disabled=true;
+    const update=()=>{const selected=list.querySelectorAll('input:checked').length;count.textContent=`เลือกแล้ว ${selected} / ${need} ใบ`;count.classList.toggle('too-many',selected>need);ok.disabled=selected!==need;};
+    list.addEventListener('change',update);update();
+    ok.onclick=()=>{const ids=[...list.querySelectorAll('input:checked')].map(x=>x.value);if(ids.length!==need){toast(`ต้องเลือก ${need} ใบ`);return;}socket.emit("resolveRoomEffect",{uids:ids});closeModal()};footer.append(count,ok);box.appendChild(footer);
   }
 
   else if(pending.type==="officePickDiscard"){

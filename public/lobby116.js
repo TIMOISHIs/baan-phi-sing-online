@@ -9,9 +9,20 @@
   const form=q('#'+id),dialog=document.createElement('dialog');dialog.className='night-room-dialog';dialog.setAttribute('aria-label',label);dialog.innerHTML='<button type="button" class="night-close" aria-label="ปิด">×</button>';document.body.append(dialog);dialog.firstElementChild.onclick=()=>dialog.close();
   const b=document.createElement('button');b.type='button';b.className='night-main-button '+kind;b.textContent=label;b.onclick=()=>dialog.showModal();actions.append(b);dialogs.push({dialog,form});
  }
+ const lobbyCharacters={'mae-mali':'แม่มะลิ','doctor':'หมอสาว','nerd':'เด็กเนิร์ด','mor-tham':'หมอธรรม','por-krai':'พ่อไกร','black-shaman':'หมอผีดำ','temple-dog':'หมาวัด','stray-cat':'แมวจร'};
  let signed=null;
- function sync(){const active=document.body.classList.contains('has-account');if(signed!==active){signed=active;for(const {dialog,form}of dialogs){dialog.close();(active?dialog:grid).append(form)}}if(!home.classList.contains('active'))dialogs.forEach(x=>x.dialog.close());const original=q('#accountProfile [data-account-avatar]');if(original?.getAttribute('src'))figure.querySelector('img').src=original.src;}
- new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['class']});new MutationObserver(sync).observe(home,{attributes:true,attributeFilter:['class']});new MutationObserver(sync).observe(q('#accountProfile [data-account-avatar]'),{attributes:true,attributeFilter:['src']});sync();
+ function sync(){
+  const active=document.body.classList.contains('has-account');
+  if(signed!==active){signed=active;for(const {dialog,form}of dialogs){dialog.close();(active?dialog:grid).append(form)}}
+  if(!home.classList.contains('active'))dialogs.forEach(x=>x.dialog.close());
+  const original=q('#accountProfile [data-account-avatar]'),key=original?.dataset.avatarKey,img=figure.querySelector('img');
+  const cutout=Object.hasOwn(lobbyCharacters,key||'');
+  const source=cutout?'/assets/polish1166/characters/'+key+'.png':original?.getAttribute('src');
+  figure.classList.toggle('lobby-cutout',cutout);figure.dataset.characterKey=cutout?key:'';
+  if(source&&img.getAttribute('src')!==source)img.src=source;
+  img.alt=cutout?lobbyCharacters[key]+' · ตัวละครโปรไฟล์':'ตัวละครโปรไฟล์ของคุณ';
+ }
+ new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['class']});new MutationObserver(sync).observe(home,{attributes:true,attributeFilter:['class']});new MutationObserver(sync).observe(q('#accountProfile [data-account-avatar]'),{attributes:true,attributeFilter:['src','data-avatar-key']});sync();
  q('#accountProfile>img').style.cursor='pointer';q('#accountProfile>img').onclick=()=>q('#accountEdit').click();
  async function api(url,body){const r=await fetch(url,{credentials:'same-origin',method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw Error(d.error||'เชื่อมต่อไม่ได้');return d;}
  q('#charactersBtn').onclick=async()=>{

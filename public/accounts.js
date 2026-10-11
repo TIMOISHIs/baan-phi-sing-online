@@ -11,7 +11,7 @@
   document.body.classList.toggle('has-account',active);
   if(!active)return;
   for(const el of document.querySelectorAll('[data-account-name]'))el.textContent=profile.display_name;
-  for(const el of document.querySelectorAll('[data-account-avatar]')){el.src=profile.avatar;el.alt='รูปโปรไฟล์ '+profile.display_name}
+  for(const el of document.querySelectorAll('[data-account-avatar]')){el.src=profile.avatar;el.alt='รูปโปรไฟล์ '+profile.display_name;el.dataset.avatarKey=profile.avatar_key||''}
   for(const el of document.querySelectorAll('[data-account-level]'))el.textContent='Lv. '+profile.progress.level;
   q('#accountXPText').textContent=`${profile.progress.current.toLocaleString()} / ${profile.progress.required.toLocaleString()} EXP · อีก ${profile.progress.remaining.toLocaleString()} ถึง Lv. ${profile.progress.level+1}`;
   q('#accountXP').value=profile.progress.current;q('#accountXP').max=profile.progress.required;

@@ -1,0 +1,39 @@
+/* Only the large authenticated Lobby showcase consumes the supplied cutouts. */
+body.has-account #home .night-character.lobby-cutout{--portrait-scale:1;isolation:isolate}
+body.has-account #home .night-character.lobby-cutout:before{left:22%;right:22%;bottom:2%;height:4%;background:#100c0999;filter:blur(12px);z-index:-1}
+body.has-account #home .night-character.lobby-cutout img{object-fit:contain;object-position:center bottom;mask-image:none!important;-webkit-mask-image:none!important;transform-origin:50% 100%;filter:drop-shadow(0 12px 10px #0006);animation:lobby-idle-breath 4.8s ease-in-out infinite;animation-play-state:paused}
+body.has-account #home.active .night-character.lobby-cutout img{animation-play-state:running}
+body.lobby-animation-paused #home .night-character.lobby-cutout img{animation-play-state:paused}
+@keyframes lobby-idle-breath{0%,100%{transform:scale(1)}50%{transform:scale(1.008,1.012)}}
+@media(prefers-reduced-motion:reduce){body.has-account #home .night-character.lobby-cutout img{animation:none!important}}
+
+/* Preserve the exact hitboxes, alignment, gaps and tooltips of the shared strip. */
+.night-topbar .rpg-quick button>.painted-hud-icon{display:none;position:absolute;width:100%;height:100%;inset:0;object-fit:contain;pointer-events:none;user-select:none;filter:saturate(.72) brightness(.98) drop-shadow(0 2px 2px #0009);transition:filter .16s ease,transform .16s ease}
+.night-topbar .rpg-quick button.has-painted-icon>.painted-hud-icon{display:block}
+body.has-account #home .night-topbar .rpg-quick button.has-painted-icon svg,#lobby .night-topbar .rpg-quick button.has-painted-icon svg{visibility:hidden}
+.night-topbar .rpg-quick button.has-painted-icon:hover>.painted-hud-icon,.night-topbar .rpg-quick button.has-painted-icon:focus-visible>.painted-hud-icon{filter:saturate(.85) brightness(1.1) drop-shadow(0 3px 3px #000a);transform:translateY(-1px)}
+@media(prefers-reduced-motion:reduce){.night-topbar .rpg-quick button>.painted-hud-icon{transition:none}.night-topbar .rpg-quick button.has-painted-icon:hover>.painted-hud-icon{transform:none}}
+
+/* Overflow discard is an independent readable layout, not a global modal/font change. */
+#modal .modal-card:has(.overflow-picker){width:min(1060px,94vw)!important;height:min(960px,90dvh);max-height:90dvh!important;display:flex;flex-direction:column;overflow:hidden;padding:20px!important;border-color:#9e804c}
+#modal .modal-card:has(.overflow-picker)>.modal-head{flex:0 0 auto;padding-bottom:14px;border-bottom:1px solid #8c71474d;gap:14px}
+#modal .modal-card:has(.overflow-picker) .modal-head h3{font-size:24px;line-height:1.4}
+#modal .modal-card:has(.overflow-picker) #modalBody{flex:1 1 auto;min-height:0;overflow:hidden}
+.overflow-picker{height:100%;min-height:0;display:flex;flex-direction:column}
+.overflow-picker>p:first-child{font-size:16px;color:#c4b394;margin:12px 0 0;line-height:1.5}
+.overflow-picker .overflow-help{flex:0 0 auto;font-size:18px;line-height:1.5;color:#f0dfbc;margin:12px 0}
+.overflow-list{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:12px;padding:3px 7px 10px 3px;scrollbar-color:#88714b #171a18}
+.overflow-list .overflow-choice{display:grid;grid-template-columns:24px 112px minmax(0,1fr);align-items:center;gap:14px;padding:14px;margin:0;border:1px solid #746449;border-radius:10px;background:#1d201b;color:#f6e8cd;cursor:pointer;min-width:0;position:relative}
+.overflow-list .overflow-choice:has(input:checked){border:2px solid #e2b66d;padding:13px;background:#3b3020;box-shadow:inset 0 0 0 1px #b18a4a44}
+.overflow-list .overflow-choice:hover{border-color:#c5a977}
+.overflow-list .overflow-choice:focus-within{outline:2px solid #f4db9e;outline-offset:1px}
+.overflow-list .overflow-choice input{width:22px;height:22px;min-width:22px;margin:0;accent-color:#d9b16e;cursor:pointer}
+.overflow-list .amulet-choice-thumbnail{width:112px;height:166px;min-width:0;flex:none;display:block;object-fit:contain;filter:drop-shadow(0 3px 4px #0008)}
+.overflow-list .overflow-copy{min-width:0;display:flex;flex-direction:column;gap:10px;overflow-wrap:anywhere}
+.overflow-list .overflow-copy strong{display:block;font-size:calc(22px * var(--board-font-scale,1));font-weight:700;line-height:1.45;color:#fff0ce}
+.overflow-list .overflow-copy small{display:block;font-size:calc(18px * var(--board-font-scale,1));line-height:1.65;color:#e2d6bf}
+.overflow-list .overflow-new{align-self:flex-start;font-size:14px;font-style:normal;color:#f1d99f;background:#64502c;padding:4px 9px;border-radius:5px}
+.overflow-footer{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px;border-top:1px solid #8c714760;padding:15px 0 0;background:#151717}
+.overflow-count{font-size:18px;color:#e0d1b4}.overflow-count.too-many{color:#f4a093}
+.overflow-footer .primary{font-size:20px;min-height:48px;padding:11px 24px}.overflow-footer .primary:disabled{opacity:.5}
+@media(max-width:760px){#modal .modal-card:has(.overflow-picker){padding:14px!important}.overflow-list{grid-template-columns:1fr}.overflow-list .overflow-choice{grid-template-columns:22px 92px minmax(0,1fr);gap:10px;padding:12px}.overflow-list .overflow-choice:has(input:checked){padding:11px}.overflow-list .amulet-choice-thumbnail{width:92px;height:136px}.overflow-list .overflow-copy strong{font-size:calc(20px * var(--board-font-scale,1))}.overflow-list .overflow-copy small{font-size:calc(17px * var(--board-font-scale,1))}.overflow-footer .primary{font-size:17px;padding:10px 14px}.overflow-count{font-size:16px}}
