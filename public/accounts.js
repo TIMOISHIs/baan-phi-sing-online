@@ -23,7 +23,7 @@
  }
  async function editor(){
   let available=config.avatars;
-  try{const shop=await api('/api/account/shop');if(shop.enabled)available=available.filter(a=>shop.owned.includes(a.key)||a.key===profile?.avatar_key)}catch{available=available.filter(a=>['mae-mali','doctor','nerd','mor-tham',profile?.avatar_key].includes(a.key))}
+  try{const shop=await api('/api/account/shop');if(shop.enabled)available=available.filter(a=>shop.owned.includes(a.key)||a.key===profile?.avatar_key)}catch{available=available.filter(a=>['mae-mali','doctor','nerd','mor-tham','por-krai','black-shaman','temple-dog','stray-cat',profile?.avatar_key].includes(a.key))}
   const d=q('#profileEditor');q('#profileName').value=profile?.display_name||'';q('#avatarOptions').replaceChildren();
   available.forEach((a,i)=>{const label=document.createElement('label'),input=document.createElement('input'),img=document.createElement('img'),name=document.createElement('span');input.type='radio';input.name='avatar';input.value=a.key;input.checked=profile?profile.avatar_key===a.key:i===0;img.src=a.art;img.alt=a.name;name.textContent=a.name;label.append(input,img,name);q('#avatarOptions').append(label)});
   q('#profileCancel').hidden=!profile;q('#profileError').textContent='';if(!d.open)d.showModal();
