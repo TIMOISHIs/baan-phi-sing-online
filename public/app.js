@@ -840,12 +840,17 @@ function updateRollFocus(){
     if(!g.moved||g.actions<2||!room?.boss){ritualRollSelection=null;hideRollFocus();return}
     mode="ritual";kick.textContent="RITUAL ROLL";btn.textContent=`🎲 ทอยทำพิธี`;hint.textContent=`${ritualRollSelection.name} • ต้อง ${ritualRollSelection.ruleLabel}`;cancel.classList.remove("hidden");box.classList.add("ritual-armed");
   }else if(g.escapeRequired&&g.actions>0){
-    mode="escape";kick.textContent="ESCAPE ROLL";btn.textContent="🎲 ทอยหนีห้อง · 1🕯";hint.textContent=g.escapeRule?.label||"ทอยตามเงื่อนไขห้อง";cancel.classList.add("hidden");box.classList.remove("ritual-armed");
+    mode="escape";kick.textContent="ESCAPE ROLL";btn.textContent="🎲 ทอยหนีห้อง · 1🕯";hint.textContent=roomEscapeStatus(g);cancel.classList.add("hidden");box.classList.remove("ritual-armed");
   }else if(!g.rolled){
     mode="move";kick.textContent="YOUR ROLL";btn.textContent="🎲 ทอยเพื่อเดิน";hint.textContent="ทอย 2 ลูก แล้วค่อยคำนวณ Fear / สติ";cancel.classList.add("hidden");box.classList.remove("ritual-armed");
   }
   if(!mode){hideRollFocus();return}
   box.dataset.mode=mode;btn.disabled=false;box.classList.remove("hidden");
+}
+function roomEscapeStatus(g){
+  const progress=g?.roomEscapeProgress,label=g?.escapeRule?.label||"ตามเงื่อนไขห้อง";
+  if(!progress)return label;
+  return `${label} • สแต็ก ${progress.count}/${progress.required}${progress.faces.length?` • เก็บหน้า ${progress.faces.join(", ")}`:""}`;
 }
 let lastPendingRitualId=null;
 function openLogDetail(entry){
@@ -908,12 +913,13 @@ function renderGame(){
     };
     $("#board").appendChild(b);
   }
-  if(!isMyTurn())$("#message").textContent=`รอ ${ap?.name||"ผู้เล่น"} เล่นเทิร์น`;
+  if(g.rescue&&!g.pendingRoomEffect&&!g.curseResolving){const who=state.players.find(p=>p.id===g.rescue.playerId)?.name||"ผู้เล่น";$("#message").textContent=g.rescue.playerId===myId()?"ปลดแล้ว — เลือกห้องติดกันที่สว่าง 1 ห้อง ไม่ทอยซ้ำ ไม่คิด Fear":`รอ ${who} เลือกออกจากห้องพิเศษ 1 ห้อง`;}
+  else if(!isMyTurn())$("#message").textContent=`รอ ${ap?.name||"ผู้เล่น"} เล่นเทิร์น`;
   else if(mp?.dead&&mine?.char?.skillType==="self_revive")$("#message").textContent="พ่อไกรล้มอยู่ — เทิร์นนี้ใช้ Skill 3🕯 เพื่อฟื้น HP +2 ได้";
   else if(mp?.dead)$("#message").textContent="คุณเสียชีวิต — รอเพื่อนมาชุบชีวิต";
   else if(g.pendingRoomEffect && g.pendingRoomEffect.playerId===myId())$("#message").textContent=g.pendingRoomEffect.type==="negativeReaction"?"⚠️ มีผลลบกำลังเกิด — การ์ดคาถาป้องกันถูก Highlight ให้เลือกใช้":"ต้อง Resolve Effect ก่อนทำ Action ต่อ";
   else if(g.pendingRitual)$("#message").textContent=g.pendingRitual.playerId===myId()?"กำลังทำพิธี — เลือก Modifier แล้วค่อยดูผล":"กำลังรอผู้เล่น Resolve พิธี";
-  else if(g.escapeRequired)$("#message").textContent=`ติดอยู่ในห้องพิเศษ — ใช้ 1 ธูปทอยหนี (${g.escapeRule?.label||"ตามเงื่อนไขห้อง"})`;
+  else if(g.escapeRequired)$("#message").textContent=`ติดอยู่ในห้องพิเศษ — ใช้ 1 ธูปทอยหนี (${roomEscapeStatus(g)})`;
   else if(!g.rolled)$("#message").textContent="ถึงเทิร์นคุณ — ทอยเต๋า 2 ลูก หรือเลือกใช้สกิลที่ใช้แทนการเดิน";
   else if(g.sanityDecision)$("#message").textContent=`สติ ${g.sanity} • เลือกห้องที่สว่างเพื่อเดินได้ทันที หรือใช้การ์ดสติก่อนเดิน • เข้าได้ ${(g.movementPreview?.legal||[]).length} ห้อง`;
   else if(g.mustMove)$("#message").textContent=`สติ ${g.sanity} • เดินได้ไม่เกิน ${g.movementRange} ห้อง — เลือกปลายทางที่ไฮไลท์`;
@@ -954,9 +960,11 @@ function renderGame(){
   const mayStay=g.moveOptional||(g.sanityDecision&&(!(g.movementPreview?.legal||[]).length||state.settings?.forcedMovement===false));
   $("#stayBtn").style.display=mayStay?"inline-block":"none";
   $("#stayBtn").disabled=!canAct||!mayStay;
+  $("#stayBtn").classList.toggle("stay-attention",mayStay&&canAct);
+  $("#stayBtn").title=mayStay?"กดเพื่ออยู่ห้องเดิม แล้วใช้ธูปทำ Action ต่อ":"";
   $("#escapeBtn").style.display=g.escapeRequired?"inline-block":"none";
   $("#escapeBtn").disabled=!canAct||!g.escapeRequired||g.actions<1;
-  $("#rollBtn").disabled=g.rescue?!(g.rescue.playerId===myId()&&g.rescue.phase==="roll"&&!g.curseResolving&&!g.pendingRoomEffect&&!diceAnimating&&!turnTransitionActive):(!canAct||g.escapeRequired||g.rolled);
+  $("#rollBtn").disabled=!!g.rescue||!canAct||g.escapeRequired||g.rolled;
   $("#drawAmu").disabled=!canAct||!g.moved||g.actions<1;
   const myRoom=mp?.pos!=null?roomAt(mp.pos):null;
   const sacLimited=(state.settings?.sacrificeDraw||"onePerTurn")==="onePerTurn";
@@ -1098,7 +1106,7 @@ function openHowToPlay(){
   const forced=state?.settings?.forcedMovement!==false;
   const sacRule=state?.settings?.sacrificeDraw==="perIncense"?"จั่วเครื่องเซ่นซ้ำได้ถ้ามีธูปและมือไม่เต็ม":"จั่วเครื่องเซ่นได้สูงสุด 1 ครั้ง/เทิร์น";
   box.innerHTML=`
-    <div class="howto-step"><b>1 · ทอยเดิน</b><p>ทอยเต๋า 2 ลูก → หัก Fear ของห้องปัจจุบันหลังรวมผลของสวมใส่ → ถ้ามีการ์ดค่าสติจะได้เลือกใช้ก่อนเปิดห้องที่เดินได้</p></div>
+    <div class="howto-step"><b>1 · ทอยเดิน</b><p>ทอยเต๋า 2 ลูก → หักเฉพาะ Fear ของสวมใส่ ไม่นับห้องปัจจุบัน → ถ้ามีการ์ดค่าสติจะได้เลือกใช้ก่อนเดิน</p></div>
     <div class="howto-step"><b>2 · ${forced?"ต้องย้ายห้อง":"เลือกย้ายหรืออยู่เดิม"}</b><p>เลือกปลายทางได้ไม่เกินผลรวมเต๋า (บน/ล่าง/ซ้าย/ขวา) • ทุกห้องตามทางต้อง Fear ≤ สติ และไม่เต็ม • หยุดเมื่อถึงห้องคำสาป/กับดักหรือห้องผี • ${forced?"ถ้ามีทาง ต้องย้ายห้อง":"เลือกอยู่ห้องเดิมได้"}</p></div>
     <div class="howto-step"><b>3 · ใช้ธูป 3 ดอก</b><p>จั่ว Amulet 1 ดอก · สวม/ถอด 1 ดอก · ${sacRule} · ตีผี 2 ดอก · Skill 3 ดอก</p></div>
     <div class="howto-step"><b>4 · ฟาร์มแล้วต่อรอง</b><p>Amulet เก็บได้สูงสุด 5 ใบ ถ้าเกินให้เลือกทิ้งลงกองทิ้ง · เมื่อกองจั่วหมดจะสับกองทิ้งขึ้นใหม่ · เครื่องเซ่น 7 ใบ · แลกเปลี่ยน 1 ธูปเมื่อสำเร็จ • 1 ครั้ง/เทิร์นกับคนห้องเดียวกัน</p></div>
@@ -1124,13 +1132,13 @@ function renderTurnGuide({ap,mp,g,myRoom,pendingMine,canAct}){
     title.textContent=t;text.textContent=x;
     steps.innerHTML=["ทอย/หนี","เดิน","ใช้ธูป","ส่งเทิร์น"].map((s,i)=>`<span class="${i===activeStep?"active":i<activeStep?"done":""}">${i+1} ${s}</span>`).join("");
   };
-  if(g.rescue){const who=state.players.find(p=>p.id===g.rescue.playerId)?.name||"ผู้ถูกช่วย";set(g.rescue.playerId===myId()?"หมอธรรมช่วยแล้ว — เดินหนีทันที":`รอ ${who} เดินหนี`,g.rescue.phase==="roll"?"ผู้ถูกช่วยกดทอยเดิน ไม่เสียธูปและไม่ใช้เทิร์นปกติ":"เลือกห้องที่ไฮไลท์ รับประกันออกได้อย่างน้อย 1 ห้องติดกัน",1);return}
+  if(g.rescue){const who=state.players.find(p=>p.id===g.rescue.playerId)?.name||"ผู้ถูกช่วย";set(g.rescue.playerId===myId()?"ปลดแล้ว — เลือกออก 1 ห้อง":`รอ ${who} เลือกห้องออก`,"เลือกขึ้น/ลง/ซ้าย/ขวาที่ไฮไลท์ • ไม่ทอยเดิน ไม่คิด Fear และไม่เสียธูปเพิ่ม",1);return}
   if(!isMyTurn()){set(`รอ ${ap?.name||"เพื่อน"}`,`ตอนนี้เป็นเทิร์นของ ${ap?.name||"ผู้เล่นอื่น"} ดูแผนที่และวางแผนการ์ดของเราไว้ก่อนได้`,0);return}
   if(mp?.dead&&mine?.char?.skillType==="self_revive"){set("พ่อไกรยังกลับมาได้","HP 0 แต่สกิลพ่อไกรใช้ได้ตอนตาย • กด Skill 3🕯 เพื่อฟื้น HP +2",2);return}
   if(mp?.dead){set("รอการชุบชีวิต","HP ของคุณเป็น 0 ผู้เล่นคนอื่นต้องใช้การ์ดที่ชุบชีวิตได้",0);return}
   if(pendingMine){set("Resolve Room Effect ก่อน","Effect ของห้องยังทำงานไม่เสร็จ เลือกการ์ด/ผลลัพธ์ในหน้าต่างที่เปิดอยู่",2);return}
   if(g.pendingRitual){set("กำลังเทียบผลพิธี",g.pendingRitual.playerId===myId()?`เต๋าดิบ ${g.pendingRitual.dice.total} • ของสวมใส่ปรับได้ ±${g.pendingRitual.attackMax} • เลือก Modifier แล้ว Confirm`:`รอ ${g.pendingRitual.playerName} เลือก Modifier`,2);return}
-  if(g.escapeRequired){set("หนีห้องก่อน",`ใช้ปุ่ม “ทอยหนีห้อง” ครั้งละ 1 ธูป • เงื่อนไข: ${g.escapeRule?.label||"ตามการ์ดห้อง"}`,0);return}
+  if(g.escapeRequired){set("หนีห้องก่อน",`ทอยครั้งละ 1 ธูป • ${roomEscapeStatus(g)} • ผ่านแล้วเลือกออก 1 ห้องทันที`,0);return}
   if(g.sanityDecision){set("เลือกห้องเพื่อเดิน",`สติ ${g.sanity} • กดห้องที่สว่างได้เลย หรือใช้การ์ดเพิ่ม/ลดสติก่อนเดิน ใบละ 1 ธูป แล้วห้องที่เดินได้จะอัปเดตทันที`,1);return}
   if(!g.rolled){set("ทอยเต๋าเพื่อเดิน","กดทอยเต๋า 2 ลูกก่อน หรือถ้าตัวละครมีสกิลแทนการเดินสามารถเลือกใช้สกิลได้",0);return}
   if(g.mustMove){set("เลือกห้องที่ไฮไลท์",`สติ ${g.sanity} • เลือกปลายทางที่ไฮไลท์ได้ไม่เกิน ${g.movementRange} ห้อง`,1);return}

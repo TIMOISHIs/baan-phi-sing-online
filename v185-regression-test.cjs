@@ -118,7 +118,7 @@ reset();g.movementRange=2;g.sanity=1;g.rooms[1].fear=9;T.finalizeMovementOptions
 reset();g.movementRange=2;g.rooms[1].capacity=1;gp.pos=1;T.finalizeMovementOptions(room,hp);assert.ok(!g.legal.includes(1));assert.ok(!g.legal.includes(2));
 reset();g.movementRange=2;g.rooms[1].type='กับดัก';T.finalizeMovementOptions(room,hp);assert.ok(g.legal.includes(1));assert.ok(!g.legal.includes(2));
 // A real move roll captures the raw dice range (not Fear-adjusted sanity).
-reset();g.moved=false;g.rooms[0].fear=2;const oldRandom=Math.random;Math.random=()=>0.2;host.trigger('roll');Math.random=oldRandom;assert.equal(g.movementRange,4);assert.equal(g.sanity,2);assert.ok(g.legal.includes(5));
+reset();g.moved=false;g.rooms[0].fear=2;const oldRandom=Math.random;Math.random=()=>0.2;host.trigger('roll');Math.random=oldRandom;assert.equal(g.movementRange,4);assert.equal(g.sanity,4,'current room Fear is excluded');assert.ok(g.legal.includes(5));
 // Each ghost reaches warning once and burst once; no early effect at 1..5.
 for(const ghost of T.GHOSTS){
   reset();g.ghost=ghost;

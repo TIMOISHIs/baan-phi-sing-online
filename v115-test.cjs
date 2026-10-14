@@ -88,7 +88,7 @@ pendingMovement();g.pendingRoomEffect={type:'test',playerId:p.id};host.trigger('
 console.log('PASS v1.15 click-to-move, +2 sanity, stale/duplicate targets, no-route stay, optional/forced movement and locks');
 const random=Math.random;Math.random=()=>0;
 reset();const serial=g.turnSerial;host.trigger('skill',{targetId:friend.id});assert.equal(g.actions,0);assert.equal(g.turn,0);assert.equal(g.rescue.playerId,friend.id);
-host.trigger('rescueRoll');assert.equal(g.rescue.phase,'roll','caster cannot roll for friend');clients[2].trigger('rescueMove',{index:1});assert.equal(friend.pos,4);
+host.trigger('rescueRoll');assert.equal(g.rescue.phase,'move','rescue does not require a second roll');clients[2].trigger('rescueMove',{index:1});assert.equal(friend.pos,4);
 clients[1].trigger('drawAmulet');assert.equal(friend.amu.length,0);clients[1].trigger('rescueRoll');assert.equal(g.rescue.sanity,0);assert.deepEqual([...T.rescueOptions(room).legal].sort(),[1,3,5,7]);
 clients[1].trigger('rescueMove',{index:0});assert.equal(friend.pos,4,'diagonal denied');clients[1].trigger('rescueMove',{index:1});assert.equal(friend.pos,1);assert.equal(g.rescue,null);assert.equal(g.turn,1);assert.equal(g.actions,3,'friend gets their full normal turn');assert.equal(g.turnSerial,serial+1);clients[1].trigger('rescueMove',{index:3});assert.equal(friend.pos,1);
 reset();host.trigger('skill',{targetId:p.id});host.trigger('rescueRoll');host.trigger('rescueMove',{index:3});assert.equal(p.pos,3);assert.equal(g.turn,1);

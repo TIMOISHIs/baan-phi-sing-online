@@ -1445,3 +1445,7 @@ body:has(#home.active) .ambient-dock{bottom:clamp(12px,2vh,26px);right:clamp(18p
 .friends-drawer-open #friendsBtn,.friends-drawer-open #roomFriendsBtn{display:none}
 @media(max-width:900px){.friends-drawer-open #home.active{width:100%}#friendsBtn{top:auto;bottom:90px;transform:none}}
 @media(prefers-reduced-motion:reduce){.friends-dialog[open],.friends-drawer-open #home.active{transition:none}}
+/* V1.17.0: Draw attention to the available stay action without moving its target. */
+#stayBtn.stay-attention:not(:disabled){border-color:#d3be82;animation:stay-action-glow 1.6s ease-in-out infinite}
+@keyframes stay-action-glow{0%,100%{box-shadow:0 0 0 1px rgba(211,190,130,.28),0 0 8px rgba(211,190,130,.14)}50%{box-shadow:0 0 0 2px rgba(211,190,130,.85),0 0 20px rgba(211,190,130,.5)}}
+@media(prefers-reduced-motion:reduce){#stayBtn.stay-attention:not(:disabled){animation:none;box-shadow:0 0 0 2px rgba(211,190,130,.8)}}
