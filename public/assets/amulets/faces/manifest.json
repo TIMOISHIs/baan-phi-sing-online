@@ -336,76 +336,76 @@
     "sha256": "7dd2d5a453a419c590cbf9d2ae9185c4455f1bed25d48069c25be75ab56aa10f"
   },
   "S01": {
-    "file": "S01.webp",
+    "file": "S01-v118.png",
     "width": 1478,
     "height": 2178,
     "source": "Amulet-คาถาอาคม-S01.png",
-    "sourceSha256": "0a8d867d2e8d79aacb72b3dc85a80fab107e525c11fb15f43fa163e1e663103f",
-    "sha256": "5155aab6db28930ea3fbbae20fe7787d174935569e8a102cb640310ceb120846"
+    "sourceSha256": "f8bbafe605e12b2ef736f031b2ca4823dd5707a399d05dfb55bd4b83c5e28e4b",
+    "sha256": "f8bbafe605e12b2ef736f031b2ca4823dd5707a399d05dfb55bd4b83c5e28e4b"
   },
   "S02": {
-    "file": "S02.webp",
+    "file": "S02-v118.png",
     "width": 1478,
     "height": 2178,
     "source": "Amulet-คาถาอาคม-S02.png",
-    "sourceSha256": "fbef745a014a24503094589a350473b0661bfd2c123ae382e3969853fc14a714",
-    "sha256": "0a2395b35499a646646bf14971607e9b55cb2a520e8deb6cb084928078785c06"
+    "sourceSha256": "6ca98726a0a2cf4b5923f34940c7b9b5f1295585e85ce3639a596b454e602f77",
+    "sha256": "6ca98726a0a2cf4b5923f34940c7b9b5f1295585e85ce3639a596b454e602f77"
   },
   "S03": {
-    "file": "S03.webp",
+    "file": "S03-v118.png",
     "width": 1478,
     "height": 2178,
     "source": "Amulet-คาถาอาคม-S03.png",
-    "sourceSha256": "8db936bf12ab569684e5d8faa3cbdbe9bf883efbfbea7baaedf77a6e716f5eaa",
-    "sha256": "1a5198532cf2446d062b4c3f42282fcbfa60c4eaa4e0c71b044998e1f118ff2a"
+    "sourceSha256": "7b566b4da323e0a1fe5dee551ff814bdafc20397ff37cfd08431568aa627e68a",
+    "sha256": "7b566b4da323e0a1fe5dee551ff814bdafc20397ff37cfd08431568aa627e68a"
   },
   "S04": {
-    "file": "S04.webp",
+    "file": "S04-v118.png",
     "width": 1478,
     "height": 2178,
     "source": "Amulet-คาถาอาคม-S03-1.png",
-    "sourceSha256": "9c355bb1ce4d0555024c812e05fe482ea28d8347746571fa72c991dddd0c158c",
-    "sha256": "187d229af1dd6080e48cf8e7443536c3ddc4353cd4bb1a0ecaf69333324d52d1"
+    "sourceSha256": "acdc5ee9c7c6de9fb6701eefcf08f361a0c59a12c7e5abad89fb2f8be3d83269",
+    "sha256": "acdc5ee9c7c6de9fb6701eefcf08f361a0c59a12c7e5abad89fb2f8be3d83269"
   },
   "S05": {
-    "file": "S05.webp",
+    "file": "S05-v118.png",
     "width": 1478,
     "height": 2178,
     "source": "Amulet-คาถาอาคม-S05.png",
-    "sourceSha256": "9b376865e198a30a8b27caeee447b23ae200340949c6815158cfc4b5c3c4ea49",
-    "sha256": "77ca1ad05bd894e0b1b4ddbde87c09743213d9d0d513f1e68a6ec50451c3b9b3"
+    "sourceSha256": "6cb41baa1d944ccd09d2a3abd159262e5495f54cf6040790a56ac49c5a95fc41",
+    "sha256": "6cb41baa1d944ccd09d2a3abd159262e5495f54cf6040790a56ac49c5a95fc41"
   },
   "S06": {
-    "file": "S06.webp",
+    "file": "S06-v118.png",
     "width": 1478,
     "height": 2178,
     "source": "Amulet-คาถาอาคม-S06.png",
-    "sourceSha256": "074a046a7f22c39941ec55263b22f28c665c29fa5bc613ca4fbab0723810eb05",
-    "sha256": "08e53d535ba02b0872ad3e931485e2ed7c73f5ccf87cf4abaaef268157ff2373"
+    "sourceSha256": "8078f4c1d37bd8a4e7a8fb2aa6aee42ebec493e20d345a4012a682908290a315",
+    "sha256": "8078f4c1d37bd8a4e7a8fb2aa6aee42ebec493e20d345a4012a682908290a315"
   },
   "S07": {
-    "file": "S07.webp",
+    "file": "S07-v118.png",
     "width": 1478,
     "height": 2178,
     "source": "Amulet-คาถาอาคม-S07.png",
-    "sourceSha256": "5dd756971af7490cdc58d9174967435bf881b40c06ed404f6085d2c08e6052fa",
-    "sha256": "d01ab4f97a7e184476a3a0cf79c898469d60a9fe2dd6f23dbcdcfa337bb88949"
+    "sourceSha256": "693d684ed64694dc0d5d22b3c8d0eb4710cbd81156e5789bffff3a12fab3dc9b",
+    "sha256": "693d684ed64694dc0d5d22b3c8d0eb4710cbd81156e5789bffff3a12fab3dc9b"
   },
   "S08": {
-    "file": "S08.webp",
+    "file": "S08-v118.png",
     "width": 1478,
     "height": 2178,
     "source": "Amulet-คาถาอาคม-S08.png",
-    "sourceSha256": "7cd6287d5a27fe75ec84a4b6f3516c1c2bb60a5bdddd262f4fce952b8da81cf1",
-    "sha256": "21363844301a13e3a2c2635f3c5f703e4e4cbc4bc4328b35d3c5418670a17646"
+    "sourceSha256": "8bc14f6d49f43f9843c6a59598e44cde519c8ba17ca40a85f8c347e7bc1a002e",
+    "sha256": "8bc14f6d49f43f9843c6a59598e44cde519c8ba17ca40a85f8c347e7bc1a002e"
   },
   "S09": {
-    "file": "S09.webp",
+    "file": "S09-v118.png",
     "width": 1478,
     "height": 2178,
     "source": "Amulet-คาถาอาคม-S09.png",
-    "sourceSha256": "3d98cc989ed770d79637cc532c26130e9388cd07254c830651a9c18b894c0a4b",
-    "sha256": "f1238729b778645f7d125f7c096488ff0328319fba35d74184d80fdcf172a6ea"
+    "sourceSha256": "354d395e6d0dec00c71ec96d721a6556c1084a41ef9bcdd606325b690b8c3e4f",
+    "sha256": "354d395e6d0dec00c71ec96d721a6556c1084a41ef9bcdd606325b690b8c3e4f"
   },
   "V01": {
     "file": "V01.webp",

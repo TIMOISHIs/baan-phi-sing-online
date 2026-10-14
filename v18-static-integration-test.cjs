@@ -92,10 +92,10 @@ cleanTurn(room,hp);hp.score=0;const evMoney=takeCard(room,'V07');g.amuDeck.unshi
 
 // Reactive protect-all prompt: negative Event is canceled on successful spell roll.
 cleanTurn(room,hp);hp.hp=hp.char.hp;gp.hp=gp.char.hp;const protect=takeCard(room,'S01');hp.amu.push(protect);const bad=takeCard(room,'V06');g.amuDeck.unshift(bad);
-const oldRandom=Math.random;Math.random=()=>0.01;host.trigger('drawAmulet');assert.equal(g.pendingRoomEffect?.type,'negativeReaction');assert.ok(g.pendingRoomEffect.options.some(o=>o.uid===protect.uid));const h0=hp.hp,gg0=gp.hp;host.trigger('resolveRoomEffect',{uid:protect.uid});assert.equal(hp.hp,h0);assert.equal(gp.hp,gg0);assert.equal(g.pendingRoomEffect,null);Math.random=oldRandom;
+const oldRandom=Math.random;Math.random=()=>0.01;host.trigger('drawAmulet');assert.equal(g.pendingRoomEffect?.type,'negativeReaction');assert.ok(g.pendingRoomEffect.options.some(o=>o.uid===protect.uid));const h0=hp.hp,gg0=gp.hp;host.trigger('resolveRoomEffect',{uid:protect.uid});assert.equal(hp.hp,h0);assert.equal(gp.hp,gg0-2);assert.equal(g.pendingRoomEffect,null);Math.random=oldRandom;
 
-// Reactive ghost protection works on failed-counter source.
-cleanTurn(room,hp);const protectGhost=takeCard(room,'S03');hp.amu.push(protectGhost);room.game.ghost=T.GHOSTS.find(x=>x.id==='ghost-pob-jaothi');const hpBefore=hp.hp;T.applyGhostCounter(room,hp,'green');assert.equal(g.pendingRoomEffect?.type,'negativeReaction');Math.random=()=>0.01;host.trigger('resolveRoomEffect',{uid:protectGhost.uid});Math.random=oldRandom;assert.equal(hp.hp,hpBefore);
+// S03 is trap escape now, not protection against a ritual counterattack.
+cleanTurn(room,hp);const protectGhost=takeCard(room,'S03');hp.amu.push(protectGhost);room.game.ghost=T.GHOSTS.find(x=>x.id==='ghost-pob-jaothi');hp.equip=[];const hpBefore=hp.hp;T.applyGhostCounter(room,hp,'green');assert.equal(g.pendingRoomEffect,null);assert.ok(hp.hp<hpBefore);assert.ok(hp.amu.includes(protectGhost));
 
 // Event เพล้ง: when drawer is in curse, choose an adjacent exit immediately.
 cleanTurn(room,hp);let curseIndex=[0,1,2,3,4,5,6,7,8].find(i=>i!==g.bossIndex);g.rooms[curseIndex]={...T.ROOMS.find(r=>r.type==='คำสาป')};hp.pos=curseIndex;const evExit=takeCard(room,'V10');g.amuDeck.unshift(evExit);host.trigger('drawAmulet');assert.equal(g.pendingRoomEffect?.type,'eventFreeCurseMove');const dest=g.pendingRoomEffect.options[0].index;host.trigger('resolveRoomEffect',{uid:dest});assert.equal(hp.pos,dest);assert.equal(g.pendingRoomEffect,null);

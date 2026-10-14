@@ -69,7 +69,7 @@ function toast(t){const e=$("#toast");e.textContent=t;e.classList.remove("hidden
 function myMandatoryDecision(){
   if(state?.phase!=="game")return null;
   const pe=state.game?.pendingRoomEffect;if(pe?.playerId===myId())return {kind:"room",id:pe.id,pending:pe};
-  const pr=state.game?.pendingRitual;if(pr?.playerId===myId())return {kind:"ritual",id:pr.id,pending:pr};
+  const pr=state.game?.pendingRitual;if(!state.game?.protectionPending&&pr?.playerId===myId())return {kind:"ritual",id:pr.id,pending:pr};
   const tr=state.trade;if(tr?.toId===myId())return {kind:"trade",id:tr.id,pending:tr};
   return null;
 }
@@ -512,7 +512,7 @@ socket.on("cardReveal",enqueueCardReveal);
 socket.on("escapeSuccessFx",showEscapeSuccessFx);
 socket.on("diceFx",receiveDice);
 socket.on("ritualFx",showRitualFx);
-socket.on("spellFx",e=>toast(`${e.playerName} ใช้ ${e.name} • ${e.success?"สำเร็จ":"ไม่สำเร็จ"} (${e.dice?.total??"?"} / ${e.condition||"?"})`));
+socket.on("spellFx",e=>toast(`${e.playerName} ใช้ ${e.name} • ${e.success?"สำเร็จ":"ไม่สำเร็จ"}${e.dice?` (${e.dice.total} / ${e.condition||""})`:""}`));
 
 
 let ghostRandomAnimating=false,ghostCycleTimers=[];
@@ -1019,7 +1019,7 @@ function renderGame(){
 
   if(state.trade)renderTradeNotice();
   if(g.pendingRoomEffect && g.pendingRoomEffect.playerId===myId()) renderPendingRoomEffect(g.pendingRoomEffect);
-  if(g.pendingRitual) renderPendingRitual(g.pendingRitual);
+  if(g.pendingRitual&&!g.pendingRoomEffect&&!g.protectionPending) renderPendingRitual(g.pendingRitual);
   updateRollFocus();
 }
 function renderPrivate(){
@@ -1056,15 +1056,18 @@ function amuletTypeLabel(c){
   if(c.category)return c.category;const map={equip:"สวมใส่",spell:"คาถาอาคม",event:"เหตุการณ์",heal_self:"ช่วยเหลือ",heal_room:"ช่วยเหลือ",heal_range:"ช่วยเหลือ",revive:"ช่วยเหลือ",sanity:"เรียกสติ"};return map[c.type]||"Amulet";
 }
 function canUseAmulet(c,{equipped=false}={}){
-  const g=state?.game,mp=mePublic();if(!g||g.rescue||!isMyTurn()||g.curseResolving||g.pendingRoomEffect||g.pendingRitual||eventRevealOpen||turnTransitionActive||diceAnimating||movingSeats.size)return false;
+  const g=state?.game,mp=mePublic();if(!g||g.protectionPending||g.rescue||!isMyTurn()||g.curseResolving||g.pendingRoomEffect||g.pendingRitual||eventRevealOpen||turnTransitionActive||diceAnimating||movingSeats.size)return false;
   if(mp?.dead)return mine?.char?.skillType==="self_revive"?false:false;
   if(equipped)return g.moved&&g.actions>=1;
   if(c.type==="sanity")return !!g.sanityDecision&&g.actions>=1;
   if(c.type==="equip")return g.moved&&g.actions>=1&&(mine?.equip?.length||0)<(mine?.char?.slots||0);
   if(["heal_self","heal_room","heal_range","revive"].includes(c.type))return g.moved&&g.actions>=1;
   if(c.type==="spell"){
-    if(["protect_all","protect_ghost"].includes(c.spellEffect))return false;
-    return g.actions>=1&&!g.pendingRitual;
+    if(["protect_event","protect_curse"].includes(c.spellEffect)||g.actions<1)return false;
+    const current=g.rooms?.[mp?.pos];
+    if(c.spellEffect==="escape_trap")return current?.type==="กับดัก";
+    if(c.spellEffect==="escape_curse")return current?.type==="คำสาป";
+    return !!g.rolled&&!["กับดัก","คำสาป"].includes(current?.type);
   }
   return false;
 }
@@ -1238,9 +1241,9 @@ function renderPendingRoomEffect(pending){
   const note=document.createElement("p");note.className="muted";note.textContent=pending.reason||"Effect ห้อง";box.appendChild(note);
 
   if(pending.type==="negativeReaction"){
-    const help=document.createElement("div");help.className="negative-reaction-callout";help.innerHTML=`<b>⚠️ ผลลบกำลังจะเกิด</b><p>${pending.reason||"ผลลบ"}</p><small>มีคาถาที่ใช้ได้ • ต้องเสีย 1 ธูปและทอยให้ผ่านเงื่อนไข ถ้าพลาดการ์ดพังและยังรับผลลบตามเดิม</small>`;box.appendChild(help);
-    (pending.options||[]).forEach(c=>{const b=document.createElement("button");b.className="modal-option reaction-spell-option";b.innerHTML=`${artMarkup(c.art,"option-art",c.name)}<b>✨ ${c.name}</b><span>ทอย ${conditionLabel(c)||"ตามเงื่อนไข"} • ${c.effect||"ป้องกันผลลบ"} • 1🕯</span>`;b.onclick=()=>{ensureAudio();socket.emit("resolveRoomEffect",{uid:c.uid});closeModal()};box.appendChild(b)});
-    const pass=document.createElement("button");pass.className="secondary";pass.textContent="ไม่ใช้คาถา — รับผลลบ";pass.onclick=()=>{socket.emit("resolveRoomEffect",{uid:"pass"});closeModal()};box.appendChild(pass);
+    const help=document.createElement("div");help.className="negative-reaction-callout";help.innerHTML=`<b>มีการ์ดป้องกัน ต้องการใช้หรือไม่?</b><p>${pending.reason||"ผลลบ"}</p><small>ป้องกันเฉพาะตัวเองครั้งนี้ • ไม่เสียธูป • ไม่ต้องทอยเต๋า • ใช้แล้วลงกองทิ้ง</small>`;box.appendChild(help);
+    (pending.options||[]).forEach(c=>{const b=document.createElement("button");b.className="modal-option reaction-spell-option";b.innerHTML=`${artMarkup(c.art,"option-art",c.name)}<b>✨ ${c.name}</b><span>${c.effect||"ป้องกันผลลบ"} • ฟรี</span>`;b.onclick=()=>{ensureAudio();socket.emit("resolveRoomEffect",{uid:c.uid,pendingId:pending.id});closeModal()};box.appendChild(b)});
+    const pass=document.createElement("button");pass.className="secondary";pass.textContent="ไม่ใช้คาถา — รับผลลบ";pass.onclick=()=>{socket.emit("resolveRoomEffect",{uid:"pass",pendingId:pending.id});closeModal()};box.appendChild(pass);
   }
 
   else if(pending.type==="discardSacrifice"){
@@ -1309,7 +1312,7 @@ function renderPendingRoomEffect(pending){
   }
 
   const titles={
-    negativeReaction:"ใช้คาถาป้องกันไหม?",
+    negativeReaction:"มีการ์ดป้องกัน ต้องการใช้หรือไม่?",
     discardAmuletOverflow:"Amulet Hand เต็ม",
     officePickDiscard:"ห้องทำงาน — เลือกจากกองทิ้ง",
     eventRollMoney:"เหยยย! — ฝากเพื่อนทอย",
