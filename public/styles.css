@@ -1449,3 +1449,14 @@ body:has(#home.active) .ambient-dock{bottom:clamp(12px,2vh,26px);right:clamp(18p
 #stayBtn.stay-attention:not(:disabled){border-color:#d3be82;animation:stay-action-glow 1.6s ease-in-out infinite}
 @keyframes stay-action-glow{0%,100%{box-shadow:0 0 0 1px rgba(211,190,130,.28),0 0 8px rgba(211,190,130,.14)}50%{box-shadow:0 0 0 2px rgba(211,190,130,.85),0 0 20px rgba(211,190,130,.5)}}
 @media(prefers-reduced-motion:reduce){#stayBtn.stay-attention:not(:disabled){animation:none;box-shadow:0 0 0 2px rgba(211,190,130,.8)}}
+
+/* V1.17.1: non-blocking card reveals and confirmed room escape. */
+.escape-success-fx{position:fixed;inset:0;z-index:150;display:grid;place-items:center;background:rgba(3,7,5,.48);backdrop-filter:blur(3px);pointer-events:auto}
+.escape-success-fx>div{min-width:min(360px,86vw);padding:24px 30px;text-align:center;border:1px solid #d6bd78;border-radius:18px;background:linear-gradient(180deg,#28362b,#101713);box-shadow:0 24px 80px #000c,0 0 42px #91c77d38}
+.escape-success-fx small,.escape-success-fx span{display:block;color:#c9d9bf}.escape-success-fx small{letter-spacing:.25em}.escape-success-fx b{display:block;margin:5px 0;font-size:32px;color:#f6e6b9}.escape-success-pop>div{animation:escapeSuccessPop .3s cubic-bezier(.2,.85,.2,1.12) both}
+@keyframes escapeSuccessPop{from{opacity:0;transform:translateY(18px) scale(.84)}to{opacity:1;transform:none}}
+.side-card-reveal{position:fixed;z-index:86;display:grid;gap:4px;pointer-events:none;padding:7px;border:1px solid #b99b64;border-radius:11px;background:#111713e8;box-shadow:0 12px 34px #000b;color:#f1e2bd;text-align:center}
+.side-card-reveal .amulet-face{width:100%;height:auto;aspect-ratio:1478/2178}.side-card-reveal small{font-size:10px}.side-card-reveal b{font-size:10px;line-height:1.2}.side-card-in{animation:sideCardIn .24s ease-out both}.side-card-out{animation:sideCardOut .25s ease-in both}
+@keyframes sideCardIn{from{opacity:0;transform:translateX(-16px) scale(.88)}to{opacity:1;transform:none}}@keyframes sideCardOut{to{opacity:0;transform:translateX(-12px) scale(.94)}}
+@media(max-width:700px){.side-card-reveal{left:8px!important;top:76px!important;width:74px!important;padding:5px}.side-card-reveal b{display:none}}
+@media(prefers-reduced-motion:reduce){.escape-success-pop>div,.side-card-in,.side-card-out{animation:none}}

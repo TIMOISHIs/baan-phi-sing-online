@@ -1607,6 +1607,7 @@ io.on("connection", socket=>{
     if(success){
       if(g.stats) g.stats.escape.success++;
       addLog(room,`${p.name} ใช้ 1 ธูปทอยหนี ${d.a}+${d.b}=${d.total}${stackText} → สำเร็จ`);
+      io.to(room.code).emit("escapeSuccessFx",{playerId:p.id,playerName:p.name,duration:1500});
       queueSpecialExit(room,p,"ทอยหนีสำเร็จ");
     }else{
       if(g.stats) g.stats.escape.fail++;

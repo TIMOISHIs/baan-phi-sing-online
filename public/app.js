@@ -509,6 +509,7 @@ socket.on("ghostReveal",e=>{if(e?.ghost)revealFinalGhost(e.ghost)});
 socket.on("gameStartCountdown",e=>runGameStartCountdown(e));
 socket.on("hpFx",e=>{if(diceAnimating){queuedHpEvents.push(e);return}const fire=()=>queueHpFx(e.delta,e.reason||"HP เปลี่ยน");if(/สวนกลับ|ดูดเลือด/.test(e.reason||""))setTimeout(fire,2600);else fire()});
 socket.on("cardReveal",enqueueCardReveal);
+socket.on("escapeSuccessFx",showEscapeSuccessFx);
 socket.on("diceFx",receiveDice);
 socket.on("ritualFx",showRitualFx);
 socket.on("spellFx",e=>toast(`${e.playerName} ใช้ ${e.name} • ${e.success?"สำเร็จ":"ไม่สำเร็จ"} (${e.dice?.total??"?"} / ${e.condition||"?"})`));
@@ -729,8 +730,30 @@ function openSacrificeCard(c){
 }
 let diceTimer=null,ritualTimer=null,diceAnimTimer=null,cardRevealBusy=false;
 const cardRevealQueue=[];
-let cardRevealTimer=null,cardRevealClosing=false,eventRevealOpen=false,cardRevealPreviousFocus=null;
-function closeCardReveal(){
+const sideRevealQueue=[];
+let cardRevealTimer=null,cardRevealClosing=false,eventRevealOpen=false,cardRevealPreviousFocus=null,sideRevealBusy=false,sideRevealTimer=null,escapeSuccessTimer=null;
+function showEscapeSuccessFx(e={}){
+  if(diceAnimating){clearTimeout(escapeSuccessTimer);escapeSuccessTimer=setTimeout(()=>showEscapeSuccessFx(e),120);return}
+  let box=$("#escapeSuccessFx");
+  if(!box){box=document.createElement("div");box.id="escapeSuccessFx";box.className="escape-success-fx hidden";box.innerHTML='<div><small>ESCAPE</small><b>หลบหนีสำเร็จ</b><span>เลือกห้องข้างเคียงเพื่อออกจากห้องนี้</span></div>';document.body.appendChild(box)}
+  clearTimeout(escapeSuccessTimer);box.classList.remove("hidden","escape-success-pop");void box.offsetWidth;box.classList.add("escape-success-pop");
+  escapeSuccessTimer=setTimeout(()=>box.classList.add("hidden"),Number(e.duration)||1500);
+}
+function positionSideReveal(box){
+  const board=$("#board")||document.querySelector(".bps-board-shell"),r=board?.getBoundingClientRect?.();
+  if(!r)return;
+  const width=Math.min(104,Math.max(78,r.width*.13));
+  box.style.width=`${width}px`;box.style.left=`${Math.max(8,r.left-width-12)}px`;box.style.top=`${Math.max(72,r.top+18)}px`;
+}
+function enqueueSideReveal(e){sideRevealQueue.push(e);if(!sideRevealBusy)showNextSideReveal()}
+function showNextSideReveal(){
+  const e=sideRevealQueue.shift();if(!e){sideRevealBusy=false;return}sideRevealBusy=true;
+  let box=$("#sideCardReveal");if(!box){box=document.createElement("div");box.id="sideCardReveal";box.className="side-card-reveal hidden";document.body.appendChild(box)}
+  box.innerHTML=`<small>${escapeHtml(e.playerName||"ผู้เล่น")} จั่ว</small>${renderAmuletFace(e.card)}<b>${escapeHtml(e.card?.name||"Amulet")}</b>`;
+  positionSideReveal(box);box.classList.remove("hidden","side-card-in","side-card-out");void box.offsetWidth;box.classList.add("side-card-in");playCardFlipSound();
+  clearTimeout(sideRevealTimer);sideRevealTimer=setTimeout(()=>{box.classList.add("side-card-out");sideRevealTimer=setTimeout(()=>{box.classList.add("hidden");box.classList.remove("side-card-in","side-card-out");sideRevealBusy=false;showNextSideReveal()},250)},1250);
+}
+function closeCardReveal(closeMs=720){
   if(!cardRevealBusy||cardRevealClosing)return;
   clearTimeout(cardRevealTimer);cardRevealClosing=true;eventRevealOpen=false;
   const box=$("#cardRevealFx");finishCardFlight();box.classList.add("card-out");
@@ -739,7 +762,7 @@ function closeCardReveal(){
     cardRevealBusy=false;cardRevealClosing=false;
     if(cardRevealPreviousFocus?.isConnected)cardRevealPreviousFocus.focus();
     showNextCardReveal();if(!cardRevealBusy){render();recoverMandatoryDecision();updateRollFocus()}
-  },720);
+  },closeMs);
 }
 function resetCardReveals(){
   resetPresentationMotion();
@@ -749,7 +772,10 @@ function resetCardReveals(){
 $("#cardRevealClose").onclick=closeCardReveal;
 $("#cardRevealFx").addEventListener("keydown",e=>{if(eventRevealOpen&&e.key==="Tab"){e.preventDefault();$("#cardRevealClose").focus()}});
 function enqueueCardReveal(e){
-  rememberReveal(e);cardRevealQueue.push(e);
+  rememberReveal(e);
+  if(e?.zone==="amulet"&&e?.reason==="draw"&&e?.playerId!==myId()&&e?.card?.type!=="event"){enqueueSideReveal(e);return}
+  cardRevealQueue.push(e);
+  if(cardRevealBusy&&!eventRevealOpen&&e?.zone==="amulet"&&e?.reason==="draw"&&e?.playerId===myId())closeCardReveal(240);
   if(!cardRevealBusy)showNextCardReveal();
 }
 function showNextCardReveal(){
@@ -776,7 +802,10 @@ function showNextCardReveal(){
   box.classList.toggle("event-reading",eventRevealOpen);$("#cardRevealClose").classList.toggle("hidden",!eventRevealOpen);
   if(eventRevealOpen){
     cardRevealPreviousFocus=document.activeElement;$("#cardRevealClose").focus();hideRollFocus();
-  }else cardRevealTimer=setTimeout(closeCardReveal,e.zone==="amulet"?2800:2200);
+  }else{
+    const revealMs=e.zone==="amulet"&&e.reason==="gain"?880:(e.zone==="amulet"?2800:2200);
+    cardRevealTimer=setTimeout(()=>closeCardReveal(e.reason==="gain"?320:720),revealMs);
+  }
 }
 const DIE_ROTATIONS={1:[0,0],2:[0,-90],3:[-90,0],4:[90,0],5:[0,90],6:[0,180]};
 function buildDie(el){

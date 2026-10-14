@@ -15,5 +15,5 @@
   if(data.entries.length){const head=document.createElement('div');head.className='ranking-columns';head.innerHTML='<span>อันดับ</span><span>ผู้เล่น</span><span>คะแนนสูงสุด</span>';const list=document.createElement('div');list.className='ranking-list';data.entries.forEach(r=>list.append(row(r)));content.append(head,list)}else{const p=document.createElement('p');p.textContent='ยังไม่มีคะแนนที่บันทึกไว้ เล่นจบเกมด้วยบัญชีเพื่อเริ่มจัดอันดับ';content.append(p)}
   const own=document.createElement('section');own.className='ranking-own';const title=document.createElement('b');title.textContent='อันดับของคุณ';own.append(title);if(data.mine)own.append(row(data.mine));else{const p=document.createElement('p');p.textContent='ยังไม่มีอันดับ · ต้องมีผลเกมที่บันทึกสำเร็จก่อน';own.append(p)}content.append(own);
  }catch(e){content.textContent=e.message;const retry=document.createElement('button');retry.className='antique-button';retry.textContent='ลองใหม่';retry.onclick=load;content.append(document.createElement('br'),retry)}finally{busy=false}}
- q('#lobbyStatsBtn').textContent='อันดับผู้เล่น';q('#lobbyStatsBtn').onclick=()=>{if(!d.open)d.showModal();load()};q('.bps-brand small').textContent='v1.17.0';
+ q('#lobbyStatsBtn').textContent='อันดับผู้เล่น';q('#lobbyStatsBtn').onclick=()=>{if(!d.open)d.showModal();load()};q('.bps-brand small').textContent='v1.17.1';
 })();

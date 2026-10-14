@@ -12,7 +12,7 @@
 #game #gameInventory .bps-stats{margin-top:0;gap:7px 4px}
 #game #gameInventory #amuletDock .amulet-card{top:0;width:72px!important;height:106px!important}
 @media(min-width:1600px){#game #gameInventory #amuletDock .amulet-card{width:86px!important;height:127px!important}}
-#game #gameInventory #amuletDock .amulet-card:hover,#game #gameInventory #amuletDock .amulet-card:focus-visible{transform:translateX(calc(-50% + var(--fan-x))) translateY(calc(-100% - 34px)) rotate(0deg) scale(1.25)!important}
+#game #gameInventory #amuletDock .amulet-card:hover,#game #gameInventory #amuletDock .amulet-card:focus-visible{transform:translateX(calc(-50% + var(--fan-x))) translateY(-12px) rotate(0deg) scale(1.04)!important;z-index:120!important}
 #soundSettings #settingsClose,#soundSettings #resetGameFont,.antique-button{color:#f6e7c7!important;background:#493022!important;border:1px solid #b4955c!important;border-radius:9px;padding:7px 12px;box-shadow:inset 0 0 0 2px #302017;text-shadow:none;cursor:pointer}
 #soundSettings #settingsClose:hover,#soundSettings #resetGameFont:hover,.antique-button:hover{background:#624330!important;color:#fff4dc!important}
 #soundSettings #settingsClose:active,#soundSettings #resetGameFont:active,.antique-button:active{background:#302017!important;transform:translateY(1px)}
