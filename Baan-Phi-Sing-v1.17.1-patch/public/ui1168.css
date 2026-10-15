@@ -1,0 +1,44 @@
+/* Retain the four original PNG frames and the 30/38/18/14 grid. */
+#game.bag-open #gameInventory>section{padding-top:44px!important}
+#game.bag-open #gameInventory #amuletDock{padding-top:40px!important}
+#game #gameInventory .inventory-label{position:absolute!important;left:50%!important;top:8px!important;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;width:max-content;max-width:calc(100% - 52px);min-height:26px;margin:0!important;padding:3px 14px!important;background:linear-gradient(#f5e7c7,#e6cea0);border:1px solid #a47c43!important;border-radius:22px;box-shadow:0 1px 3px #36201165,inset 0 0 0 2px #e7d2ac;color:#352319!important;z-index:3;line-height:1.25;text-align:center;pointer-events:none}
+#game #gameInventory .inventory-label h3,#game #gameInventory .inventory-label .hand-title{margin:0!important;color:#352319!important}
+#game #gameInventory .inventory-label h3{font-size:12px;line-height:15px}
+#game #gameInventory .inventory-label .hand-title{font-size:10px;line-height:12px}
+#game #gameInventory .amulet-dock-head.inventory-label{flex-direction:row;gap:5px;font-size:12px;letter-spacing:normal}
+#game #gameInventory .amulet-dock-head.inventory-label small{display:none}
+#game #gameInventory #sacHand,#game #gameInventory .bps-equip-zone .equip-row{height:100%}
+#game #gameInventory .bps-equip-zone #equip{height:100%;margin:0}
+#game #gameInventory .bps-stats{margin-top:0;gap:7px 4px}
+#game #gameInventory #amuletDock .amulet-card{top:0;width:72px!important;height:106px!important}
+@media(min-width:1600px){#game #gameInventory #amuletDock .amulet-card{width:86px!important;height:127px!important}}
+#game #gameInventory #amuletDock .amulet-card:hover,#game #gameInventory #amuletDock .amulet-card:focus-visible{transform:translateX(calc(-50% + var(--fan-x))) translateY(-12px) rotate(0deg) scale(1.04)!important;z-index:120!important}
+#soundSettings #settingsClose,#soundSettings #resetGameFont,.antique-button{color:#f6e7c7!important;background:#493022!important;border:1px solid #b4955c!important;border-radius:9px;padding:7px 12px;box-shadow:inset 0 0 0 2px #302017;text-shadow:none;cursor:pointer}
+#soundSettings #settingsClose:hover,#soundSettings #resetGameFont:hover,.antique-button:hover{background:#624330!important;color:#fff4dc!important}
+#soundSettings #settingsClose:active,#soundSettings #resetGameFont:active,.antique-button:active{background:#302017!important;transform:translateY(1px)}
+#soundSettings #settingsClose:disabled,#soundSettings #resetGameFont:disabled,.antique-button:disabled{background:#4b4035!important;color:#c5b99f!important;border-color:#857155!important;opacity:1;cursor:not-allowed;transform:none}
+#soundSettings #settingsClose:focus-visible,#soundSettings #resetGameFont:focus-visible,.antique-button:focus-visible{outline:3px solid #e7c884;outline-offset:3px}
+#home .cozy-menu-icon{display:block;width:82px;height:82px;object-fit:contain;filter:drop-shadow(0 3px 3px #0008);margin:0 auto}
+body.has-account #home .lobby-footer .cozy-menu-button .pregame-icon{width:82px!important;height:82px!important;filter:none}
+body.has-account #home.active .lobby-footer{height:112px!important;bottom:2%!important}
+body.has-account #home .lobby-footer .lobby-nav .cozy-menu-button{flex-direction:column!important;justify-content:center;gap:3px!important;border:0!important;padding:0 4px!important;font-size:14px!important;background:none!important;box-shadow:none!important}
+#home .cozy-menu-button:hover .cozy-menu-icon{transform:translateY(-3px)}
+#game #gameInventory .amulet-dock-head.inventory-label span{font-size:12px;letter-spacing:normal;font-weight:700}
+#leaderboardDialog{width:min(740px,calc(100vw - 40px));max-height:calc(100dvh - 48px);padding:24px;color:#352319;background:radial-gradient(ellipse at 30% 15%,#f6e9cc,#e4c99b);border:8px solid #60402a;border-radius:18px;box-shadow:0 0 0 2px #b59763,inset 0 0 0 2px #b7975e,0 22px 70px #0009;font-family:inherit;overflow:auto}
+#leaderboardDialog::backdrop{background:#0c080bd9}
+#leaderboardDialog header{display:flex;justify-content:space-between;align-items:center;gap:16px}
+#leaderboardDialog h2{color:#352319;margin:4px 0;font-size:26px}
+#leaderboardDialog header small,#leaderboardDialog footer{color:#674c32}
+#leaderboardDialog .ranking-sub{font-size:13px;color:#674c32;margin:14px 0}
+#leaderboardDialog .ranking-columns{display:grid;grid-template-columns:66px 1fr 110px;padding:10px 12px;background:#dbc19a;border-radius:7px;font-size:12px}
+#leaderboardDialog .ranking-columns span:last-child{text-align:right}
+#leaderboardDialog .ranking-list{max-height:390px;overflow:auto}
+#leaderboardDialog .ranking-row{display:grid;grid-template-columns:42px 40px minmax(0,1fr) 100px;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #b99b6a65;color:#352319}
+#leaderboardDialog .ranking-row>img{width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid #a3814e;background:#cdb186}
+#leaderboardDialog .ranking-row>span{overflow-wrap:anywhere}
+#leaderboardDialog .ranking-row>strong{text-align:right;color:#352319}
+#leaderboardDialog .ranking-row.is-me{background:#cfa76540}
+#leaderboardDialog .ranking-own{margin-top:18px;border:1px solid #aa864e;border-radius:10px;padding:12px;background:#f4e4c4}
+#leaderboardDialog .ranking-own>p{margin:8px 0;font-size:13px}
+#leaderboardDialog footer{font-size:11px;margin-top:16px;line-height:1.5}
+@media(max-width:700px){#leaderboardDialog{padding:16px}#leaderboardDialog .ranking-row{grid-template-columns:28px 30px minmax(0,1fr) 60px;gap:6px;padding:8px 0;font-size:12px}#leaderboardDialog .ranking-row>img{width:28px;height:28px}}

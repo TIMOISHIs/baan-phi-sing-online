@@ -1,0 +1,138 @@
+{
+  "version": "1.18.2",
+  "baseVersion": "1.18.1",
+  "branch": "v1.8-playtest",
+  "files": [
+    {
+      "path": "public/index.html",
+      "sha256": "309233e7f68668af61af175e921e21469c7dcb7d8555d1f9b08ec4edcd95b0f8",
+      "baseSha256": "59639904116b43809742d3ac71ac9fa64f3e3e274d081619b8ac20f750b5ac79"
+    },
+    {
+      "path": "package.json",
+      "sha256": "4cf68a87628492de0e18a81655b03adcb3d3f33f4332b5174d66d875ece2d6d7",
+      "baseSha256": "fa6a5776eca6fd3009e7cb47db9e092f4748dbfd646bea43eea7e7e92ea5a4ee"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "cfff8af16f553a6c2ea91132202c0c719382ee053c49b479921673e58e628a06",
+      "baseSha256": "efd78877daff53315265551549bca817199001c26388f6ed50aeab11a804ee5a"
+    },
+    {
+      "path": "public/ui1182.js",
+      "sha256": "8be6d10d3506599a7a3cea4b2b7b88f25d112af04cdf10107a4832013336ec37",
+      "baseSha256": null
+    },
+    {
+      "path": "public/ui1182.css",
+      "sha256": "4ea9abae4694b90fb115c3655ed0ec6c55e1a625c88096fc9de9696f0904f9b8",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/01_trade_default_148x114.png",
+      "sha256": "a3990d56a91c638c784fecd634ac0f179e9ffceb8ea3f9be2094d8a857d2b03b",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/01_trade_disabled_148x114.png",
+      "sha256": "2d0a8b41c043676c11418405abad6edac5cf865452488231b4044276893e0789",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/01_trade_hover_148x114.png",
+      "sha256": "c101e1af248693c1694c901ef883cb5f607d8516a9cecea93ba1d35845541fde",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/01_trade_pressed_148x114.png",
+      "sha256": "44d662c28fda1baecaa8233baf903d4d3a326e750087607ab34df82be2ec0f5f",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/02_ritual_default_148x114.png",
+      "sha256": "93fddcd903da09d5381eb738802aa7e19a32551839b3821c2baf554a87aab170",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/02_ritual_disabled_148x114.png",
+      "sha256": "dab81a0c3779ccb75598368bb73a6388e70c0be90da3cb23f89f01e09423b0ac",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/02_ritual_hover_148x114.png",
+      "sha256": "2fd8b30a0c735f0df0df634d2e9b892e20d6faa7da764dc4b9a914f2f2c7fcc6",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/02_ritual_pressed_148x114.png",
+      "sha256": "a993ca07bd191b8dc06c726f8eeb91910a39d7f20b6164ef8707acea700fa6fb",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/03_skill_default_148x114.png",
+      "sha256": "d2de8599c0aac05413db5bebf8e1beaf5a2393ff2c7a0a89606efc161b7ee89b",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/03_skill_disabled_148x114.png",
+      "sha256": "dca9583a722cd8d5d524b8084ef610e2859f58ca3a5bcf9921969ceaeaf95b9f",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/03_skill_hover_148x114.png",
+      "sha256": "317bae2ffefc09e9ef63e66dc712e22767db93c8e201ffff58d10b8fedc857ca",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/03_skill_pressed_148x114.png",
+      "sha256": "3d0bd6380559bfdb6042e1b89180ee8977d3f4a1ace05ec830b3849253ab5c0d",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/04_end_turn_default_148x80.png",
+      "sha256": "540ce6a24f7ee227e2cc7560031772c25f89a5ad96b8c7155790c22d68d90326",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/04_end_turn_disabled_148x80.png",
+      "sha256": "19aef3650048582e375a371e58caa61cdacdc685aa488b95e658e6c1375b8198",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/04_end_turn_hover_148x80.png",
+      "sha256": "58c0e7d8fe7744cba4d93dc618bc6b5a8878810eca31e83f82a5ac7cab7e6f01",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/actions/04_end_turn_pressed_148x80.png",
+      "sha256": "76d65845bc70df9ff7cf940f38103d83b77a0d2dd5d1f086de53dc253bb4ea64",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/status/status-hp.png",
+      "sha256": "fb3c7bdab3f8da6778952e4f80122321af453834cd7aeca60d30ec03e9f8adcd",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/status/status-incense.png",
+      "sha256": "8583867913fa524960f4bf974a500e4561ce6a43401f3ae9458ca2a2d8995e81",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/status/status-money.png",
+      "sha256": "5f65c667a86b7db806bd05e5bec57cc209d5e24c29269e5a69f5273034543e48",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/status/status-sanity.png",
+      "sha256": "8addcedc8c6ca55d15c47b40657cc83be61cd878f0ca26ee9bc38724c3ca23bf",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/ui1182/status/status-support.png",
+      "sha256": "95bd66f3628a3cf05775f469f1e9442ebea95e107f535e2a6b2effd093870312",
+      "baseSha256": null
+    }
+  ],
+  "revision": 2
+}

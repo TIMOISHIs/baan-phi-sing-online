@@ -1,0 +1,55 @@
+/* The original PNG proportions determine both the image and its cost plaque. */
+#game .bps-action-rail .bps-action-grid{grid-template-rows:none;grid-auto-rows:max-content;align-content:start;gap:8px}
+#game .bps-action-rail button.painted-action{
+  display:block;position:relative;width:100%;height:auto!important;min-height:0!important;
+  padding:0!important;margin:0;border:0!important;border-radius:4px;background:transparent!important;
+  box-shadow:none!important;transform:none!important;filter:none!important;opacity:1!important;
+  color:#f4dfbd;overflow:visible;cursor:pointer;line-height:1;
+}
+#game .painted-action .painted-action-face{
+  display:block;position:relative;width:100%;aspect-ratio:148/114;
+  background:var(--art-default) center/100% 100% no-repeat;
+  pointer-events:none;
+}
+#game #endBtn.painted-action .painted-action-face{aspect-ratio:148/80}
+@media(hover:hover){#game .painted-action:not(:disabled):hover .painted-action-face{background-image:var(--art-hover)}}
+#game .painted-action:not(:disabled):active .painted-action-face{background-image:var(--art-pressed)}
+#game .painted-action:disabled{cursor:not-allowed}
+#game .painted-action:disabled .painted-action-face{background-image:var(--art-disabled)}
+#game .painted-action:focus-visible{outline:2px solid #ffe5a2;outline-offset:3px}
+/* Opaque parchment-brown plaque covers the baked-in AP label, in every state. */
+#game .painted-action .painted-incense-cost{
+  position:absolute;left:27%;top:77%;width:55%;height:17%;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:999px;
+  background:linear-gradient(#79512e,#684326);color:#f8e5c7!important;
+  font-family:inherit;font-size:clamp(7px,.62vw,10px)!important;font-weight:500;
+  line-height:1!important;text-align:center;white-space:nowrap;text-shadow:none;
+}
+@media(hover:hover){#game .painted-action:not(:disabled):hover .painted-incense-cost{background:linear-gradient(#956236,#78502c)}}
+#game .painted-action:not(:disabled):active .painted-incense-cost{background:#53371f;color:#dac39d!important}
+#game .painted-action:disabled .painted-incense-cost{background:#4d4946;color:#c7c1ba!important}
+#game #gameInventory .bps-stats .hud-stat.painted-status{
+  display:grid!important;grid-template-columns:28px minmax(0,1fr);grid-template-rows:28px auto;
+  align-items:center;justify-content:stretch;column-gap:4px;row-gap:1px;min-width:0;text-align:left;
+}
+#game #gameInventory .painted-status-icon{display:block;width:28px;height:28px;object-fit:contain;margin:0}
+#game #gameInventory .painted-status b{font-variant-numeric:tabular-nums;line-height:1.2;white-space:nowrap;text-align:left}
+#game #gameInventory .bps-stats .hud-stat.painted-status small{grid-column:2;text-align:left;white-space:nowrap}
+#game #gameInventory .bps-stats{row-gap:4px}
+#game.bag-open #gameInventory .bps-status-zone{padding:44px 0 16px!important}
+@media(max-width:1599px){
+  #game.bag-open #gameInventory .bps-status-zone{padding:40px 0 14px!important}
+  #game #gameInventory .bps-stats .hud-stat.painted-status{grid-template-columns:24px minmax(0,1fr);grid-template-rows:24px auto;column-gap:2px}
+  #game #gameInventory .painted-status-icon{width:24px;height:24px}
+  #game #gameInventory .bps-stats .hud-stat.painted-status b{font-size:13px}
+  #game #gameInventory .painted-status small{font-size:9px;line-height:11px}
+}
+@media(max-width:620px){
+  #game #gameInventory .bps-status-zone{height:auto!important;min-height:150px}
+  #game .bps-action-rail{display:flex!important;flex-direction:row;align-items:center;justify-content:center;gap:8px;padding:8px!important}
+  #game .bps-action-rail .bps-action-grid{display:flex;flex:0 1 auto;gap:6px}
+  #game .bps-action-rail button.painted-action{width:74px;max-width:100%;flex:0 0 74px}
+  #game .bps-action-rail .bps-end{display:flex!important;width:74px;flex:0 0 74px;margin:0}
+}
+
+#game #gameInventory .bps-status-zone .bps-stats{width:56%;margin-left:15%;}

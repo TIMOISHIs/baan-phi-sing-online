@@ -1,0 +1,88 @@
+{
+  "version": "1.18.1",
+  "baseVersion": "1.18.0",
+  "baseCommit": "b3b12922b5098688f6184c4588f0c64e74a2a018",
+  "branch": "v1.8-playtest",
+  "files": [
+    {
+      "path": "server.js",
+      "sha256": "804a9b154f8ff001aadaf64b31b20bc093187145e5dfb7c764a3359334d7b1fe",
+      "baseSha256": "85ccbcf9c42c56b2ac67e42f44e6039980ca99557b946af66a3ac95cd10d5e92"
+    },
+    {
+      "path": "public/app.js",
+      "sha256": "04d59a1b1a7a1116678ebfd0624ea9603c4073fa76273527af171b9f76459314",
+      "baseSha256": "88f99041dbcb59f9670b654c857714ed832c7a907467840440075d47428ff2a4"
+    },
+    {
+      "path": "public/index.html",
+      "sha256": "59639904116b43809742d3ac71ac9fa64f3e3e274d081619b8ac20f750b5ac79",
+      "baseSha256": "6a7e64a39cfe4c52b8a7f4812cab9f48b960c1fe0864bb262b5325f3a07e8745"
+    },
+    {
+      "path": "public/patch1181.css",
+      "sha256": "aa3a675c21673d275bc49d736f25ab89c5645dcf9c7788aedcab9702c9ea5aa3",
+      "baseSha256": null
+    },
+    {
+      "path": "package.json",
+      "sha256": "fa6a5776eca6fd3009e7cb47db9e092f4748dbfd646bea43eea7e7e92ea5a4ee",
+      "baseSha256": "7cbb6c853ab8f39c6242cbe6c8620521b5326c3d2387d0a8dbac32e7dbdb736c"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "efd78877daff53315265551549bca817199001c26388f6ed50aeab11a804ee5a",
+      "baseSha256": "83d5055f5a80d268e12c5143eb64f4b9df0a44636852420bd3720725752bbf71"
+    },
+    {
+      "path": "v117-regression-test.cjs",
+      "sha256": "b958fb3a128e59a02872cf6b4291b99eee8a1e177e2a892f9cd06cb06edc87f4",
+      "baseSha256": "21b586085fa4065943f4d1dd778ac305f7494924c285119259ef92fb7d4f82ae"
+    },
+    {
+      "path": "v117-client-test.cjs",
+      "sha256": "36683f16b75e71367cb32ba2097b1313d7acce7881f2cbe5212735990a04929d",
+      "baseSha256": "a7ddf8b1a9029aeb994062626809427e48e2b502cedc13c198148a31ace5fa63"
+    },
+    {
+      "path": "v118-regression-test.cjs",
+      "sha256": "c216c560f3c8316aadd5a0a68ab3ea7fd44c5f3e42ddc494257f27da7a899774",
+      "baseSha256": "2f3abc7143ab17aad24e304b4e59cb05e319f9d515f91cb37057878d886c6491"
+    },
+    {
+      "path": "v118-client-test.cjs",
+      "sha256": "94564f16793906e837f823233684adb189c671ef1fb9ba7470a59812604a347e",
+      "baseSha256": "647566a8c755efc7d9ffbb90e19654a54da39a408fc15aef074491f93533a356"
+    },
+    {
+      "path": "v185-regression-test.cjs",
+      "sha256": "ca3a48dbdc994a5480226d3187448846d6baf652d9caefc9ef5c8d82264965a7",
+      "baseSha256": "645a7085ad0e3d0423fae402c26d46493b1d82825951829295040c403290347a"
+    },
+    {
+      "path": "v185-client-test.cjs",
+      "sha256": "26b8da4f94e6b14d906e4c872c133817518b2886a1b2784aa593c82f695c99e3",
+      "baseSha256": "fca67ae4621d392f8885d6b2d6b463acae5bcd067cc252900855fcda902190f3"
+    },
+    {
+      "path": "v186-client-test.cjs",
+      "sha256": "383c75927e8ecdab0dd296c4c1921691f527d22b07573954daea93d021d0eea1",
+      "baseSha256": "53a0f0960e9bfc92905785d6e53fb21a8177fa0e84ce6a525863723a34c317b3"
+    },
+    {
+      "path": "v190-regression-test.cjs",
+      "sha256": "4f06ed5e9099540cb54d6901e76493219ef945f8d1ab6bd1ae6396f96fe88193",
+      "baseSha256": "50e6226aabed3ff1cd63af40c0505c5d4b0ebcc0369ce2d477d87ff3dd082323"
+    },
+    {
+      "path": "v1181-client-test.cjs",
+      "sha256": "07ce97fe8a52a3f0d62e5cc3eeed08808077d72ee8ae6a73f92c3149da19c612",
+      "baseSha256": null
+    },
+    {
+      "path": "RELEASE-v1.18.1.md",
+      "sha256": "851d83ae71a8debe0f2bdea2046f51a7089bedcd6ce77834451dfd73ce8daaad",
+      "baseSha256": null
+    }
+  ]
+}

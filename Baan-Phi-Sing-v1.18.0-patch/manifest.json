@@ -1,0 +1,112 @@
+{
+  "version": "1.18.0",
+  "baseVersion": "1.17.1",
+  "branch": "v1.8-playtest",
+  "files": [
+    {
+      "path": "RELEASE-v1.18.0.md",
+      "sha256": "ace45af1ba6c86064e1b7617f7bc03ee3083548643bfcc2c179416a627bcc441",
+      "baseSha256": null
+    },
+    {
+      "path": "lib/balance-data.json",
+      "sha256": "ce4f78099860804412b03d9ab815fc54b9324c087a8d0e3ac64770ec84d5d5ef",
+      "baseSha256": "6f3fe96ec1979e4e6742585c2f3ea74bf1495e615415f78c8f4012a12a0b6329"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "83d5055f5a80d268e12c5143eb64f4b9df0a44636852420bd3720725752bbf71",
+      "baseSha256": "5154238753a0b109fa8d8f2942788bfa0413370e85b37b642b3f1597270a7865"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7cbb6c853ab8f39c6242cbe6c8620521b5326c3d2387d0a8dbac32e7dbdb736c",
+      "baseSha256": "2d8606dabb2eec1cbe7d40cbd34c14d3394410c2f611eb2908a15304a2608441"
+    },
+    {
+      "path": "public/app.js",
+      "sha256": "88f99041dbcb59f9670b654c857714ed832c7a907467840440075d47428ff2a4",
+      "baseSha256": "f1c2be65d85ed1807d59e25c1a41451b2ab230aa41c648460af47b0816b66659"
+    },
+    {
+      "path": "public/assets/amulets/faces/S01-v118.png",
+      "sha256": "f8bbafe605e12b2ef736f031b2ca4823dd5707a399d05dfb55bd4b83c5e28e4b",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/amulets/faces/S02-v118.png",
+      "sha256": "6ca98726a0a2cf4b5923f34940c7b9b5f1295585e85ce3639a596b454e602f77",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/amulets/faces/S03-v118.png",
+      "sha256": "7b566b4da323e0a1fe5dee551ff814bdafc20397ff37cfd08431568aa627e68a",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/amulets/faces/S04-v118.png",
+      "sha256": "acdc5ee9c7c6de9fb6701eefcf08f361a0c59a12c7e5abad89fb2f8be3d83269",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/amulets/faces/S05-v118.png",
+      "sha256": "6cb41baa1d944ccd09d2a3abd159262e5495f54cf6040790a56ac49c5a95fc41",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/amulets/faces/S06-v118.png",
+      "sha256": "8078f4c1d37bd8a4e7a8fb2aa6aee42ebec493e20d345a4012a682908290a315",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/amulets/faces/S07-v118.png",
+      "sha256": "693d684ed64694dc0d5d22b3c8d0eb4710cbd81156e5789bffff3a12fab3dc9b",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/amulets/faces/S08-v118.png",
+      "sha256": "8bc14f6d49f43f9843c6a59598e44cde519c8ba17ca40a85f8c347e7bc1a002e",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/amulets/faces/S09-v118.png",
+      "sha256": "354d395e6d0dec00c71ec96d721a6556c1084a41ef9bcdd606325b690b8c3e4f",
+      "baseSha256": null
+    },
+    {
+      "path": "public/assets/amulets/faces/manifest.json",
+      "sha256": "de874db8fb5762059e8c7edee21eb69b75516c4f2e312395d1d6d991b44ed724",
+      "baseSha256": "68a93029ee4d26fa3a84f14b7d54c853c1db09cb7bd99169e8c2b2222e7ffc57"
+    },
+    {
+      "path": "public/index.html",
+      "sha256": "6a7e64a39cfe4c52b8a7f4812cab9f48b960c1fe0864bb262b5325f3a07e8745",
+      "baseSha256": "e45f0a461ff4ea6cc798c57d448de303526d6a66d4c708186d34af2e96d5c4ec"
+    },
+    {
+      "path": "server.js",
+      "sha256": "85ccbcf9c42c56b2ac67e42f44e6039980ca99557b946af66a3ac95cd10d5e92",
+      "baseSha256": "e41e4cbf464f44953313344a0338ed5965a8c2fd05d595eb3f4e35c6ef9df1fa"
+    },
+    {
+      "path": "v118-client-test.cjs",
+      "sha256": "647566a8c755efc7d9ffbb90e19654a54da39a408fc15aef074491f93533a356",
+      "baseSha256": null
+    },
+    {
+      "path": "v118-regression-test.cjs",
+      "sha256": "2f3abc7143ab17aad24e304b4e59cb05e319f9d515f91cb37057878d886c6491",
+      "baseSha256": null
+    },
+    {
+      "path": "v18-regression-test.cjs",
+      "sha256": "5066e093a5684305aa448201f9bb6238a0bf9477ed11d71c0ab6254ad586b4a9",
+      "baseSha256": "3e669771fb0e5b039403c8c3b85a19c54753f33cc0a614ea2a696cc21fef850b"
+    },
+    {
+      "path": "v18-static-integration-test.cjs",
+      "sha256": "56b925903f54593e243cbb7fe5dc9c806dd0fa3c6eecb58f181edc390b9ef9ad",
+      "baseSha256": "4490d3b635aa5dc4f327c069740e9f602f30f106ae3d8341097351a3449bea5b"
+    }
+  ]
+}

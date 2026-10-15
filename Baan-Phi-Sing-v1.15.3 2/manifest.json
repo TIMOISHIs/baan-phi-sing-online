@@ -1,0 +1,18 @@
+{
+  "version": "1.15.3",
+  "base": "1.15.2",
+  "files": {
+    "public/index.html": {
+      "before": "af34a1fd42ac8c836308e01ad13ac1b627f7bab7eba7227187c3d5a9939257fd",
+      "after": "dc544e608dc73074607900a28cd50e614ddacfaac3faf12cf9207f504c93be83"
+    },
+    "public/layout1153.js": {
+      "before": null,
+      "after": "d63f4df0f8a0c0657bc6e3948a39d0f8e8a11157767485477251d4fb224bac4b"
+    },
+    "public/layout1153.css": {
+      "before": null,
+      "after": "af937ce1f409470e00fe6fb19329298fd231e3b4b19366ea6e6fb03e5bd6b45c"
+    }
+  }
+}
