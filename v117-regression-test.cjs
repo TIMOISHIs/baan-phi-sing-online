@@ -107,7 +107,7 @@ reset('HALL');g.rooms[4].fear=99;p.equip=[{fear:1},{fear:2}];p.amu=[];
 withDice(2,3,()=>host.trigger('roll'));assert.equal(g.moveFear,3);assert.equal(g.sanityBase,2);assert.ok(g.legal.includes(3));
 reset('HALL');g.rooms[4].fear=99;g.rooms[3].fear=5;g.rooms[1].capacity=1;friend.pos=1;
 withDice(2,2,()=>host.trigger('roll'));assert.equal(g.sanity,4);assert.ok(!g.legal.includes(3));assert.ok(!g.legal.includes(1));assert.ok(g.legal.includes(5));
-reset('HALL');g.rooms[5].type='กับดัก';g.movementRange=4;g.sanity=99;const opts=T.movementOptions(room,p);assert.ok(opts.legal.includes(5));assert.ok(!opts.paths[2]?.includes(5),'paths stop in a special room');
+reset('HALL');g.rooms[5].type='กับดัก';g.movementRange=4;g.sanity=99;const opts=T.movementOptions(room,p);assert.ok(opts.legal.includes(5));assert.ok(opts.legal.includes(2),'special rooms allow transit when Fear is affordable');
 
 // Each matching die is exactly one stack, for all 36 possible pairs.
 for(const id of ['CURSE_ODD','CURSE_EVEN'])for(let a=1;a<=6;a++)for(let b=1;b<=6;b++){

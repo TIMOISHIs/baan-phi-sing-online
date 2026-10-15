@@ -889,7 +889,7 @@ function movementOptions(room,p){
   const queue=[{index:p.pos,distance:0,cost:0,path:[p.pos]}],legal=[],distances={},paths={[p.pos]:[p.pos]},costs={};
   for(let n=0;n<queue.length;n++){
     const {index,distance,cost,path}=queue[n];if(distance>=range)continue;
-    if(index!==p.pos&&(index===g.bossIndex||["คำสาป","กับดัก"].includes(roomAt(room,index)?.type)))continue;
+    // Transit rooms charge Fear; room effects apply only at the destination.
     for(const next of neighbors(index)){
       const nextCost=cost+Math.max(0,Number(roomAt(room,next)?.fear)||0);
       if(path.includes(next)||nextCost>g.sanity||!canEnter(room,p,next))continue;

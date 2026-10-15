@@ -66,6 +66,16 @@ function renderAmuletFace(c,{compact=false}={}){
 }
 
 function toast(t){const e=$("#toast");e.textContent=t;e.classList.remove("hidden");setTimeout(()=>e.classList.add("hidden"),2600)}
+function isBoardMovement(pending){return !!pending&&["spellMoveAny","spellMoveDiagonal","eventFreeCurseMove","eventMoveTwo"].includes(pending.type)}
+function boardMovePending(){const pending=state?.game?.pendingRoomEffect;return isBoardMovement(pending)?pending:null}
+function selectBoardDestination(index){
+  const pending=boardMovePending();
+  if(!pending)return false;
+  if(pending.playerId===myId()&&pending.options?.some(o=>o.index===index)&&!diceAnimating&&!escapePresentationActive&&!cardRevealBusy&&!eventRevealOpen&&!turnTransitionActive&&!movingSeats.size&&!state.game.curseResolving){
+    socket.emit("resolveRoomEffect",{uid:index,pendingId:pending.id});
+  }
+  return true;
+}
 function myMandatoryDecision(){
   if(state?.phase!=="game")return null;
   const pe=state.game?.pendingRoomEffect;if(pe?.playerId===myId())return {kind:"room",id:pe.id,pending:pe};
@@ -75,7 +85,7 @@ function myMandatoryDecision(){
 }
 function recoverMandatoryDecision(){
   const d=myMandatoryDecision();if(!d)return false;
-  if(d.kind==="room"){lastRoomEffectId=null;renderPendingRoomEffect(d.pending);return true}
+  if(d.kind==="room"){if(isBoardMovement(d.pending))return true;lastRoomEffectId=null;renderPendingRoomEffect(d.pending);return true}
   if(d.kind==="ritual"){lastPendingRitualId=null;renderPendingRitual(d.pending);return true}
   if(d.kind==="trade"){renderTradeNotice();return true}
   return false;
@@ -681,7 +691,7 @@ function startCardFlight(e){
   if(from&&to)trackAnimation(card,[{transform:`translate(${from.x-to.x}px,${from.y-to.y}px) scale(.22) rotate(-8deg)`,opacity:.3},{transform:"none",opacity:1}],650);
   else trackAnimation(card,[{transform:"translateY(18px) scale(.92)",opacity:0},{transform:"none",opacity:1}],350);
 }
-function finishCardFlight(){
+function finishCardFlight(duration=500){
   const e=currentRevealEvent;currentRevealEvent=null;
   if(!e||e.card?.type==="event"||(e.zone!=="sacrifice"&&!["draw","gain","skill"].includes(e.reason)))return;
   const owned=e.playerId===myId()?(e.zone==="sacrifice"?mine?.sac:mine?.amu)?.some(c=>c.uid===e.card?.uid):true;
@@ -692,7 +702,7 @@ function finishCardFlight(){
   if(e.zone==="amulet")flyer.classList.add("amulet-flight");
   flyer.innerHTML=e.zone==="amulet"?renderAmuletFace(e.card):artMarkup(e.card.art,"card-art-img",e.card.name)||"✦";
   Object.assign(flyer.style,{left:`${from.x-60}px`,top:`${from.y-85}px`});document.body.appendChild(flyer);motionObjects.add(flyer);
-  trackAnimation(flyer,[{transform:"scale(1.7)",opacity:1},{transform:`translate(${to.x-from.x}px,${to.y-from.y}px) scale(.65) rotate(4deg)`,opacity:.9}],700).finally(()=>{flyer.remove();motionObjects.delete(flyer);pendingHandCards.delete(e.card?.uid);seenRevealCards.delete(e.card?.uid);renderPrivate()});
+  trackAnimation(flyer,[{transform:"scale(1.7)",opacity:1},{transform:`translate(${to.x-from.x}px,${to.y-from.y}px) scale(.65) rotate(4deg)`,opacity:.9}],duration).finally(()=>{flyer.remove();motionObjects.delete(flyer);pendingHandCards.delete(e.card?.uid);seenRevealCards.delete(e.card?.uid);renderPrivate()});
 }
 function queueGainedCards(before,after){
   if(!before||state?.phase!=="game")return;
@@ -732,12 +742,15 @@ let diceTimer=null,ritualTimer=null,diceAnimTimer=null,cardRevealBusy=false;
 const cardRevealQueue=[];
 const sideRevealQueue=[];
 let cardRevealTimer=null,cardRevealClosing=false,eventRevealOpen=false,cardRevealPreviousFocus=null,sideRevealBusy=false,sideRevealTimer=null,escapeSuccessTimer=null;
+let escapePresentationActive=false,pendingEscapeFx=null;
 function showEscapeSuccessFx(e={}){
-  if(diceAnimating){clearTimeout(escapeSuccessTimer);escapeSuccessTimer=setTimeout(()=>showEscapeSuccessFx(e),120);return}
+  escapePresentationActive=true;
+  if(diceAnimating){pendingEscapeFx=e;return}
+  pendingEscapeFx=null;
   let box=$("#escapeSuccessFx");
   if(!box){box=document.createElement("div");box.id="escapeSuccessFx";box.className="escape-success-fx hidden";box.innerHTML='<div><small>ESCAPE</small><b>หลบหนีสำเร็จ</b><span>เลือกห้องข้างเคียงเพื่อออกจากห้องนี้</span></div>';document.body.appendChild(box)}
   clearTimeout(escapeSuccessTimer);box.classList.remove("hidden","escape-success-pop");void box.offsetWidth;box.classList.add("escape-success-pop");
-  escapeSuccessTimer=setTimeout(()=>box.classList.add("hidden"),Number(e.duration)||1500);
+  escapeSuccessTimer=setTimeout(()=>{box.classList.add("hidden");escapePresentationActive=false;render()},1500);
 }
 function positionSideReveal(box){
   const board=$("#board")||document.querySelector(".bps-board-shell"),r=board?.getBoundingClientRect?.();
@@ -751,12 +764,12 @@ function showNextSideReveal(){
   let box=$("#sideCardReveal");if(!box){box=document.createElement("div");box.id="sideCardReveal";box.className="side-card-reveal hidden";document.body.appendChild(box)}
   box.innerHTML=`<small>${escapeHtml(e.playerName||"ผู้เล่น")} จั่ว</small>${renderAmuletFace(e.card)}<b>${escapeHtml(e.card?.name||"Amulet")}</b>`;
   positionSideReveal(box);box.classList.remove("hidden","side-card-in","side-card-out");void box.offsetWidth;box.classList.add("side-card-in");playCardFlipSound();
-  clearTimeout(sideRevealTimer);sideRevealTimer=setTimeout(()=>{box.classList.add("side-card-out");sideRevealTimer=setTimeout(()=>{box.classList.add("hidden");box.classList.remove("side-card-in","side-card-out");sideRevealBusy=false;showNextSideReveal()},250)},1250);
+  clearTimeout(sideRevealTimer);sideRevealTimer=setTimeout(()=>{box.classList.add("side-card-out");sideRevealTimer=setTimeout(()=>{box.classList.add("hidden");box.classList.remove("side-card-in","side-card-out");sideRevealBusy=false;showNextSideReveal()},500)},2200);
 }
-function closeCardReveal(closeMs=720){
+function closeCardReveal(closeMs=500){
   if(!cardRevealBusy||cardRevealClosing)return;
   clearTimeout(cardRevealTimer);cardRevealClosing=true;eventRevealOpen=false;
-  const box=$("#cardRevealFx");finishCardFlight();box.classList.add("card-out");
+  const box=$("#cardRevealFx");finishCardFlight(closeMs);box.classList.add("card-out");
   cardRevealTimer=setTimeout(()=>{
     box.classList.add("hidden");box.classList.remove("card-out","event-reading");
     cardRevealBusy=false;cardRevealClosing=false;
@@ -766,16 +779,20 @@ function closeCardReveal(closeMs=720){
 }
 function resetCardReveals(){
   resetPresentationMotion();
+  clearTimeout(escapeSuccessTimer);clearTimeout(sideRevealTimer);clearTimeout(diceTimer);clearTimeout(diceSettleTimer);
+  escapePresentationActive=false;pendingEscapeFx=null;sideRevealQueue.length=0;sideRevealBusy=false;
+  diceAnimating=false;queuedState=null;queuedPrivateState=null;queuedHpEvents=[];
+  $("#escapeSuccessFx")?.classList.add("hidden");$("#sideCardReveal")?.classList.add("hidden");$("#diceFx")?.classList.add("hidden");
   clearTimeout(cardRevealTimer);cardRevealQueue.length=0;cardRevealBusy=false;cardRevealClosing=false;eventRevealOpen=false;
   $("#cardRevealFx").classList.add("hidden");$("#cardRevealFx").classList.remove("card-out","event-reading");
 }
-$("#cardRevealClose").onclick=closeCardReveal;
+$("#cardRevealClose").onclick=()=>closeCardReveal();
 $("#cardRevealFx").addEventListener("keydown",e=>{if(eventRevealOpen&&e.key==="Tab"){e.preventDefault();$("#cardRevealClose").focus()}});
 function enqueueCardReveal(e){
   rememberReveal(e);
   if(e?.zone==="amulet"&&e?.reason==="draw"&&e?.playerId!==myId()&&e?.card?.type!=="event"){enqueueSideReveal(e);return}
   cardRevealQueue.push(e);
-  if(cardRevealBusy&&!eventRevealOpen&&e?.zone==="amulet"&&e?.reason==="draw"&&e?.playerId===myId())closeCardReveal(240);
+  if(cardRevealBusy&&!eventRevealOpen&&e?.zone==="amulet"&&e?.reason==="draw"&&e?.playerId===myId())closeCardReveal(500);
   if(!cardRevealBusy)showNextCardReveal();
 }
 function showNextCardReveal(){
@@ -803,8 +820,8 @@ function showNextCardReveal(){
   if(eventRevealOpen){
     cardRevealPreviousFocus=document.activeElement;$("#cardRevealClose").focus();hideRollFocus();
   }else{
-    const revealMs=e.zone==="amulet"&&e.reason==="gain"?880:(e.zone==="amulet"?2800:2200);
-    cardRevealTimer=setTimeout(()=>closeCardReveal(e.reason==="gain"?320:720),revealMs);
+    const revealMs=e.zone==="amulet"&&e.reason==="gain"?880:(["draw","gain","skill"].includes(e.reason)||e.zone==="sacrifice"?2200:2000);
+    cardRevealTimer=setTimeout(()=>closeCardReveal(500),revealMs);
   }
 }
 const DIE_ROTATIONS={1:[0,0],2:[0,-90],3:[-90,0],4:[90,0],5:[0,90],6:[0,180]};
@@ -833,8 +850,16 @@ function showDiceFx(e){
     settleDie(aEl,e.a);settleDie(bEl,e.b);total.textContent=`รวม ${e.total}`;
     box.classList.remove("dice-rolling");box.classList.add("dice-result");
     playDiceTick(.075);setTimeout(()=>playDiceTick(.055),100);
-    flushDiceQueues(e.kind);
-    diceTimer=setTimeout(()=>box.classList.add("hidden"),1600);
+    if(e.kind==="escape"){
+      diceTimer=setTimeout(()=>{
+        box.classList.add("hidden");flushDiceQueues(e.kind);
+        if(pendingEscapeFx)showEscapeSuccessFx(pendingEscapeFx);
+      },1500);
+    }else{
+      flushDiceQueues(e.kind);
+      if(pendingEscapeFx)showEscapeSuccessFx(pendingEscapeFx);
+      diceTimer=setTimeout(()=>box.classList.add("hidden"),1600);
+    }
   },rollMs);
 }
 function showRitualFx(e){
@@ -930,19 +955,23 @@ function renderGame(){
     const style=r.boss?"boss":r.type==="คำสาป"?"curse":r.type==="กับดัก"?"trap":r.sac?"mystery":"safe";
     b.className=`room room-${style} ${r.boss?"boss":""}`;
     b.dataset.roomIndex=String(i);
-    if(g.rescue){b.classList.add((g.rescue.legal||[]).includes(i)?"legal":"illegal");}
+    const boardPending=boardMovePending();
+    if(boardPending){const allowed=boardPending.playerId===myId()&&boardPending.options?.some(o=>o.index===i);b.classList.add(allowed?"legal":"illegal");b.classList.toggle("card-destination",!!allowed);}
+    else if(g.rescue){b.classList.add((g.rescue.legal||[]).includes(i)?"legal":"illegal");}
     else if(g.sanityDecision){
       const allowed=(g.movementPreview?.legal||[]).includes(i);b.classList.add(allowed?"legal":"illegal");
     }else if(g.mustMove||g.moveOptional)b.classList.add(g.legal.includes(i)?"legal":"illegal");
     const pawns=state.players.map(p=>p.pos===i?pawnMarkup(p):"").join("");
     b.innerHTML=`<div class="room-top"><div><b>${r.boss?"👻 ":""}${r.name}</b><small>${r.type}</small></div><span class="fear-badge">${r.fear}</span></div><div class="room-art">${artMarkup(r.art,"room-art-img",r.name)|| (r.boss?"BOSS":"ROOM")}</div><div class="room-bottom">${r.effectText?`<span>${r.effectText.split("•")[0]}</span>`:"<span>คลิกเพื่อดู Effect</span>"}<div class="pawns">${pawns}</div></div>`;
-    b.onclick=()=>{if(g.rescue){if(g.rescue.playerId===myId()&&g.rescue.phase==="move"&&!g.curseResolving&&!g.pendingRoomEffect&&!diceAnimating&&!movingSeats.size)socket.emit("rescueMove",{index:i});return;}
+    b.onclick=()=>{if(diceAnimating||escapePresentationActive)return;if(selectBoardDestination(i))return;if(g.rescue){if(g.rescue.playerId===myId()&&g.rescue.phase==="move"&&!g.curseResolving&&!g.pendingRoomEffect&&!diceAnimating&&!movingSeats.size)socket.emit("rescueMove",{index:i});return;}
       if(isMyTurn()&&(g.sanityDecision||g.mustMove||g.moveOptional)&&(g.sanityDecision?g.movementPreview?.legal||[]:g.legal).includes(i)&&!g.curseResolving&&!g.pendingRoomEffect&&!g.pendingRitual&&!turnTransitionActive&&!diceAnimating&&!eventRevealOpen&&!movingSeats.size) socket.emit("move",{index:i});
       else openRoomInfo(r,i);
     };
     $("#board").appendChild(b);
   }
-  if(g.rescue&&!g.pendingRoomEffect&&!g.curseResolving){const who=state.players.find(p=>p.id===g.rescue.playerId)?.name||"ผู้เล่น";$("#message").textContent=g.rescue.playerId===myId()?"ปลดแล้ว — เลือกห้องติดกันที่สว่าง 1 ห้อง ไม่ทอยซ้ำ ไม่คิด Fear":`รอ ${who} เลือกออกจากห้องพิเศษ 1 ห้อง`;}
+  if(escapePresentationActive)$("#message").textContent="รอดูผลหลบหนี แล้วเลือกห้องที่สว่าง";
+  else if(boardMovePending())$("#message").textContent=boardMovePending().playerId===myId()?"เลือกห้องที่สว่างบนกระดานเพื่อใช้การ์ดเคลื่อนที่":"รอผู้เล่นเลือกห้องปลายทางบนกระดาน";
+  else if(g.rescue&&!g.pendingRoomEffect&&!g.curseResolving){const who=state.players.find(p=>p.id===g.rescue.playerId)?.name||"ผู้เล่น";$("#message").textContent=g.rescue.playerId===myId()?"ปลดแล้ว — เลือกห้องติดกันที่สว่าง 1 ห้อง ไม่ทอยซ้ำ ไม่คิด Fear":`รอ ${who} เลือกออกจากห้องพิเศษ 1 ห้อง`;}
   else if(!isMyTurn())$("#message").textContent=`รอ ${ap?.name||"ผู้เล่น"} เล่นเทิร์น`;
   else if(mp?.dead&&mine?.char?.skillType==="self_revive")$("#message").textContent="พ่อไกรล้มอยู่ — เทิร์นนี้ใช้ Skill 3🕯 เพื่อฟื้น HP +2 ได้";
   else if(mp?.dead)$("#message").textContent="คุณเสียชีวิต — รอเพื่อนมาชุบชีวิต";
@@ -1235,15 +1264,21 @@ function renderTradeNotice(){
 }
 let lastRoomEffectId=null;
 function renderPendingRoomEffect(pending){
+  if(isBoardMovement(pending)){if(lastRoomEffectId!==pending.id){lastRoomEffectId=pending.id;closeModal()}return;}
   if(!pending || pending.id===lastRoomEffectId || !mine) return;
   lastRoomEffectId=pending.id;
   const box=document.createElement("div");
   const note=document.createElement("p");note.className="muted";note.textContent=pending.reason||"Effect ห้อง";box.appendChild(note);
 
   if(pending.type==="negativeReaction"){
-    const help=document.createElement("div");help.className="negative-reaction-callout";help.innerHTML=`<b>มีการ์ดป้องกัน ต้องการใช้หรือไม่?</b><p>${pending.reason||"ผลลบ"}</p><small>ป้องกันเฉพาะตัวเองครั้งนี้ • ไม่เสียธูป • ไม่ต้องทอยเต๋า • ใช้แล้วลงกองทิ้ง</small>`;box.appendChild(help);
-    (pending.options||[]).forEach(c=>{const b=document.createElement("button");b.className="modal-option reaction-spell-option";b.innerHTML=`${artMarkup(c.art,"option-art",c.name)}<b>✨ ${c.name}</b><span>${c.effect||"ป้องกันผลลบ"} • ฟรี</span>`;b.onclick=()=>{ensureAudio();socket.emit("resolveRoomEffect",{uid:c.uid,pendingId:pending.id});closeModal()};box.appendChild(b)});
-    const pass=document.createElement("button");pass.className="secondary";pass.textContent="ไม่ใช้คาถา — รับผลลบ";pass.onclick=()=>{socket.emit("resolveRoomEffect",{uid:"pass",pendingId:pending.id});closeModal()};box.appendChild(pass);
+    box.innerHTML="";box.className="protection-prompt";
+    const c=pending.options?.[0];
+    if(c){
+      const card=document.createElement("div");card.className="protection-card";card.innerHTML=artMarkup(c.art,"protection-card-art",c.name);box.appendChild(card);
+      const use=document.createElement("button");use.className="primary protection-use";use.textContent="ต้องการใช้";
+      use.onclick=()=>{ensureAudio();socket.emit("resolveRoomEffect",{uid:c.uid,pendingId:pending.id});closeModal()};box.appendChild(use);
+    }
+    const pass=document.createElement("button");pass.className="secondary";pass.textContent="ไม่ใช้";pass.onclick=()=>{socket.emit("resolveRoomEffect",{uid:"pass",pendingId:pending.id});closeModal()};box.appendChild(pass);
   }
 
   else if(pending.type==="discardSacrifice"){
@@ -1289,11 +1324,6 @@ function renderPendingRoomEffect(pending){
     (pending.options||[]).forEach(o=>{const b=document.createElement("button");b.className="modal-option";b.innerHTML=`<b>☠️ ${o.name}</b><span>${o.char||""} • ชุบเป็น HP 1</span>`;b.onclick=()=>{socket.emit("resolveRoomEffect",{uid:o.id});closeModal()};box.appendChild(b)});
   }
 
-  else if(["spellMoveAny","spellMoveDiagonal","eventFreeCurseMove","eventMoveTwo"].includes(pending.type)){
-    const help=document.createElement("p");help.className="muted";help.textContent=pending.type==="eventFreeCurseMove"?"เลือกห้องข้างเคียง 1 ช่องเพื่อออกจากห้องคำสาปทันที":"เลือกห้องปลายทาง";box.appendChild(help);
-    (pending.options||[]).forEach(o=>{const b=document.createElement("button");b.className="modal-option";b.innerHTML=`<b>${o.name}</b><span>Fear ${o.fear??"-"}</span>`;b.onclick=()=>{socket.emit("resolveRoomEffect",{uid:o.index});closeModal()};box.appendChild(b)});
-  }
-
   else if(pending.type==="skillPeekChoose"){
     const need=pending.count??Math.min(2,(pending.options||[]).filter(c=>!c.disabled).length);
     const help=document.createElement("p");help.className="muted";help.textContent=`การ์ด ${pending.side==="top"?"บนสุด":"ล่างสุด"} ที่เปิดมา • เลือกเก็บ ${need} ใบ แล้วใบที่เหลือกลับด้านเดิมตามลำดับ`;box.appendChild(help);
@@ -1312,7 +1342,7 @@ function renderPendingRoomEffect(pending){
   }
 
   const titles={
-    negativeReaction:"มีการ์ดป้องกัน ต้องการใช้หรือไม่?",
+    negativeReaction:"มีการ์ดป้องกัน",
     discardAmuletOverflow:"Amulet Hand เต็ม",
     officePickDiscard:"ห้องทำงาน — เลือกจากกองทิ้ง",
     eventRollMoney:"เหยยย! — ฝากเพื่อนทอย",

@@ -22,8 +22,8 @@ assert.match(styles,/@keyframes stay-action-glow/);assert.match(styles,/@media\(
 assert.match(source,/\$\("#rollBtn"\)\.disabled=!!g\.rescue/);
 assert.match(ui1168,/translateY\(-12px\).*scale\(1\.04\)/);assert.doesNotMatch(ui1168,/translateY\(calc\(-100%/);
 assert.match(source,/e\?\.zone==="amulet"&&e\?\.reason==="draw"&&e\?\.playerId!==myId\(\)&&e\?\.card\?\.type!=="event"/);
-assert.match(source,/setTimeout\(\(\)=>\{box\.classList\.add\("side-card-out"\).*\},1250\)/s);
-assert.match(source,/e\.zone==="amulet"&&e\.reason==="gain"\?880/);assert.match(source,/closeCardReveal\(e\.reason==="gain"\?320:720\)/);
-assert.match(source,/if\(diceAnimating\).*showEscapeSuccessFx\(e\),120/s);assert.match(server,/emit\("escapeSuccessFx",\{playerId:p\.id,playerName:p\.name,duration:1500\}\)/);
+assert.match(source,/setTimeout\(\(\)=>\{box\.classList\.add\("side-card-out"\).*\},2200\)/s);
+assert.match(source,/e\.zone==="amulet"&&e\.reason==="gain"\?880/);assert.match(source,/closeCardReveal\(500\)/);
+assert.match(source,/if\(diceAnimating\)\{pendingEscapeFx=e;return\}/);assert.match(server,/emit\("escapeSuccessFx",\{playerId:p\.id,playerName:p\.name,duration:1500\}\)/);
 assert.match(styles,/\.side-card-reveal\{[^}]*pointer-events:none/);assert.match(styles,/\.escape-success-fx\{[^}]*pointer-events:auto/);
 console.log('V1.17.1 CLIENT PASS: stable hover, staged escape success, non-blocking remote draws, rapid consecutive draws and 3-card opening pace');

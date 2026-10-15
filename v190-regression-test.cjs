@@ -89,7 +89,7 @@ function prepare(){
 }
 const make=type=>T.uidCard(T.AMULETS.find(c=>c.type===type));
 
-// V1.9.0 paths are server-authoritative, orthogonal, and stop at special rooms.
+// Paths are server-authoritative, orthogonal, and may pass through special rooms.
 prepare();g.sanity=20;g.movementRange=4;
 let options=T.movementOptions(room,hp);
 for(const [dest,path] of Object.entries(options.paths)){
@@ -97,7 +97,7 @@ for(const [dest,path] of Object.entries(options.paths)){
  for(let i=1;i<path.length;i++)assert.equal(Math.abs(Math.floor(path[i]/3)-Math.floor(path[i-1]/3))+Math.abs(path[i]%3-path[i-1]%3),1);
  if(Number(dest)!==hp.pos)assert.equal(path.length-1,options.distances[dest]);
 }
-g.rooms[1].type='กับดัก';g.rooms[3].fear=99;options=T.movementOptions(room,hp);assert.deepEqual(options.legal,[1]);
+g.rooms[1].type='กับดัก';g.rooms[3].fear=99;options=T.movementOptions(room,hp);assert.ok(options.legal.includes(2));assert.ok(!options.legal.includes(3));assert.deepEqual(options.paths[2],[0,1,2]);
 g.rooms[1].type='ปลอดภัย';g.rooms[3].fear=1;T.finalizeMovementOptions(room,hp);host.trigger('move',{index:4});assert.equal(hp.pos,4);assert.equal(g.lastMove.playerId,hp.id);assert.equal(g.lastMove.path[0],0);assert.equal(g.lastMove.path.at(-1),4);assert.deepEqual(T.publicSnapshot(room).game.lastMove,g.lastMove);
 assert.ok(host.last('ghostReveal').ghost.art,'ghost reveal must include artwork');
 for(const ghost of T.GHOSTS)assert.ok(ghost.art);

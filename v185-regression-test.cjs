@@ -113,10 +113,10 @@ reset();hp.equip=[card()];g.actions=0;host.trigger('unequip',{uid:hp.equip[0].ui
 // Reach multi-room destinations by orthogonal path within raw dice range.
 reset();g.moved=false;g.movementRange=2;T.finalizeMovementOptions(room,hp);assert.ok(g.legal.includes(2));assert.ok(g.legal.includes(4));assert.ok(!g.legal.includes(5));assert.equal(g.moveDistances[2],2);
 host.trigger('move',{index:2});assert.equal(hp.pos,2);assert.equal(g.moved,true);const pos=hp.pos;host.trigger('move',{index:5});assert.equal(hp.pos,pos);
-// Fear and occupied capacity block paths; cannot tunnel through traps.
+// Fear and occupied capacity block paths; affordable traps allow transit.
 reset();g.movementRange=2;g.sanity=1;g.rooms[1].fear=9;T.finalizeMovementOptions(room,hp);assert.ok(!g.legal.includes(2));
 reset();g.movementRange=2;g.rooms[1].capacity=1;gp.pos=1;T.finalizeMovementOptions(room,hp);assert.ok(!g.legal.includes(1));assert.ok(!g.legal.includes(2));
-reset();g.movementRange=2;g.rooms[1].type='กับดัก';T.finalizeMovementOptions(room,hp);assert.ok(g.legal.includes(1));assert.ok(!g.legal.includes(2));
+reset();g.movementRange=2;g.rooms[1].type='กับดัก';T.finalizeMovementOptions(room,hp);assert.ok(g.legal.includes(1));assert.ok(g.legal.includes(2));
 // A real move roll captures the raw dice range (not Fear-adjusted sanity).
 reset();g.moved=false;g.rooms[0].fear=2;const oldRandom=Math.random;Math.random=()=>0.2;host.trigger('roll');Math.random=oldRandom;assert.equal(g.movementRange,4);assert.equal(g.sanity,4,'current room Fear is excluded');assert.ok(g.legal.includes(5));
 // Each ghost reaches warning once and burst once; no early effect at 1..5.

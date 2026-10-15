@@ -1,10 +1,10 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
 const source=fs.readFileSync(path.join(__dirname,'public/app.js'),'utf8');
 function fn(name){const start=source.indexOf('function '+name+'('),end=source.indexOf('\nfunction ',start+1);assert.ok(start>=0);return source.slice(start,end<0?undefined:end);}
-class Element{constructor(){this.children=[];this.innerHTML='';this.textContent='';}appendChild(c){this.children.push(c);}}
+class Element{constructor(){this.children=[];this.innerHTML='';this.textContent='';}appendChild(c){this.children.push(c);}set innerHTML(s){this._html=s;this.children=[]}get innerHTML(){return this._html}}
 const sent=[],ctx={state:{game:{rolled:false,moved:false,actions:3,rooms:[{type:'ปลอดภัย'}]}},mine:{char:{},amu:[]},mePublic:()=>({pos:0}),isMyTurn:()=>true,eventRevealOpen:false,turnTransitionActive:false,diceAnimating:false,movingSeats:new Set(),lastRoomEffectId:null,
  document:{createElement:()=>new Element()},socket:{emit:(event,data)=>sent.push({event,data})},ensureAudio(){},closeModal(){},artMarkup:()=>'',escapeHtml:s=>String(s),conditionLabel:()=>'',openModal:(title,box,options)=>ctx.modal={title,box,options}};
-vm.createContext(ctx);vm.runInContext(fn('canUseAmulet')+'\n'+fn('renderPendingRoomEffect'),ctx);
+vm.createContext(ctx);vm.runInContext(fn('isBoardMovement')+'\n'+fn('canUseAmulet')+'\n'+fn('renderPendingRoomEffect'),ctx);
 const spell=spellEffect=>({type:'spell',spellEffect});
 for(const effect of ['go_anywhere','diagonal_move']){
  ctx.state.game.rolled=false;assert.equal(ctx.canUseAmulet(spell(effect)),false);ctx.state.game.rolled=true;assert.equal(ctx.canUseAmulet(spell(effect)),true);
@@ -19,8 +19,8 @@ for(const [effect,type]of [['escape_trap','กับดัก'],['escape_curse',
 for(const effect of ['protect_event','protect_curse'])assert.equal(ctx.canUseAmulet(spell(effect)),false);
 ctx.isMyTurn=()=>false;ctx.state.game.actions=0;
 ctx.renderPendingRoomEffect({id:'reaction-1',type:'negativeReaction',reason:'Curse',options:[{uid:'s04',name:'อยู่ยงคงกระพัน',effect:'ป้องกัน Curse'}]});
-assert.equal(ctx.modal.title,'มีการ์ดป้องกัน ต้องการใช้หรือไม่?');assert.ok(ctx.modal.options.mandatory);
-const button=ctx.modal.box.children.find(x=>x.className==='modal-option reaction-spell-option');assert.ok(button.innerHTML.includes('ฟรี'));button.onclick();
+assert.equal(ctx.modal.title,'มีการ์ดป้องกัน');assert.ok(ctx.modal.options.mandatory);
+const button=ctx.modal.box.children.find(x=>x.className==='primary protection-use');assert.equal(button.textContent,'ต้องการใช้');button.onclick();
 assert.deepEqual(JSON.parse(JSON.stringify(sent.pop())),{event:'resolveRoomEffect',data:{uid:'s04',pendingId:'reaction-1'}});
 ctx.modal.box.children.at(-1).onclick();assert.equal(sent.at(-1).data.uid,'pass');
 assert.ok(source.includes('if(g.pendingRitual&&!g.pendingRoomEffect&&!g.protectionPending)'));

@@ -99,6 +99,14 @@ opts=T.movementOptions(room,p);assert.deepEqual(opts.paths[2],[0,3,4,5,2]);asser
 g.movementRange=3;assert.ok(!T.movementOptions(room,p).legal.includes(2));
 g.movementRange=4;g.rolled=true;T.finalizeMovementOptions(room,p);host.trigger('move',{index:2});assert.equal(p.pos,2);assert.equal(g.sanity,0);
 host.trigger('move',{index:5});assert.equal(p.pos,2);
+// Pass each special room, charge every entered Fear, and stop only at destination.
+for(const type of ['กับดัก','คำสาป','บอส']){
+ reset('HALL');p.pos=0;g.rooms.forEach(r=>r.fear=99);g.rooms[1].fear=2;g.rooms[1].type=type;g.rooms[2].fear=3;
+ g.bossIndex=type==='บอส'?1:8;g.ghost.fear=2;g.sanity=5;g.movementRange=2;g.rolled=true;
+ assert.deepEqual(T.movementOptions(room,p).paths[2],[0,1,2]);assert.equal(T.movementOptions(room,p).costs[2],5);
+ g.sanity=4;assert.ok(!T.movementOptions(room,p).legal.includes(2));g.sanity=5;
+ T.finalizeMovementOptions(room,p);host.trigger('move',{index:2});assert.equal(p.pos,2);assert.equal(g.sanity,0);assert.equal(g.escapeRequired,false);assert.equal(g.rescue,null);
+}
 // Independent exhaustive oracle tests routes, not implementation details.
 let seed=118;function rand(n){seed=(1664525*seed+1013904223)>>>0;return seed%n;}
 for(let run=0;run<250;run++){
@@ -106,7 +114,6 @@ for(let run=0;run<250;run++){
  for(let i=0;i<9;i++){g.rooms[i].fear=rand(5);g.rooms[i].type=rand(5)===0?'กับดัก':'ปลอดภัย';}
  const best={};function walk(pos,path,cost){
   if(path.length>g.movementRange)return;
-  if(path.length>1&&(pos===g.bossIndex||g.rooms[pos].type==='กับดัก'))return;
   for(let j=0;j<9;j++){
    if(Math.abs(Math.floor(j/3)-Math.floor(pos/3))+Math.abs(j%3-pos%3)!==1||path.includes(j))continue;
    const next=cost+T.roomAt(room,j).fear;if(next>g.sanity)continue;best[j]=Math.min(best[j]??Infinity,next);walk(j,[...path,j],next);

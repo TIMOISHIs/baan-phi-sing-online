@@ -18,7 +18,7 @@ let clock=0,next=1;const timers=new Map(),storage=new Map();
 const ctx={serverClock:{now:()=>clock},console,Math,Number,String,Set,JSON,document:{querySelector:element,createElement:()=>new Element(),activeElement:null},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},
  setTimeout:(fn,ms)=>{const id=next++;timers.set(id,{fn,at:clock+ms});return id},clearTimeout:id=>timers.delete(id),
  render(){},recoverMandatoryDecision(){},updateRollFocus(){},hideRollFocus(){},playCardFlipSound(){},artMarkup:()=>'',socket:{emit(){}},closeModal(){},toast(){},openModal:(title,box)=>ctx.modal=box,
- mine:{amu:Array.from({length:5},(_,i)=>({uid:`old-${i}`,name:`old-${i}`}))},myId:()=> 'p1'};
+ pendingEscapeFx:null,isBoardMovement:()=>false,mine:{amu:Array.from({length:5},(_,i)=>({uid:`old-${i}`,name:`old-${i}`}))},myId:()=> 'p1'};
 ctx.$=element;vm.createContext(ctx);
 const run=s=>vm.runInContext(s,ctx);
 function advance(ms){clock+=ms;for(let limit=0;limit<50;limit++){const due=[...timers].find(([,t])=>t.at<=clock);if(!due)return;timers.delete(due[0]);due[1].fn()}throw Error('timer loop')}
