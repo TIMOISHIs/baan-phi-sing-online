@@ -1,6 +1,6 @@
 {
-  "name": "baan-phi-sing-v1-18-7-playtest",
-  "version": "1.18.7",
+  "name": "baan-phi-sing-v1-18-8-playtest",
+  "version": "1.18.8",
   "private": true,
   "type": "commonjs",
   "scripts": {
@@ -9,7 +9,7 @@
     "smoke": "npm test",
     "smoke:legacy": "node smoke-test.js",
     "test:static": "node v18-static-integration-test.cjs",
-    "test": "node v18-regression-test.cjs && node v185-regression-test.cjs && node v185-client-test.cjs && node v186-regression-test.cjs && node v186-client-test.cjs && node v190-regression-test.cjs && node v190-client-test.cjs && node v110-account-test.cjs && node duplicate-characters-test.cjs && node balance-integration-test.cjs && node shop-catalog-test.cjs && node shop-sql-test.cjs && node shop-account-test.cjs && node shop-dom-test.cjs && node v112-test.cjs && node v113-test.cjs && node friends-test.cjs && node friends-sql-test.cjs && node friends-ui-test.cjs && node v117-regression-test.cjs && node v117-client-test.cjs && node v118-regression-test.cjs && node v118-client-test.cjs && node v1181-client-test.cjs && node leaderboard-test.cjs && node v1183-client-test.cjs",
+    "test": "node v18-regression-test.cjs && node v185-regression-test.cjs && node v185-client-test.cjs && node v186-regression-test.cjs && node v186-client-test.cjs && node v190-regression-test.cjs && node v190-client-test.cjs && node v110-account-test.cjs && node duplicate-characters-test.cjs && node balance-integration-test.cjs && node shop-catalog-test.cjs && node shop-sql-test.cjs && node shop-account-test.cjs && node shop-dom-test.cjs && node v112-test.cjs && node v113-test.cjs && node friends-test.cjs && node friends-sql-test.cjs && node friends-ui-test.cjs && node v117-regression-test.cjs && node v117-client-test.cjs && node v118-regression-test.cjs && node v118-client-test.cjs && node v1181-client-test.cjs && node leaderboard-test.cjs && node v1183-client-test.cjs && node v1188-client-test.cjs",
     "test:patch": "node v117-regression-test.cjs && node v117-client-test.cjs && node v118-regression-test.cjs && node v118-client-test.cjs && node v1181-client-test.cjs && node leaderboard-test.cjs && node v1183-client-test.cjs"
   },
   "dependencies": {

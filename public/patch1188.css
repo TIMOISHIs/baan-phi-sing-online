@@ -1,0 +1,14 @@
+/* Login has no preview menus; the authenticated lobby retains both. */
+body:not(.has-account) #home #lobby-battle-pass,
+body:not(.has-account) #home #lobby-event{display:none!important}
+#modal:has(.ritual-card-grid) .modal-card{width:min(940px,94vw);max-width:940px}
+.ritual-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;padding:8px 2px;align-items:stretch}
+.ritual-card-choice{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0;margin:0;padding:10px;background:#29231d;border:1px solid #88704a;border-radius:12px;color:#f4e4c5;text-align:left;white-space:normal;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.ritual-card-art{aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:7px;background:#151311;font-size:40px}
+.ritual-card-art img{display:block;width:100%;height:100%;object-fit:contain}
+.ritual-card-choice strong{font-size:17px;line-height:1.4}.ritual-card-choice span{font-size:14px;line-height:1.5}.ritual-card-choice small{font-size:12px;line-height:1.5;color:#c5b391}
+.ritual-card-choice:hover:not(:disabled),.ritual-card-choice:focus-visible{border-color:#f2cb7e;box-shadow:0 0 0 2px #d4a45270;outline:none}
+.ritual-card-choice:disabled{opacity:.52;filter:grayscale(.8);cursor:not-allowed}
+.audio-credit-link{font-size:12px;text-align:center}.audio-credit-link a{color:#c8b18b}
+@media(max-width:500px){.ritual-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.ritual-card-choice{padding:7px}.ritual-card-choice strong{font-size:15px}}
+@media(prefers-reduced-motion:reduce){.ritual-card-choice{transition:none}}

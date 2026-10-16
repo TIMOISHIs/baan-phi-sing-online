@@ -11,11 +11,12 @@ localStorage.setItem(tokenKey,sessionToken);
 let state=null,mine=null,tutorialShown=false,lastKraiTurnPrompt=null;
 let createAfterLeave=false,leavingRoom=false;
 let audioCtx=null,masterGain=null,ambientMaster=null,sfxMaster=null,trackNodes=[],trackTimers=[];
+let ambientStartRequest=0;
 let ambientEnabled=localStorage.getItem("bpsAmbientV14")==="1" || localStorage.getItem("bpsAmbientV13")==="1";
 let ambientVolume=Math.max(0,Math.min(3,Number(localStorage.getItem("bpsAmbientVolV14")??localStorage.getItem("bpsAmbientVolV13")??0.24)));
 const storedVolume=(key,fallback,max=3)=>{const value=Number(localStorage.getItem(key)??fallback);return Number.isFinite(value)?Math.max(0,Math.min(max,value)):fallback};
 let masterVolume=storedVolume("bpsMasterVolV185",1.5),sfxVolume=storedVolume("bpsSfxVolV185",0.8);
-const TRACK_NAMES={lofi_midnight:"Lo-Fi · เที่ยงคืน",lofi_lantern:"Lo-Fi · โคมผี",lofi_rain:"Lo-Fi · ฝนหลอน"};
+const TRACK_NAMES={lofi_midnight:"Lo-Fi · เที่ยงคืน",lofi_lantern:"Lo-Fi · โคมผี",lofi_rain:"Lo-Fi · ฝนหลอน",darkest_child:"Darkest Child · หลอนขี้เล่น",myst_moor:"Myst on the Moor · หมอกลึกลับ"};
 const previousAmbientTrack=localStorage.getItem("bpsAmbientTrackV14");
 let ambientTrack=TRACK_NAMES[previousAmbientTrack]?previousAmbientTrack:"lofi_midnight";
 if(ambientTrack!==previousAmbientTrack)localStorage.setItem("bpsAmbientTrackV14",ambientTrack);
@@ -144,6 +145,7 @@ function updateAmbientUI(){
   syncSoundSettings();
 }
 function clearTrack(){
+  if(typeof stopRecordedTrack==="function")stopRecordedTrack();
   trackTimers.forEach(t=>clearTimeout(t));trackTimers=[];
   trackNodes.forEach(n=>{try{n.stop?.()}catch{} try{n.disconnect?.()}catch{}});trackNodes=[];
 }
@@ -200,17 +202,21 @@ function startSelectedTrack(){
   clearTrack();
   if(!ambientEnabled)return;
   ensureAudio();
-  startLofiTrack(ambientTrack);
+  if(typeof RECORDED_TRACKS!=="undefined"&&RECORDED_TRACKS[ambientTrack])startRecordedTrack(ambientTrack);
+  else startLofiTrack(ambientTrack);
 }
 async function startAmbient(){
+  const request=++ambientStartRequest;
   const ctx=ensureAudio();if(!ctx){toast("Browser นี้ไม่รองรับ Web Audio");return;}
   try{await ctx.resume()}catch{}
+  if(request!==ambientStartRequest)return;
   ambientEnabled=true;
   localStorage.setItem("bpsAmbientV14","1");
   ambientMaster.gain.setTargetAtTime(ambientVolume,ctx.currentTime,.08);
   startSelectedTrack();updateAmbientUI();
 }
 function stopAmbient(){
+  ambientStartRequest++;
   ambientEnabled=false;localStorage.setItem("bpsAmbientV14","0");clearTrack();
   if(ambientMaster&&audioCtx)ambientMaster.gain.setTargetAtTime(0,audioCtx.currentTime,.08);
   updateAmbientUI();
@@ -240,7 +246,7 @@ $("#settingsMusicToggle").onclick=toggleAmbient;
 $("#masterVolume").oninput=e=>setSoundVolume("master",e.target.value);
 $("#musicVolume").oninput=e=>setSoundVolume("music",e.target.value);
 $("#sfxVolume").oninput=e=>setSoundVolume("sfx",e.target.value);
-$("#settingsTestSound").onclick=playCardFlipSound;
+$("#settingsTestSound").onclick=()=>playUISound("confirm");
 function setAmbientTrack(value){
   if(!TRACK_NAMES[value])return;
   ambientTrack=value;localStorage.setItem("bpsAmbientTrackV14",value);updateAmbientUI();
@@ -469,7 +475,7 @@ $("#skillBtn").onclick=()=>{
   }
   if(t==="remote_ritual_hp3"){
     const g=state.game,eligible=(mine.sac||[]).filter(c=>(g.ghost?.need?.[c.color]||0)>(g.bossDone?.[c.color]||0));if(!eligible.length){toast("ไม่มีเครื่องเซ่นสีที่ผีต้องการ");return;}
-    const box=document.createElement("div");box.innerHTML=`<p class="muted">เลือกเครื่องเซ่นเพื่อท้าดวลผีจากห้องไหนก็ได้ • ใช้ธูป 3 • หลัง Resolve HP -3</p>`;eligible.forEach(c=>{const b=document.createElement("button");b.className=`modal-option ${c.color}`;b.innerHTML=`<b>${c.name}</b><span>${c.group||c.color} · ตีผี ${c.boss}</span>`;b.onclick=()=>{socket.emit("skill",{uid:c.uid});closeModal()};box.appendChild(b)});openModal("Skill — หมอผีดำ",box);return;
+    const box=document.createElement("div");box.innerHTML=`<p class="muted">เลือกเครื่องเซ่นเพื่อท้าดวลผีจากห้องไหนก็ได้ • ใช้ธูป 3 • หลัง Resolve HP -3</p>`;box.append(offeringPicker(mine.sac||[],g.ghost||{},g.bossDone,c=>{socket.emit("skill",{uid:c.uid});closeModal()}));openModal("Skill — หมอผีดำ",box);return;
   }
   if(t==="free_any_trap_curse"){
     const targets=state.players.filter(x=>!x.dead&&["คำสาป","กับดัก"].includes(roomAt(x.pos)?.type));if(!targets.length){toast("ยังไม่มีใครติดห้องคำสาป/กับดัก");return;}const box=document.createElement("div");box.innerHTML=`<p class="muted">เลือกตัวเองหรือเพื่อนที่ติดคำสาป/กับดัก • ใช้ 3 ธูป ช่วยทั่วกระดาน • ผู้ถูกช่วยทอยและเดินหนีทันที</p>`;targets.forEach(x=>{const b=document.createElement("button");b.className="modal-option";b.innerHTML=`<b>${x.id===myId()?"ตัวเอง · ":""}${x.name}</b><span>${roomAt(x.pos)?.name||""}</span>`;b.onclick=()=>{socket.emit("skill",{targetId:x.id});closeModal()};box.appendChild(b)});openModal("Skill — หมอธรรม",box);return;
@@ -1235,18 +1241,26 @@ function openRevive(card){
   openModal("ชุบชีวิตเพื่อน",box);
 }
 
+function offeringPicker(cards,ghost,bossDone,onSelect){
+  const grid=document.createElement("div");grid.className="ritual-card-grid";
+  if(!cards.length){const empty=document.createElement("p");empty.textContent="ยังไม่มีเครื่องเซ่นในกระเป๋า";grid.append(empty);return grid}
+  cards.forEach(c=>{
+    const allowed=(ghost.need?.[c.color]||0)>(bossDone?.[c.color]||0),rule=ghost.dice?.[c.color];
+    const b=document.createElement("button");b.type="button";b.className=`ritual-card-choice ${c.color}`;b.disabled=!allowed;b.dataset.uid=c.uid;
+    const art=document.createElement("div");art.className="ritual-card-art";
+    if(c.art){const img=document.createElement("img");img.src=c.art;img.alt=c.name;img.draggable=false;img.onerror=()=>{img.remove();art.textContent=c.icon||"◆"};art.append(img)}else art.textContent=c.icon||"◆";
+    const name=document.createElement("strong");name.textContent=c.name;
+    const hint=document.createElement("span");hint.textContent=allowed?`ต้องทอย ${rule?.label||"ตามการ์ดผี"} · สำเร็จได้เงิน ${c.boss}`:"ผีไม่ต้องการสีนี้แล้ว";
+    const counter=document.createElement("small");counter.textContent=allowed?(ghost.counterText?.[c.color]||"พลาด → รับผลสวนกลับตามการ์ดผี"):"เลือกใช้ใบที่สว่างได้";
+    b.append(art,name,hint,counter);b.onclick=()=>{if(allowed)onSelect(c,rule)};grid.append(b);
+  });return grid;
+}
 $("#ritualBtn").onclick=()=>{
-  const g=state.game,box=document.createElement("div"),ghost=g.ghost||{};
+  const g=state?.game;if(!g)return;
+  const box=document.createElement("div"),ghost=g.ghost||{};
   const intro=document.createElement("div");intro.className="ritual-help";
-  intro.innerHTML=`<b>ใช้ 2 ธูป</b><span>เลือกเครื่องเซ่น 1 ใบที่ตรง Symbol ที่ยังเหลือ แล้วทอยเต๋า 2 ลูกตามเกณฑ์สี</span>`;
-  box.appendChild(intro);
-  (mine?.sac||[]).filter(c=>(ghost.need?.[c.color]||0)>(g.bossDone[c.color]||0)).forEach(c=>{
-    const rule=ghost.dice?.[c.color];
-    const b=document.createElement("button");b.className=`modal-option ritual-option ${c.color}`;
-    b.innerHTML=`<strong>${c.icon} ${c.name}</strong><span>ต้องทอย ${rule?.label||"?"} · สำเร็จได้เงิน ${c.boss}</span><small>${ghost.counterText?.[c.color]||"พลาด → รับผลสวนกลับตามการ์ดผี"}</small>`;
-    b.onclick=()=>{closeModal();armRitualRoll(c,rule)};
-    box.appendChild(b)
-  });
+  intro.innerHTML=`<b>ใช้ 2 ธูป</b><span>เลือกเครื่องเซ่นในกระเป๋า 1 ใบที่สว่าง แล้วกดทอยเต๋าทำพิธี</span>`;
+  box.append(intro,offeringPicker(mine?.sac||[],ghost,g.bossDone,(c,rule)=>{closeModal();armRitualRoll(c,rule)}));
   openModal(`ทำพิธี — ${ghost.name||"ผี"}`,box);
 };
 $("#tradeBtn").onclick=()=>{
