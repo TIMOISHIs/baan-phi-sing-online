@@ -244,6 +244,12 @@ AMULETS.forEach(c=>{
   c.art=`/assets/amulets/faces/${face.file}`;
 });
 const sacCounters={green:0,blue:0,pink:0,black:0};
+// Read-only collection: public definitions independent of ownership.
+app.get('/api/cards/collection',(_req,res)=>{
+ res.set('Cache-Control','no-store');
+ res.json({characters:CHARS.map(c=>({id:c.key,name:c.name,art:c.art,role:c.role,hp:c.hp,slots:c.slots,skill:c.skill})),
+ ghosts:GHOSTS.map(g=>({id:g.id,name:g.name,art:g.art,tier:g.tier,fear:g.fear,need:g.need,dice:g.dice,curseText:g.curseText,counterText:g.counterText}))});
+});
 // Read-only Lobby catalogue. Use the same definitions and full Figma faces as the deck.
 app.get('/api/cards/amulets',(_req,res)=>{
   res.set('Cache-Control','public, max-age=300');
