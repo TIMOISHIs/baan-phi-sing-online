@@ -37,7 +37,7 @@ global.setInterval=()=>({unref(){}});
 
 const filename=path.join(root,'server.js');
 let src=fs.readFileSync(filename,'utf8');
-src += `\nmodule.exports.__test={rooms,AMULETS,SACRIFICES,ROOMS,CHARS,GHOSTS,uidCard,drawAmuletFromDeck,applyGhostCounter,applyEventCard,roomAt,applyCurse,finalizeMovementOptions,publicSnapshot,privateSnapshot,startRoom,beginTurn,advanceToNextAlive,recordDice,movementOptions,queueOfficeDiscardPick,canRecoverToHand,setHp,addLog,expireTurn,rescueOptions,emitRoom,balancedRoomMap,roomEscapeProgress,setPlayerPosition,addCurseProgress,resolveGhostCurse,spellMoveOptions};\n`;
+src += `\nmodule.exports.__test={rooms,AMULETS,SACRIFICES,ROOMS,CHARS,GHOSTS,uidCard,drawAmuletFromDeck,applyGhostCounter,applyEventCard,roomAt,applyCurse,finalizeMovementOptions,publicSnapshot,privateSnapshot,startRoom,beginTurn,advanceToNextAlive,recordDice,movementOptions,queueOfficeDiscardPick,canRecoverToHand,setHp,addLog,expireTurn,rescueOptions,emitRoom,balancedRoomMap,roomEscapeProgress,setPlayerPosition,addCurseProgress,resolveGhostCurse,spellMoveOptions,checkDefeat};\n`;
 const mod=new Module(filename,module);mod.filename=filename;mod.paths=Module._nodeModulePaths(root);mod._compile(src,filename);
 const T=mod.exports.__test;
 
@@ -169,6 +169,21 @@ T.applyEventCard(room,p,event);const eventPending=g.pendingRoomEffect.id;deferre
 reply(p);assert.equal(g.pendingRoomEffect.playerId,friend.id);reply(friend);assert.equal(g.protectionPending,false);assert.equal(g.curse,0);
 reset('HALL');card('S04',friend);T.addCurseProgress(room,6);g.pendingRitual={playerId:p.id,id:'ritual-held'};
 host.trigger('resolveRitual',{modifier:0});assert.equal(g.pendingRitual.id,'ritual-held');reply(friend);g.pendingRitual=null;
+// A final successful ritual wins even if everyone reached zero HP in its Curse resolution.
+reset('HALL');g.ghost={...T.GHOSTS.find(x=>x.id==='ghost-widow')};g.bossDone={green:0,blue:1,pink:1,black:3};
+const finalOffering=takeSac(room,'green');p.sac=[finalOffering];room.players.forEach(x=>{x.hp=0;x.selfReviveUsed=true;x.deadAnnounced=true});
+g.pendingRitual={id:'last-ritual',playerId:p.id,cardUid:finalOffering.uid,color:'green',rule:{op:'>=',value:1,label:'1+'},dice:{a:4,b:4,total:8},counterText:''};
+assert.equal(T.checkDefeat(room),false,'do not end while the final ritual awaits resolution');host.trigger('resolveRitual',{modifier:0});
+assert.equal(room.phase,'result');assert.equal(room.result.defeat,undefined);assert.ok(room.log.at(-1).text.includes('ผู้เล่นชนะ'));
+// A failed final ritual still resolves to defeat when all players are out of lives.
+reset('HALL');g.ghost={...T.GHOSTS.find(x=>x.id==='ghost-widow')};g.bossDone={green:0,blue:1,pink:1,black:3};
+const failedOffering=takeSac(room,'green');p.sac=[failedOffering];room.players.forEach(x=>{x.hp=0;x.selfReviveUsed=true;x.deadAnnounced=true});
+g.pendingRitual={id:'failed-last-ritual',playerId:p.id,cardUid:failedOffering.uid,color:'green',rule:{op:'>=',value:99,label:'99+'},dice:{a:1,b:1,total:2},counterText:''};
+host.trigger('resolveRitual',{modifier:0});assert.equal(room.phase,'defeat');
+// Broadcast trade activity while limiting card details to the two participants.
+reset('HALL');room.trade={id:'private-trade',fromId:p.id,toId:friend.id,giveScore:4,askScore:2,askCardCount:0,giveCards:[{uid:'secret',name:'ความลับ',zone:'amu'}]};
+const publicTrade=T.publicSnapshot(room).trade;assert.equal(publicTrade.fromName,p.name);assert.equal(publicTrade.toName,friend.name);assert.equal('giveCards' in publicTrade,false);
+assert.equal(T.privateSnapshot(room,clients[0].id).trade.giveCards[0].name,'ความลับ');assert.equal(T.privateSnapshot(room,clients[1].id).trade.giveCards[0].name,'ความลับ');assert.equal(T.privateSnapshot(room,clients[2].id).trade,null);
 Module._load=origLoad;global.setTimeout=origTimeout;global.setInterval=origInterval;
-console.log('V1.18 SERVER PASS: 250 route-oracle maps; travel, capacity, escape types, free personal Event/Curse reactions, all 9 ghosts, repeated burst, timeout and queued decisions');
+console.log('V1.18 SERVER PASS: 250 route-oracle maps; travel, capacity, escape types, free personal Event/Curse reactions, all 9 ghosts, simultaneous final ritual victory, failed ritual defeat, private trade details');
 

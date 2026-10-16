@@ -59,7 +59,8 @@
     loading=(async()=>{try{
       const response=await fetch('/api/cards/amulets');if(!response.ok)throw Error('โหลดการ์ดไม่สำเร็จ');
       const data=await response.json();if(!Array.isArray(data.cards)||!data.cards.length)throw Error('ยังไม่พบข้อมูลการ์ด');
-      if(data.cards.some(c=>!/^\/assets\/amulets\/faces\/[A-Z]\d+\.webp$/.test(c.art)))throw Error('กรุณาติดตั้งแพตช์อาร์ต Amulet เต็มใบก่อน');
+      // Spell faces use versioned PNG filenames; other Amulet faces use WebP.
+      if(data.cards.some(c=>!/^\/assets\/amulets\/faces\/[A-Z]\d+(?:-v\d+)?\.(?:webp|png)$/i.test(c.art)))throw Error('ไม่พบไฟล์ภาพการ์ด Amulet บางใบ กรุณาติดตั้งแพตช์อาร์ต Amulet ให้ครบก่อน');
       cards=data.cards;draw();
     }catch(e){status(e.message||'โหลดการ์ดไม่สำเร็จ',true);}finally{loading=null;}})();return loading;
   }

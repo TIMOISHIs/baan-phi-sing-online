@@ -8,7 +8,7 @@ const tokenKey="bpsSessionTokenV09",roomKey="bpsRoomCodeV13",legacyRoomKey="bpsR
 const makeToken=()=>globalThis.crypto?.randomUUID?.().replaceAll("-","")||`${Date.now()}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
 let sessionToken=localStorage.getItem(tokenKey)||makeToken();
 localStorage.setItem(tokenKey,sessionToken);
-let state=null,mine=null,tutorialShown=false;
+let state=null,mine=null,tutorialShown=false,lastKraiTurnPrompt=null;
 let createAfterLeave=false,leavingRoom=false;
 let audioCtx=null,masterGain=null,ambientMaster=null,sfxMaster=null,trackNodes=[],trackTimers=[];
 let ambientEnabled=localStorage.getItem("bpsAmbientV14")==="1" || localStorage.getItem("bpsAmbientV13")==="1";
@@ -1047,8 +1047,10 @@ function renderGame(){
   }
 
   if(state.trade)renderTradeNotice();
+  renderTradeStatus();
   if(g.pendingRoomEffect && g.pendingRoomEffect.playerId===myId()) renderPendingRoomEffect(g.pendingRoomEffect);
   if(g.pendingRitual&&!g.pendingRoomEffect&&!g.protectionPending) renderPendingRitual(g.pendingRitual);
+  maybePromptKraiRevive(g,mp,deadSelfRevive);
   updateRollFocus();
 }
 function renderPrivate(){
@@ -1251,7 +1253,7 @@ $("#tradeBtn").onclick=()=>{
   openModal("🤝 ใจแลกใจ",wrap);
 };
 function renderTradeNotice(){
-  const t=state.trade;if(!t)return;
+  const publicTrade=state.trade,t=mine?.trade?.id===publicTrade?.id?mine.trade:null;if(!publicTrade||!t)return;
   if(t.toId===myId()){
     const from=state.players.find(p=>p.id===t.fromId),box=document.createElement("div");
     const p=document.createElement("p");p.textContent=`${from?.name} เสนอ Trade: ให้ ${t.giveCards.map(c=>c.name).join(", ")||"ไม่มีการ์ด"} + เงิน ${t.giveScore} • ขอเงิน ${t.askScore} และการ์ด ${t.askCardCount} ใบ`;box.appendChild(p);
@@ -1261,6 +1263,25 @@ function renderTradeNotice(){
     const reject=document.createElement("button");reject.className="secondary";reject.style.marginLeft="7px";reject.textContent="Reject";reject.onclick=()=>{socket.emit("tradeReject");closeModal()};box.appendChild(reject);
     if($("#modal").classList.contains("hidden"))openModal("มี Trade Offer ถึงคุณ",box,{mandatory:true,mandatoryId:t.id});
   }
+}
+function renderTradeStatus(){
+  const board=document.getElementById('board');if(!board)return;
+  let banner=document.getElementById('tradeStatus');
+  if(!banner){banner=document.createElement('div');banner.id='tradeStatus';banner.className='trade-status-banner';board.parentElement.insertBefore(banner,board)}
+  const t=state?.trade;
+  if(!t){banner.hidden=true;banner.textContent='';return}
+  banner.hidden=false;banner.textContent=`🤝 ${t.fromName||'ผู้เล่น'} กำลังแลกเปลี่ยนกับ ${t.toName||'ผู้เล่น'} · รอการตอบรับ`;
+}
+function maybePromptKraiRevive(g,mp,eligible){
+  if(!eligible||!isMyTurn()||myMandatoryDecision()||!g.turnSerial)return;
+  const key=`${state.code}:${g.turnSerial}:${myId()}`;if(lastKraiTurnPrompt===key)return;
+  const box=document.createElement('div'),message=document.createElement('p'),use=document.createElement('button'),end=document.createElement('button');
+  message.textContent='พ่อไกรเสียชีวิตแล้ว แต่ยังใช้สกิลพิเศษชุบตัวเองได้ ต้องการใช้สกิลไหม?';
+  use.type='button';use.className='primary';use.textContent='ใช้สกิลพิเศษ';
+  end.type='button';end.className='secondary';end.style.marginLeft='8px';end.textContent='จบเทิร์น';
+  use.onclick=()=>{closeModal();document.getElementById('skillBtn')?.click()};
+  end.onclick=()=>{closeModal();socket.emit('endTurn')};box.append(message,use,end);
+  if(openModal('พ่อไกร · เลือกการกระทำ',box))lastKraiTurnPrompt=key;
 }
 let lastRoomEffectId=null;
 function renderPendingRoomEffect(pending){

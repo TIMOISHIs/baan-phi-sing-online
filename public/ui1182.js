@@ -1,4 +1,4 @@
-/* v1.18.2: presentation only; preserve the live buttons and status values. */
+/* v1.18.2 action/status artwork; preserve the live buttons and status values. */
 (()=>{
   const root='/assets/ui1182/';
   const actions=[['tradeBtn','01_trade','148x114','แลกเปลี่ยน',1],['ritualBtn','02_ritual','148x114','ทำพิธี',2],['skillBtn','03_skill','148x114','สกิลพิเศษ',3],['endBtn','04_end_turn','148x80','จบเทิร์น',null]];
@@ -32,5 +32,5 @@
   const previous=window.renderDashboard;
   if(previous)window.renderDashboard=function(...args){const result=previous.apply(this,args);updateSkillCost();return result;};
   updateSkillCost();
-  const version=document.querySelector('.bps-brand small');if(version)version.textContent='v1.18.2';
+  const version=document.querySelector('.bps-brand small');if(version)version.textContent='v1.18.3';
 })();

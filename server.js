@@ -639,10 +639,9 @@ function publicSnapshot(room){
       id:room.trade.id,
       fromId:room.trade.fromId,
       toId:room.trade.toId,
-      giveScore:room.trade.giveScore,
-      askScore:room.trade.askScore,
-      askCardCount:room.trade.askCardCount,
-      giveCards:room.trade.giveCards.map(c=>({uid:c.uid,name:c.name,zone:c.zone,color:c.color||null,type:c.type||null}))
+      fromName:room.players.find(p=>p.id===room.trade.fromId)?.name||"ผู้เล่น",
+      toName:room.players.find(p=>p.id===room.trade.toId)?.name||"ผู้เล่น",
+      status:"pending"
     } : null
   };
 }
@@ -660,6 +659,11 @@ function privateSnapshot(room, socketId){
     equip:p.equip || [],
     score:p.score || 0,
     hp:p.hp ?? null,
+    trade:room.trade&&(room.trade.fromId===p.id||room.trade.toId===p.id)?{
+      id:room.trade.id,fromId:room.trade.fromId,toId:room.trade.toId,
+      giveScore:room.trade.giveScore,askScore:room.trade.askScore,askCardCount:room.trade.askCardCount,
+      giveCards:room.trade.giveCards.map(c=>({uid:c.uid,name:c.name,zone:c.zone,color:c.color||null,type:c.type||null}))
+    }:null,
     char:p.char || null,
     characterPreviewKey:p.characterPreviewKey || null,
     characterConfirmed:!!p.characterConfirmed,
@@ -784,6 +788,9 @@ function markNewDeaths(room){
 function canTakeTurn(p){return !!p && (p.hp>0 || (p.hp<=0 && p.char?.skillType==="self_revive"&&!p.selfReviveUsed));}
 function checkDefeat(room){
   if(room.phase!=="game") return false;
+  // Keep a rolled ritual alive until its result is chosen. This lets a final
+  // successful attack win even if the last player falls to the same Curse.
+  if(room.game?.pendingRitual) return false;
   if(room.players.length && room.players.every(p=>!canTakeTurn(p))){
     room.phase="defeat";
     finishStats(room);
@@ -1227,8 +1234,12 @@ function resolveRitualAction(socket,{modifier=0},forcedPlayer=null){
     }
     if(pending.remoteSkill&&pending.skillHpCost)changeHp(room,p,-Math.abs(Number(pending.skillHpCost)||3),"ค่าพลังสกิลหมอผีดำ");
     io.to(room.code).emit("ritualFx",{playerName:p.name,ghostName:ghost.name,cardName:c.name,color:c.color,dice:d,modifier,finalTotal,ruleLabel:rule.label,ruleValue:rule.value,success:ok,score:ok?c.boss:0,attackMax,counterText:pending.counterText});
+    if(ok&&ghostComplete(room)){
+      markNewDeaths(room);
+      room.phase="result";computeResults(room);addLog(room,`ปราบ ${ghost.name} สำเร็จ → ผู้เล่นชนะ`);
+      emitRoom(room);return;
+    }
     if(resolveDeathsAfterAction(room,p.id)){emitRoom(room);return;}
-    if(ghostComplete(room)){room.phase="result";computeResults(room);addLog(room,`ปราบ ${ghost.name} สำเร็จ → จบเกม`);}
     emitRoom(room);
 }
 function resolveRoomEffectAction(socket,{uids=[],uid=null,pendingId=null},forcedPlayer=null){
