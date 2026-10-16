@@ -45,5 +45,7 @@ document.addEventListener('click',event=>{
   const label=(button.getAttribute('aria-label')||button.textContent||'').trim();
   const kind=/close|cancel/i.test(button.id)||/^(ปิด|ยกเลิก|ไม่ใช้|กลับ)|^[×✕]$/.test(label)?'cancel':
     button.matches('.primary,.ritual-card-choice')?'confirm':'click';
+  // Suppress only generic clicks during play; keep confirmation and cancel feedback.
+  if(document.querySelector('#game.active')&&kind==='click')return;
   playUISound(kind);
 },true);
