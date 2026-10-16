@@ -1,0 +1,72 @@
+/* Keep the old content width while returning the former rail width to the board. */
+#game.floating-actions .bps-table{grid-template-columns:clamp(174px,14vw,252px) minmax(0,1fr) clamp(180px,14vw,250px)}
+#game.floating-actions .bps-spirit{grid-column:3;grid-row:1}
+#game .bps-board-area{
+  --returned-rail:88px;--floating-width:92px;--action-top:14px;
+  position:relative;min-width:0;min-height:0;width:100%;height:100%;
+  border-radius:10px;background:#252c24 url('/assets/ui/game-table1164.png') center/cover no-repeat;
+  box-shadow:inset 0 0 12px #0005;
+}
+#game.floating-actions .bps-board-shell{
+  width:calc(100% - var(--returned-rail));height:100%;margin:0;
+  background:transparent;box-shadow:none;border-color:transparent;
+}
+#game.floating-actions .bps-board-area>.bps-action-rail{
+  position:absolute;inset:var(--action-top) 6px 14px auto;
+  width:var(--floating-width);height:auto;min-height:0;
+  display:flex!important;flex-direction:column;align-items:center;justify-content:space-between;
+  gap:18px;padding:0!important;margin:0;border:0;background:transparent;
+  box-shadow:none;z-index:6;pointer-events:none;
+}
+#game.floating-actions .bps-action-rail .bps-action-grid{
+  display:flex;flex-direction:column;flex:none;gap:12px;width:100%;
+}
+#game.floating-actions .bps-action-rail .bps-end{
+  display:flex!important;flex:none;width:100%;margin:0;margin-top:auto;
+}
+#game.floating-actions .bps-action-rail button.painted-action{
+  width:var(--floating-width);max-width:none;flex:none;
+  height:calc(var(--floating-width) * 114 / 148)!important;pointer-events:auto;
+}
+#game.floating-actions .bps-action-rail #endBtn.painted-action{height:calc(var(--floating-width) * 80 / 148)!important}
+@media(max-width:1100px) and (min-width:621px){
+  #game.floating-actions .bps-table{grid-template-columns:170px minmax(0,1fr)}
+  #game.floating-actions .bps-spirit{grid-column:1/-1;grid-row:2}
+  #game .bps-board-area{--returned-rail:76px;--floating-width:80px}
+}
+/* Narrow screens keep the room area intact and put floating controls below it. */
+@media(max-width:620px){
+  #game .bps-board-area{--returned-rail:0px;--floating-width:min(74px,calc((100vw - 54px) / 4));height:auto;padding-bottom:78px}
+  #game.floating-actions .bps-board-shell{height:clamp(290px,82vw,390px)}
+  #game.floating-actions .bps-board-area>.bps-action-rail{
+    inset:auto 6px 10px 6px;width:auto;height:57px;flex-direction:row;gap:6px;
+  }
+  #game.floating-actions .bps-action-rail .bps-action-grid{flex-direction:row;gap:6px;width:auto}
+  #game.floating-actions .bps-action-rail .bps-end{width:auto;margin:0}
+}
+
+/* Follow-up: larger end-turn artwork, centered on the same action axis. */
+#game.floating-actions .bps-action-rail #endBtn.painted-action{width:calc(var(--floating-width) * 1.15);height:calc(var(--floating-width) * 1.15 * 80 / 148)!important;flex:none}
+/* Each pawn owns a layout cell, including invisible in-transit pawns. */
+#game.floating-actions .room{container-type:size}
+#game.floating-actions .room .pawns{--head-size:clamp(20px,min(25cqw,25cqh),42px);display:grid;grid-template-columns:repeat(3,var(--head-size));grid-auto-rows:var(--head-size);gap:6px;justify-content:center;align-content:end;bottom:6px;left:4px;right:4px}
+#game.floating-actions .room .pawn-portrait{width:var(--head-size);height:var(--head-size);min-width:0;margin:0;box-sizing:border-box}
+
+/* Head silhouettes: player color follows the alpha edge, not a circular frame. */
+#game.floating-actions .room .pawns{--head-size:min(48px,calc((100cqw - 24px) / 3),calc((100cqh - 58px) / 2))}
+#game.floating-actions .room .pawn-head,.walking-pawn .pawn-head{
+  position:relative;display:block;padding:0;border:0;border-radius:0;background:transparent;
+  overflow:visible;box-shadow:none;transform:none;flex:none;
+}
+.pawn-head-art{display:block;width:100%;height:100%;background-image:var(--head-sheet);background-size:200% 200%;background-position:var(--head-x) var(--head-y);background-repeat:no-repeat;filter:drop-shadow(1px 0 0 var(--pcolor)) drop-shadow(-1px 0 0 var(--pcolor)) drop-shadow(0 1px 0 var(--pcolor)) drop-shadow(0 -1px 0 var(--pcolor));pointer-events:none}
+#game.floating-actions .room .pawn-head.pawn-dead{filter:grayscale(1);opacity:.55}
+.pawn-head.pawn-mine:after{content:'';position:absolute;bottom:0;left:calc(50% - 3px);width:6px;height:3px;border-radius:3px;background:var(--pcolor);box-shadow:0 0 2px #fff}
+.walking-pawn .pawn-head{width:40px;height:40px}
+#game.floating-actions .room[data-pawn-count='4'] .room-bottom>span,
+#game.floating-actions .room[data-pawn-count='5'] .room-bottom>span,
+#game.floating-actions .room[data-pawn-count='6'] .room-bottom>span{top:32px;transform:none;max-height:18px;-webkit-line-clamp:1}
+@media(max-width:620px){
+  #game .bps-board-area{--floating-width:min(74px,calc((100vw - 54px) / 4.15))}
+}
+
+#game .pawn-head img.pawn-head-art,.walking-pawn .pawn-head img.pawn-head-art{width:100%;height:100%;object-fit:contain;object-position:center;border-radius:0}

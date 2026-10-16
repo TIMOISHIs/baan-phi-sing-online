@@ -927,6 +927,12 @@ function openLogDetail(entry){
 $("#logDetailClose").onclick=()=>$("#logDetailDialog").close();
 function pawnMarkup(p){
   const seat=playerSeat(p),label=`${PLAYER_META[seat]?.label||""} · ${PLAYER_META[seat]?.name||""}`;
+  const headKeys=['por-krai','mae-mali','doctor','nerd','black-shaman','mor-tham','temple-dog','stray-cat'];
+  const headIndex=headKeys.indexOf(p.char?.key);
+  if(headIndex>=0){
+
+    return `<span data-pawn-seat="${seat}" class="pawn pawn-portrait pawn-head ${movingSeats.has(seat)?"pawn-in-transit":""} pcolor-${seat} ${p.dead?"pawn-dead":""} ${p.id===myId()?"pawn-mine":""}" role="img" aria-label="${roomEscape(label)}" title="${roomEscape(label)}"><img class="pawn-head-art" src="/assets/pawns1186/${headKeys[headIndex]}.svg" alt="" draggable="false"></span>`;
+  }
   const portrait=p.char?.art;
   if(portrait)return `<span data-pawn-seat="${seat}" class="pawn pawn-portrait ${movingSeats.has(seat)?"pawn-in-transit":""} pcolor-${seat} ${p.dead?"pawn-dead":""}" role="img" aria-label="${roomEscape(label)}" title="${roomEscape(label)}"><img src="${roomEscape(portrait)}" alt="" draggable="false"></span>`;
   return `<span data-pawn-seat="${seat}" class="pawn pawn-person ${movingSeats.has(seat)?"pawn-in-transit":""} pcolor-${seat} ${p.dead?"pawn-dead":""}" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 32 40" aria-hidden="true"><circle cx="16" cy="8" r="6"/><path d="M10 16 Q16 13 22 16 L28 28 Q29 31 25 31 H23 L25 37 H7 L9 31 H7 Q3 31 4 28Z"/></svg></span>`;
@@ -961,7 +967,9 @@ function renderGame(){
     else if(g.sanityDecision){
       const allowed=(g.movementPreview?.legal||[]).includes(i);b.classList.add(allowed?"legal":"illegal");
     }else if(g.mustMove||g.moveOptional)b.classList.add(g.legal.includes(i)?"legal":"illegal");
-    const pawns=state.players.map(p=>p.pos===i?pawnMarkup(p):"").join("");
+    const occupants=state.players.filter(p=>p.pos===i).sort((a,b)=>playerSeat(a)-playerSeat(b));
+    b.dataset.pawnCount=String(occupants.length);
+    const pawns=occupants.map(p=>pawnMarkup(p)).join("");
     b.innerHTML=`<div class="room-top"><div><b>${r.boss?"👻 ":""}${r.name}</b><small>${r.type}</small></div><span class="fear-badge">${r.fear}</span></div><div class="room-art">${artMarkup(r.art,"room-art-img",r.name)|| (r.boss?"BOSS":"ROOM")}</div><div class="room-bottom">${r.effectText?`<span>${r.effectText.split("•")[0]}</span>`:"<span>คลิกเพื่อดู Effect</span>"}<div class="pawns">${pawns}</div></div>`;
     b.onclick=()=>{if(diceAnimating||escapePresentationActive)return;if(selectBoardDestination(i))return;if(g.rescue){if(g.rescue.playerId===myId()&&g.rescue.phase==="move"&&!g.curseResolving&&!g.pendingRoomEffect&&!diceAnimating&&!movingSeats.size)socket.emit("rescueMove",{index:i});return;}
       if(isMyTurn()&&(g.sanityDecision||g.mustMove||g.moveOptional)&&(g.sanityDecision?g.movementPreview?.legal||[]:g.legal).includes(i)&&!g.curseResolving&&!g.pendingRoomEffect&&!g.pendingRitual&&!turnTransitionActive&&!diceAnimating&&!eventRevealOpen&&!movingSeats.size) socket.emit("move",{index:i});
